@@ -1,4 +1,5 @@
 use std::mem;
+use std::cmp::PartialEq;
 
 // ProtocolTypes is the list of all supported protocols.
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -150,6 +151,12 @@ impl Multiaddr {
     }
 }
 
+impl PartialEq for Multiaddr {
+    fn eq(&self, other: &Multiaddr) -> bool {
+        self.bytes == other.bytes
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -187,5 +194,11 @@ mod tests {
             Multiaddr::new("/ip4/127.0.0.1/udp/1234").bytes,
             target
          );
+    }
+
+    #[test]
+    fn multiaddr_eq() {
+        assert!(Multiaddr::new("/ip4/127.0.0.1") == Multiaddr::new("/ip4/127.0.0.1"));
+        assert!(Multiaddr::new("/ip4/127.0.0.1") != Multiaddr::new("/ip4/128.0.0.1"))
     }
 }
