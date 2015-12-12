@@ -1,5 +1,8 @@
-use std::mem;
+extern crate byteorder;
+
+use std::io::Cursor;
 use std::cmp::PartialEq;
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
 // ProtocolTypes is the list of all supported protocols.
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -123,19 +126,10 @@ impl Multiaddr {
 
         for part in address.split("/") {
             if let Some(protocol) = ProtocolTypes::from_name(part) {
-                // Is there a way to do this safely?
-                unsafe {
-                    let code_u16 = protocol.to_code();
-                    let code = mem::transmute::<u16, [u8; 2]>(code_u16);
-
-                    if code_u16 > 255 {
-                        let mut code = code.iter().cloned().collect();
-                        bytes.append(&mut code);
-                    } else {
-                        bytes.push(code[0])
-                    }
-                }
-
+                bytes.write_u16::<LittleEndian>(protocol.to_code());
+                println!("Bytes {:?}", bytes);
+                let mut rdr = Cursor::new(vec![4, 0]);
+                println!("Bytes reversed {:?}", rdr.read_u16::<LittleEndian>());
                 println!("Got protocol {}", protocol.to_name());
                 println!("With size {}", protocol.to_size());
             } else if part.len() > 0 {
@@ -150,9 +144,49 @@ impl Multiaddr {
         }
     }
 
-    // Return a copy to disallow changing the bytes directly
+    /// Return a copy to disallow changing the bytes directly
     pub fn to_bytes(&self) -> Vec<u8> {
         self.bytes.to_owned()
+    }
+
+    /// Return a list of protocols
+    ///
+    /// # Examples
+    ///
+    /// A single protocol
+    ///
+    /// ```
+    /// use multiaddr::{Multiaddr, ProtocolTypes};
+    ///
+    /// let address = Multiaddr::new("/ip4/127.0.0.1");
+    /// assert_eq!(address.protocols(), vec![ProtocolTypes::IP4])
+    /// ```
+    ///
+    pub fn protocols(&self) -> Vec<ProtocolTypes> {
+        let mut protos = vec![];
+
+        // let mut skipper = 0;
+        // let mut first = true;
+        // let mut current = [0u8, 0u8];
+
+        // for (i, byte) in self.bytes.iter().enumerate() {
+        //     println!("{}: {}", byte, i);
+        //     if (skipper > 0) {
+        //         skipper --;
+        //         continue;
+        //     }
+
+        //     if (first) {
+        //         current[0] = byte;
+        //         first = false;
+        //     } else {
+        //         current[1] = byte;
+
+        //         a[]
+        //     }
+        // }
+
+        protos
     }
 }
 

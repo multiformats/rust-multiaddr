@@ -25,9 +25,9 @@ fn protocols_to_name() {
 
 #[test]
 fn multiaddr_from_string() {
-    let mut target = vec![4u8];
+    let mut target = vec![0, 4u8];
     target.append(&mut "127.0.0.1".to_string().into_bytes());
-    target.push(17u8);
+    target.append(&mut vec![0, 17u8]);
     target.append(&mut "1234".to_string().into_bytes());
 
     assert_eq!(
