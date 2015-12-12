@@ -1,3 +1,5 @@
+use std::mem;
+
 // ProtocolTypes is the list of all supported protocols.
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum ProtocolTypes {
@@ -85,7 +87,69 @@ impl ProtocolTypes {
 	    ProtocolTypes::ONION => "onion".to_string(),
         }
     }
+
+    // Try to convert a string to a protocol
+    pub fn from_name(s: &str) -> Option<ProtocolTypes> {
+        match s {
+            "ip4"   => Some(ProtocolTypes::IP4),
+	    "tcp"   => Some(ProtocolTypes::TCP),
+	    "udp"   => Some(ProtocolTypes::UDP),
+	    "dccp"  => Some(ProtocolTypes::DCCP),
+	    "ip6"   => Some(ProtocolTypes::IP6),
+	    "sctp"  => Some(ProtocolTypes::SCTP),
+	    "utp"   => Some(ProtocolTypes::UTP),
+	    "udt"   => Some(ProtocolTypes::UDT),
+	    "ipfs"  => Some(ProtocolTypes::IPFS),
+	    "http"  => Some(ProtocolTypes::HTTP),
+	    "https" => Some(ProtocolTypes::HTTPS),
+	    "onion" => Some(ProtocolTypes::ONION),
+            _ => None
+        }
+    }
 }
+
+
+pub struct Multiaddr {
+    bytes: Vec<u8>
+}
+
+impl Multiaddr {
+    /// Create a new multiaddr based on a string representation, like
+    /// `/ip4/127.0.0.1/udp/1234`.
+    pub fn new(address: &str) -> Multiaddr {
+        let address = address.to_string();
+        let mut bytes: Vec<u8>= vec![];
+
+        for part in address.split("/") {
+            if let Some(protocol) = ProtocolTypes::from_name(part) {
+                // Is there a way to do this safely?
+                unsafe {
+                    let code_u16 = protocol.to_code();
+                    let code = mem::transmute::<u16, [u8; 2]>(code_u16);
+
+                    if code_u16 > 255 {
+                        let mut code = code.iter().cloned().collect();
+                        bytes.append(&mut code);
+                    } else {
+                        bytes.push(code[0])
+                    }
+                }
+
+                println!("Got protocol {}", protocol.to_name());
+                println!("With size {}", protocol.to_size());
+            } else if part.len() > 0 {
+                let mut part_bytes = part.to_string().into_bytes();
+                bytes.append(&mut part_bytes);
+                println!("got part {}, {}", part.len(), part);
+            }
+        }
+
+        Multiaddr {
+            bytes: bytes,
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -110,5 +174,18 @@ mod tests {
     #[test]
     fn protocols_to_name() {
         assert_eq!(ProtocolTypes::TCP.to_name(), "tcp");
+    }
+
+    #[test]
+    fn multiaddr_from_string() {
+        let mut target = vec![4u8];
+        target.append(&mut "127.0.0.1".to_string().into_bytes());
+        target.push(17u8);
+        target.append(&mut "1234".to_string().into_bytes());
+
+        assert_eq!(
+            Multiaddr::new("/ip4/127.0.0.1/udp/1234").bytes,
+            target
+         );
     }
 }
