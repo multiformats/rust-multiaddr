@@ -2,7 +2,7 @@ use std::fmt;
 use std::error;
 use std::str::from_utf8;
 
-use byteorder::{LittleEndian, WriteBytesExt};
+use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 use nom::IResult;
 
 use ::protocol_types::*;
@@ -66,5 +66,28 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>, ParseError> {
             Result::Ok(res)
         },
         _ => Result::Err(ParseError),
+    }
+}
+
+fn from_code(code: &[u8]) -> ProtocolTypes {
+    let code = code.read_u16::<LittleEndian>().unwrap();
+    ProtocolTypes::from_code(code).unwrap()
+}
+
+named!(protocol < Vec<u8>, ProtocolTypes >,
+    chain!(
+        p: take!(2) ~
+           take!(from_code(p).to_size()),
+        || {from_code(p)}
+    )
+);
+
+named!(protocols < Vec<u8>, Vec<ProtocolTypes> >, many1!(protocol));
+
+/// Panics on invalid bytes as this would mean data corruption!
+pub fn protocols_from_bytes(input: Vec<u8>) -> Vec<ProtocolTypes> {
+    match protocols(input) {
+        IResult::Done(_, res) => res,
+        _ => panic!("Failed to parse internal bytes, possible corruption"),
     }
 }

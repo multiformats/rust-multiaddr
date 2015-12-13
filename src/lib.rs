@@ -58,30 +58,7 @@ impl Multiaddr {
     /// ```
     ///
     pub fn protocols(&self) -> Vec<ProtocolTypes> {
-        let protos = vec![];
-
-        // let mut skipper = 0;
-        // let mut first = true;
-        // let mut current = [0u8, 0u8];
-
-        // for (i, byte) in self.bytes.iter().enumerate() {
-        //     println!("{}: {}", byte, i);
-        //     if (skipper > 0) {
-        //         skipper --;
-        //         continue;
-        //     }
-
-        //     if (first) {
-        //         current[0] = byte;
-        //         first = false;
-        //     } else {
-        //         current[1] = byte;
-
-        //         a[]
-        //     }
-        // }
-
-        protos
+        parser::protocols_from_bytes(self.bytes)
     }
 }
 
