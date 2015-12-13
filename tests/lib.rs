@@ -31,9 +31,9 @@ fn multiaddr_from_string() {
     target.append(&mut "1234".to_string().into_bytes());
 
     assert_eq!(
-        Multiaddr::new("/ip4/127.0.0.1/udp/1234").to_bytes(),
+        Multiaddr::new("/ip4/127.0.0.1/udp/1234").unwrap().to_bytes(),
         target
-            );
+    );
 }
 
 #[test]

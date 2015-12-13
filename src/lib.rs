@@ -6,6 +6,8 @@ extern crate byteorder;
 pub use self::protocol_types::*;
 pub mod protocol_types;
 
+use std::fmt;
+use std::error;
 use std::io::Cursor;
 use std::cmp::PartialEq;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
@@ -16,44 +18,62 @@ pub struct Multiaddr {
 }
 
 /// Parse a single /
-named!(sep, tag!("/"));
+named!(sep <&[u8], &[u8]>, tag!("/"));
 
 /// Parse a single multiaddress in the form of `/ip4/127.0.0.1`.
-named!(address <&[u8], (&str, &str)>,
+named!(address <&[u8], (&[u8], &[u8])>,
     chain!(
          opt!(sep)             ~
-      t: map_res!(
-          take_until!("/"),
-          std::str::from_utf8
-         )                     ~
+      t: take_until!("/")      ~
          sep                   ~
-      a: map_res!(
-          is_not!("/"),
-          std::str::from_utf8
-         ),
-      || {(t, a)}
+      a: is_not!("/"),
+      || {
+
+      }
     )
 );
 
 /// Parse a list of addresses
-named!(addresses < &[u8], Vec<(&str, &str)> >, many1!(address));
+named!(addresses < &[u8], Vec<(&[u8], &[u8])> >, many1!(address));
+
+fn print_bytes(i: &[u8]) -> &str {
+    std::str::from_utf8(i).unwrap()
+}
+
+#[derive(Debug)]
+struct ParseError;
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "The given multiaddress is invalid");
+    }
+}
+
+impl error::Error for ParseError {
+    fn description(&self) -> &str {
+        "Invalid multiaddress"
+    }
+}
+
+fn parse_multiaddr(input: &str) -> Result<Vec<(&[u8], &[u8])>, ParseError> {
+    match addresses(input.as_bytes()) {
+        IResult::Done(i, tuple_vec) => {
+            println!("Not yet parsed {}", print_bytes(i));
+            println!("found {} addresse(s)", tuple_vec.len());
+            for el in &tuple_vec {
+                println!("{}, {}", print_bytes(el.0), print_bytes(el.1));
+            }
+            Result::Ok(tuple_vec)
+        },
+        _ => Result::Err(ParseError),
+    }
+}
 
 impl Multiaddr {
     /// Create a new multiaddr based on a string representation, like
     /// `/ip4/127.0.0.1/udp/1234`.
-    pub fn new(input: &str) -> Multiaddr {
-        match addresses(input.as_bytes()) {
-            IResult::Done(i, tuple_vec) => {
-                println!("Not yet parsed {}", std::str::from_utf8(i).unwrap());
-                println!("found {} addresse(s)", tuple_vec.len());
-                for el in &tuple_vec {
-                    println!("{}, {}", el.0, el.1);
-                }
-            },
-            _ => println!("error")
-        }
-
-        let mut bytes: Vec<u8>= vec![];
+    pub fn new(input: &str) -> Result<Multiaddr, ParseError> {
+        let bytes = try!(parse_multiaddr(input));
 
         // for part in address.split("/") {
         //     if let Some(protocol) = ProtocolTypes::from_name(part) {
