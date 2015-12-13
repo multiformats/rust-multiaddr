@@ -8,9 +8,8 @@ pub mod protocol_types;
 
 use std::fmt;
 use std::error;
-use std::io::Cursor;
 use std::cmp::PartialEq;
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{LittleEndian, WriteBytesExt};
 use nom::IResult;
 
 pub struct Multiaddr {
@@ -21,31 +20,40 @@ pub struct Multiaddr {
 named!(sep <&[u8], &[u8]>, tag!("/"));
 
 /// Parse a single multiaddress in the form of `/ip4/127.0.0.1`.
-named!(address <&[u8], (&[u8], &[u8])>,
+named!(address <&[u8], Vec<u8> >,
     chain!(
          opt!(sep)             ~
-      t: take_until!("/")      ~
+      t: map_res!(
+          take_until!("/"),
+          std::str::from_utf8
+         )                     ~
          sep                   ~
       a: is_not!("/"),
       || {
+          let mut res: Vec<u8>= Vec::new();
 
+          // Write the u16 code into the results vector
+          if let Some(protocol) = ProtocolTypes::from_name(t) {
+              res.write_u16::<LittleEndian>(protocol.to_code()).unwrap();
+          }
+
+          // Write the address into the results vector
+          res.extend(a.iter().cloned());
+
+          res
       }
     )
 );
 
 /// Parse a list of addresses
-named!(addresses < &[u8], Vec<(&[u8], &[u8])> >, many1!(address));
-
-fn print_bytes(i: &[u8]) -> &str {
-    std::str::from_utf8(i).unwrap()
-}
+named!(addresses < &[u8], Vec< Vec<u8> > >, many1!(address));
 
 #[derive(Debug)]
-struct ParseError;
+pub struct ParseError;
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "The given multiaddress is invalid");
+        write!(f, "The given multiaddress is invalid")
     }
 }
 
@@ -55,15 +63,16 @@ impl error::Error for ParseError {
     }
 }
 
-fn parse_multiaddr(input: &str) -> Result<Vec<(&[u8], &[u8])>, ParseError> {
+fn parse_multiaddr(input: &str) -> Result<Vec<u8>, ParseError> {
     match addresses(input.as_bytes()) {
-        IResult::Done(i, tuple_vec) => {
-            println!("Not yet parsed {}", print_bytes(i));
-            println!("found {} addresse(s)", tuple_vec.len());
-            for el in &tuple_vec {
-                println!("{}, {}", print_bytes(el.0), print_bytes(el.1));
-            }
-            Result::Ok(tuple_vec)
+        IResult::Done(_, res) => {
+            let res = res.iter()
+                .fold(Vec::new(), |mut v, a| {
+                    v.extend(a.iter().cloned());
+                    v
+                });
+
+            Result::Ok(res)
         },
         _ => Result::Err(ParseError),
     }
@@ -75,24 +84,9 @@ impl Multiaddr {
     pub fn new(input: &str) -> Result<Multiaddr, ParseError> {
         let bytes = try!(parse_multiaddr(input));
 
-        // for part in address.split("/") {
-        //     if let Some(protocol) = ProtocolTypes::from_name(part) {
-        //         bytes.write_u16::<LittleEndian>(protocol.to_code());
-        //         println!("Bytes {:?}", bytes);
-        //         let mut rdr = Cursor::new(vec![4, 0]);
-        //         println!("Bytes reversed {:?}", rdr.read_u16::<LittleEndian>());
-        //         println!("Got protocol {}", protocol.to_name());
-        //         println!("With size {}", protocol.to_size());
-        //     } else if part.len() > 0 {
-        //         let mut part_bytes = part.to_string().into_bytes();
-        //         bytes.append(&mut part_bytes);
-        //         println!("got part {}, {}", part.len(), part);
-        //     }
-        // }
-
-        Multiaddr {
+        Result::Ok(Multiaddr {
             bytes: bytes,
-        }
+        })
     }
 
     /// Return a copy to disallow changing the bytes directly
@@ -114,7 +108,7 @@ impl Multiaddr {
     /// ```
     ///
     pub fn protocols(&self) -> Vec<ProtocolTypes> {
-        let mut protos = vec![];
+        let protos = vec![];
 
         // let mut skipper = 0;
         // let mut first = true;

@@ -25,19 +25,24 @@ fn protocols_to_name() {
 
 #[test]
 fn multiaddr_from_string() {
-    let mut target = vec![0, 4u8];
+    let mut target = vec![4u8, 0];
     target.append(&mut "127.0.0.1".to_string().into_bytes());
-    target.append(&mut vec![0, 17u8]);
+    target.append(&mut vec![17u8, 0]);
     target.append(&mut "1234".to_string().into_bytes());
+    let bytes = Multiaddr::new("/ip4/127.0.0.1/udp/1234").unwrap().to_bytes();
 
     assert_eq!(
-        Multiaddr::new("/ip4/127.0.0.1/udp/1234").unwrap().to_bytes(),
+        bytes,
         target
     );
 }
 
 #[test]
 fn multiaddr_eq() {
-    assert!(Multiaddr::new("/ip4/127.0.0.1") == Multiaddr::new("/ip4/127.0.0.1"));
-    assert!(Multiaddr::new("/ip4/127.0.0.1") != Multiaddr::new("/ip4/128.0.0.1"))
+    assert!(
+        Multiaddr::new("/ip4/127.0.0.1").unwrap() == Multiaddr::new("/ip4/127.0.0.1").unwrap()
+    );
+    assert!(
+        Multiaddr::new("/ip4/127.0.0.1").unwrap() != Multiaddr::new("/ip4/128.0.0.1").unwrap()
+    );
 }
