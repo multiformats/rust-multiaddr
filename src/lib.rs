@@ -16,6 +16,21 @@ pub struct Multiaddr {
 impl Multiaddr {
     /// Create a new multiaddr based on a string representation, like
     /// `/ip4/127.0.0.1/udp/1234`.
+    ///
+    /// # Examples
+    ///
+    /// Simple construction
+    ///
+    /// ```
+    /// use multiaddr::Multiaddr;
+    ///
+    /// let address = Multiaddr::new("/ip4/127.0.0.1/udp/1234").unwrap();
+    /// assert_eq!(address.to_bytes(), [
+    ///     4, 0, 49, 50, 55, 46, 48, 46, 48, 46, 49,
+    ///     17, 0, 49, 50, 51, 52
+    /// ]);
+    /// ```
+    ///
     pub fn new(input: &str) -> Result<Multiaddr, ParseError> {
         let bytes = try!(parser::multiaddr_from_str(input));
 
