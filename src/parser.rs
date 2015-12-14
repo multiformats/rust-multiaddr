@@ -10,24 +10,35 @@ use ::protocol_types::*;
 /// Parse a single /
 named!(sep <&[u8], &[u8]>, tag!("/"));
 
+/// Parse the protocol part `/ip4`
+named!(proto <&[u8], &str>, chain!(
+    sep? ~
+    a: map_res!(is_not!("/"), from_utf8),
+    || {a}
+));
+
+/// Parse the the address part `/127.0.0.1`
+named!(address, chain!(
+           sep ~
+    inner: is_not!("/"),
+    || {inner}
+));
+
 /// Parse a single multiaddress in the form of `/ip4/127.0.0.1`.
-named!(address <&[u8], Vec<u8> >,
-    chain!(
-           opt!(sep)             ~
-        t: map_res!(
-             take_until!("/"),
-             from_utf8
-           )                     ~
-           sep                   ~
-        a: is_not!("/"),
-        || {
-            let mut res: Vec<u8>= Vec::new();
+named!(proto_with_address <&[u8], Vec<u8> >, chain!(
+    t: proto  ~
+    a: address?,
+    || {
+        let mut res: Vec<u8>= Vec::new();
 
-            // TODO: Better error handling
-            // Write the u16 code into the results vector
-            if let Some(protocol) = ProtocolTypes::from_name(t) {
-                res.write_u16::<BigEndian>(protocol.to_code()).unwrap();
+        // TODO: Better error handling
+        // Write the u16 code into the results vector
+        if let Some(protocol) = ProtocolTypes::from_name(t) {
+            res.write_u16::<BigEndian>(protocol.to_code()).unwrap();
+            println!("wrote {:?}", protocol.to_code());
 
+            if let Some(a) = a {
+                println!("Got an address {:?}", a);
                 let a = from_utf8(a).unwrap();
                 println!("{:?}, {:?}", protocol, a);
                 let address_bytes = protocol.address_string_to_bytes(a).unwrap();
@@ -35,14 +46,14 @@ named!(address <&[u8], Vec<u8> >,
                 // Write the address into the results vector
                 res.extend(address_bytes);
             }
-
-            res
         }
-    )
-);
+
+        res
+    }
+));
 
 /// Parse a list of addresses
-named!(addresses < &[u8], Vec< Vec<u8> > >, many1!(address));
+named!(addresses < &[u8], Vec< Vec<u8> > >, many1!(proto_with_address));
 
 #[derive(Debug)]
 pub struct ParseError;
@@ -61,7 +72,8 @@ impl error::Error for ParseError {
 
 pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>, ParseError> {
     match addresses(input.as_bytes()) {
-        IResult::Done(_, res) => {
+        IResult::Done(i, res) => {
+            println!("remain: {:?}", from_utf8(i).unwrap());
             let res = res.iter()
                 .fold(Vec::new(), |mut v, a| {
                     v.extend(a.iter().cloned());
@@ -70,7 +82,10 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>, ParseError> {
 
             Result::Ok(res)
         },
-        _ => Result::Err(ParseError),
+        e => {
+            println!("{:?}", e);
+            Result::Err(ParseError)
+        },
     }
 }
 

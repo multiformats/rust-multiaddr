@@ -35,8 +35,16 @@ fn multiaddr_eq() {
 
 
 fn assert_bytes(source: &str, target: &[u8]) -> () {
-    let address = Multiaddr::new(source).unwrap();
-    assert_eq!(address.to_bytes(), target);
+    match Multiaddr::new(source) {
+        Result::Ok(address) => {
+            println!("source {:?}, target {:?}", source, target);
+            assert_eq!(address.to_bytes(), target);
+        },
+        Result::Err(err) => {
+            println!("{:?}", err);
+            panic!("failed")
+        },
+    }
 }
 
 #[test]
@@ -55,18 +63,33 @@ fn byte_formats() {
     // assert_bytes("/onion/timaq4ygg2iegci7:80/http", &[]);
     assert_bytes("/udp/0", &[0, 17, 0, 0]);
     assert_bytes("/tcp/0", &[0, 6, 0, 0]);
-    // assert_bytes("/sctp/0", &[]);
+    assert_bytes("/sctp/0", &[0, 132, 0, 0]);
     assert_bytes("/udp/1234", &[0, 17, 4, 210]);
     assert_bytes("/tcp/1234", &[0, 6, 4, 210]);
-    // assert_bytes("/sctp/1234", &[]);
-    // assert_bytes("/udp/65535", &[0, 17, 0, 0]);
-    // assert_bytes("/tcp/65535", &[0, 6, 0, 0]);
+    assert_bytes("/sctp/1234", &[0, 132, 4, 210]);
+    assert_bytes("/udp/65535", &[0, 17, 255, 255]);
+    assert_bytes("/tcp/65535", &[0, 6, 255, 255]);
     // assert_bytes("/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC", &[]);
-    // assert_bytes("/udp/1234/sctp/1234", &[]);
-    // assert_bytes("/udp/1234/udt", &[]);
-    // assert_bytes("/udp/1234/utp", &[]);
-    // assert_bytes("/tcp/1234/http", &[]);
-    // assert_bytes("/tcp/1234/https", &[]);
+    assert_bytes("/udp/1234/sctp/1234", &[
+        0, 17, 4, 210,
+        0, 132, 4, 210
+    ]);
+    assert_bytes("/udp/1234/udt", &[
+        0, 17, 4, 210,
+        0
+    ]);
+    assert_bytes("/udp/1234/utp", &[
+        0, 17, 4, 210,
+
+    ]);
+    assert_bytes("/tcp/1234/http", &[
+        0, 6, 4, 210,
+
+    ]);
+    assert_bytes("/tcp/1234/https", &[
+        0, 6, 4, 210,
+        12
+    ]);
     // assert_bytes("/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234", &[]);
     // assert_bytes("/ip4/127.0.0.1/udp/1234", &[]);
     // assert_bytes("/ip4/127.0.0.1/udp/0", &[]);

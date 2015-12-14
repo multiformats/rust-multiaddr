@@ -14,5 +14,5 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-byteorder = "0.4"
-nom = "~1.0.0"
+byteorder = "~0.4"
+nom = {git = "https://github.com/Geal/nom.git"}
