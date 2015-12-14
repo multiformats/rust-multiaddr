@@ -1,3 +1,7 @@
+use std::net::{Ipv4Addr, Ipv6Addr};
+use std::str::{FromStr, from_utf8};
+use byteorder::{LittleEndian, WriteBytesExt};
+
 // ProtocolTypes is the list of all supported protocols.
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum ProtocolTypes {
@@ -106,6 +110,33 @@ impl ProtocolTypes {
     }
 
     pub fn address_string_to_bytes<'a>(&self, a: &'a [u8]) -> Option<&'a [u8]> {
-        Some(a)
+        match *self {
+            ProtocolTypes::IP4        => {
+                let a = from_utf8(a).unwrap();
+                Some(&Ipv4Addr::from_str(a).unwrap().octets()[..])
+            },
+            ProtocolTypes::IP6        => {
+                let a = from_utf8(a).unwrap();
+                let segments = Ipv6Addr::from_str(a).unwrap().segments();
+                let res: Vec<u8> = Vec::new();
+                res.write_u16::<LittleEndian>(segments);
+                Some(res)
+            },
+	    ProtocolTypes::TCP
+                | ProtocolTypes::UDP
+                | ProtocolTypes::DCCP
+                | ProtocolTypes::SCTP => Some(a),
+	    ProtocolTypes::IPFS       => Some(a),
+	    ProtocolTypes::ONION      => Some(a),
+	    ProtocolTypes::UTP
+	        | ProtocolTypes::UDT
+	        | ProtocolTypes::HTTP
+	        | ProtocolTypes::HTTPS => {
+                    // These all have length 0 so just return the input
+                    // for consistency
+                    Some(a)
+                },
+            _ => None
+        }
     }
 }
