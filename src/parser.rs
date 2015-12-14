@@ -23,13 +23,16 @@ named!(address <&[u8], Vec<u8> >,
         || {
             let mut res: Vec<u8>= Vec::new();
 
+            // TODO: Better error handling
             // Write the u16 code into the results vector
             if let Some(protocol) = ProtocolTypes::from_name(t) {
                 res.write_u16::<LittleEndian>(protocol.to_code()).unwrap();
-            }
 
-            // Write the address into the results vector
-            res.extend(a.iter().cloned());
+                let address_bytes = protocol.address_string_to_bytes(a).unwrap();
+
+                // Write the address into the results vector
+                res.extend(address_bytes.iter().cloned());
+            }
 
             res
         }
@@ -70,24 +73,44 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>, ParseError> {
 }
 
 fn from_code(code: &[u8]) -> ProtocolTypes {
+    let mut code = code;
     let code = code.read_u16::<LittleEndian>().unwrap();
+    println!("code {:?}", code);
     ProtocolTypes::from_code(code).unwrap()
 }
 
-named!(protocol < Vec<u8>, ProtocolTypes >,
+fn take_size<'a>(i: &'a [u8], code: &[u8]) -> IResult<&'a [u8], &'a [u8]> {
+    println!("taking size {:?}", from_code(code).to_size());
+    println!("{:?}", i);
+    take!(i, from_code(code).to_size() / 8)
+}
+
+named!(protocol < &[u8], ProtocolTypes >,
     chain!(
-        p: take!(2) ~
-           take!(from_code(p).to_size()),
-        || {from_code(p)}
+        code: take!(2) ~
+        a   : apply!(take_size, code),
+        || {
+            println!("code {:?}, {:?}", code, a);
+            from_code(code)
+        }
     )
 );
 
-named!(protocols < Vec<u8>, Vec<ProtocolTypes> >, many1!(protocol));
+named!(protocols < &[u8], Vec<ProtocolTypes> >, many1!(protocol));
 
 /// Panics on invalid bytes as this would mean data corruption!
-pub fn protocols_from_bytes(input: Vec<u8>) -> Vec<ProtocolTypes> {
+pub fn protocols_from_bytes(input: &[u8]) -> Vec<ProtocolTypes> {
     match protocols(input) {
-        IResult::Done(_, res) => res,
-        _ => panic!("Failed to parse internal bytes, possible corruption"),
+        IResult::Done(i, res) => {
+            println!("remaining {:?}", i);
+            for p in &res {
+                println!("results {:?}", p);
+            }
+            res
+        },
+        e => {
+            println!("{:?}", e);
+            panic!("Failed to parse internal bytes, possible corruption")
+        },
     }
 }

@@ -53,12 +53,12 @@ impl Multiaddr {
     /// ```
     /// use multiaddr::{Multiaddr, ProtocolTypes};
     ///
-    /// let address = Multiaddr::new("/ip4/127.0.0.1");
-    /// assert_eq!(address.protocols(), vec![ProtocolTypes::IP4])
+    /// let address = Multiaddr::new("/ip4/127.0.0.1").unwrap();
+    /// assert_eq!(address.protocols(), vec![ProtocolTypes::IP4]);
     /// ```
     ///
     pub fn protocols(&self) -> Vec<ProtocolTypes> {
-        parser::protocols_from_bytes(self.bytes)
+        parser::protocols_from_bytes(&self.bytes[..])
     }
 }
 

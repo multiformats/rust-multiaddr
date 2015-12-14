@@ -104,4 +104,8 @@ impl ProtocolTypes {
             _ => None
         }
     }
+
+    pub fn address_string_to_bytes<'a>(&self, a: &'a [u8]) -> Option<&'a [u8]> {
+        Some(a)
+    }
 }
