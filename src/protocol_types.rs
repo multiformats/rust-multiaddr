@@ -1,6 +1,6 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
-use std::str::{FromStr, from_utf8};
-use byteorder::{LittleEndian, WriteBytesExt};
+use std::str::FromStr;
+use byteorder::{BigEndian, WriteBytesExt};
 
 // ProtocolTypes is the list of all supported protocols.
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -118,27 +118,24 @@ impl ProtocolTypes {
                 println!("{:?}", res);
                 Some(res)
             },
-            // ProtocolTypes::IP6        => {
-            //     //let a = from_utf8(a).unwrap();
-            //     let segments = Ipv6Addr::from_str(a).unwrap().segments();
-            //     let res: Vec<u8> = Vec::new();
+            ProtocolTypes::IP6        => {
+                let segments = Ipv6Addr::from_str(a).unwrap().segments();
+                let mut res = Vec::new();
 
-            //     for segment in &segments {
-            //         println!("{}", *segment);
-            //         res.write_u16::<BigEndian>(*segment);
-            //     }
+                for segment in &segments {
+                    println!("{}", *segment);
+                    res.write_u16::<BigEndian>(*segment).unwrap();
+                }
 
-            //     Some(&res[..])
-            // },
+                Some(res)
+            },
 	    ProtocolTypes::TCP
                 | ProtocolTypes::UDP
                 | ProtocolTypes::DCCP
                 | ProtocolTypes::SCTP => {
                     let parsed: u16 = a.parse().unwrap();
-
                     let mut res = Vec::new();
-                    res.write_u16::<LittleEndian>(parsed);
-                    //res.extend(parsed.iter().cloned());
+                    res.write_u16::<BigEndian>(parsed).unwrap();
                     println!("{:?}", res);
                     Some(res)
                 },
@@ -151,8 +148,7 @@ impl ProtocolTypes {
                     // These all have length 0 so just return an empty vector
                     // for consistency
                     Some(Vec::new())
-                }
-            _ => None
+                },
         }
     }
 }

@@ -43,15 +43,21 @@ fn assert_bytes(source: &str, target: &[u8]) -> () {
 fn byte_formats() {
     assert_bytes("/ip4/1.2.3.4", &[0, 4, 1, 2, 3, 4]);
     assert_bytes("/ip4/0.0.0.0", &[0, 4, 0, 0, 0, 0]);
-    // assert_bytes("/ip6/::1", &[]);
-    // assert_bytes("/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21", &[]);
+    assert_bytes("/ip6/::1", &[
+        0, 41,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+    ]);
+    assert_bytes("/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21", &[
+        0, 41,
+        38, 1, 0, 9, 79, 129, 151, 0, 128, 62, 202, 101, 102, 232, 12, 33
+    ]);
     // assert_bytes("/onion/timaq4ygg2iegci7:1234", &[]);
     // assert_bytes("/onion/timaq4ygg2iegci7:80/http", &[]);
     assert_bytes("/udp/0", &[0, 17, 0, 0]);
     assert_bytes("/tcp/0", &[0, 6, 0, 0]);
     // assert_bytes("/sctp/0", &[]);
-    assert_bytes("/udp/1234", &[0, 17, 210, 4]);
-    assert_bytes("/tcp/1234", &[0, 6, 210, 4]);
+    assert_bytes("/udp/1234", &[0, 17, 4, 210]);
+    assert_bytes("/tcp/1234", &[0, 6, 4, 210]);
     // assert_bytes("/sctp/1234", &[]);
     // assert_bytes("/udp/65535", &[0, 17, 0, 0]);
     // assert_bytes("/tcp/65535", &[0, 6, 0, 0]);
