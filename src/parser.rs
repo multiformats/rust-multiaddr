@@ -28,10 +28,12 @@ named!(address <&[u8], Vec<u8> >,
             if let Some(protocol) = ProtocolTypes::from_name(t) {
                 res.write_u16::<LittleEndian>(protocol.to_code()).unwrap();
 
+                let a = from_utf8(a).unwrap();
+                println!("{:?}, {:?}", protocol, a);
                 let address_bytes = protocol.address_string_to_bytes(a).unwrap();
-
+                println!("address {:?}", address_bytes);
                 // Write the address into the results vector
-                res.extend(address_bytes.iter().cloned());
+                res.extend(address_bytes);
             }
 
             res

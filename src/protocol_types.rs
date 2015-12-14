@@ -109,33 +109,50 @@ impl ProtocolTypes {
         }
     }
 
-    pub fn address_string_to_bytes<'a>(&self, a: &'a [u8]) -> Option<&'a [u8]> {
+    pub fn address_string_to_bytes(&self, a: &str) -> Option<Vec<u8>> {
         match *self {
             ProtocolTypes::IP4        => {
-                let a = from_utf8(a).unwrap();
-                Some(&Ipv4Addr::from_str(a).unwrap().octets()[..])
-            },
-            ProtocolTypes::IP6        => {
-                let a = from_utf8(a).unwrap();
-                let segments = Ipv6Addr::from_str(a).unwrap().segments();
-                let res: Vec<u8> = Vec::new();
-                res.write_u16::<LittleEndian>(segments);
+                let octets = Ipv4Addr::from_str(a).unwrap().octets();
+                let mut res = Vec::new();
+                res.extend(octets.iter().cloned());
+                println!("{:?}", res);
                 Some(res)
             },
+            // ProtocolTypes::IP6        => {
+            //     //let a = from_utf8(a).unwrap();
+            //     let segments = Ipv6Addr::from_str(a).unwrap().segments();
+            //     let res: Vec<u8> = Vec::new();
+
+            //     for segment in &segments {
+            //         println!("{}", *segment);
+            //         res.write_u16::<LittleEndian>(*segment);
+            //     }
+
+            //     Some(&res[..])
+            // },
 	    ProtocolTypes::TCP
                 | ProtocolTypes::UDP
                 | ProtocolTypes::DCCP
-                | ProtocolTypes::SCTP => Some(a),
-	    ProtocolTypes::IPFS       => Some(a),
-	    ProtocolTypes::ONION      => Some(a),
+                | ProtocolTypes::SCTP => {
+                    let parsed = [
+                        &a[0..2].parse::<u8>().unwrap(),
+                        &a[2..4].parse::<u8>().unwrap(),
+                     ];
+                    let mut res = Vec::new();
+                    res.extend(parsed.iter().cloned());
+                    println!("{:?}", res);
+                    Some(res)
+                },
+	    ProtocolTypes::IPFS       => Some(Vec::new()),
+	    ProtocolTypes::ONION      => Some(Vec::new()),
 	    ProtocolTypes::UTP
 	        | ProtocolTypes::UDT
 	        | ProtocolTypes::HTTP
 	        | ProtocolTypes::HTTPS => {
-                    // These all have length 0 so just return the input
+                    // These all have length 0 so just return an empty vector
                     // for consistency
-                    Some(a)
-                },
+                    Some(Vec::new())
+                }
             _ => None
         }
     }
