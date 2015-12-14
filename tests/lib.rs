@@ -67,22 +67,22 @@ fn byte_formats() {
         0, 17, 4, 210,
         0, 132, 4, 210
     ]);
-    assert_bytes("/udp/1234/udt", &[
-        0, 17, 4, 210,
-        0
-    ]);
-    assert_bytes("/udp/1234/utp", &[
-        0, 17, 4, 210,
+    // assert_bytes("/udp/1234/udt", &[
+    //     0, 17, 4, 210,
+    //     0
+    // ]);
+    // assert_bytes("/udp/1234/utp", &[
+    //     0, 17, 4, 210,
 
-    ]);
-    assert_bytes("/tcp/1234/http", &[
-        0, 6, 4, 210,
+    // ]);
+    // assert_bytes("/tcp/1234/http", &[
+    //     0, 6, 4, 210,
 
-    ]);
-    assert_bytes("/tcp/1234/https", &[
-        0, 6, 4, 210,
-        12
-    ]);
+    // ]);
+    // assert_bytes("/tcp/1234/https", &[
+    //     0, 6, 4, 210,
+
+    // ]);
     // assert_bytes("/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234", &[]);
     // assert_bytes("/ip4/127.0.0.1/udp/1234", &[]);
     // assert_bytes("/ip4/127.0.0.1/udp/0", &[]);
