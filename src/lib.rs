@@ -26,8 +26,8 @@ impl Multiaddr {
     ///
     /// let address = Multiaddr::new("/ip4/127.0.0.1/udp/1234").unwrap();
     /// assert_eq!(address.to_bytes(), [
-    ///     4, 0, 127, 0, 0, 1,
-    ///     17, 0, 12, 34
+    ///     0, 4, 127, 0, 0, 1,
+    ///     0, 17, 210, 4
     /// ]);
     /// ```
     ///

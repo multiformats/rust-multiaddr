@@ -125,7 +125,7 @@ impl ProtocolTypes {
 
             //     for segment in &segments {
             //         println!("{}", *segment);
-            //         res.write_u16::<LittleEndian>(*segment);
+            //         res.write_u16::<BigEndian>(*segment);
             //     }
 
             //     Some(&res[..])
@@ -134,12 +134,11 @@ impl ProtocolTypes {
                 | ProtocolTypes::UDP
                 | ProtocolTypes::DCCP
                 | ProtocolTypes::SCTP => {
-                    let parsed = [
-                        &a[0..2].parse::<u8>().unwrap(),
-                        &a[2..4].parse::<u8>().unwrap(),
-                     ];
+                    let parsed: u16 = a.parse().unwrap();
+
                     let mut res = Vec::new();
-                    res.extend(parsed.iter().cloned());
+                    res.write_u16::<LittleEndian>(parsed);
+                    //res.extend(parsed.iter().cloned());
                     println!("{:?}", res);
                     Some(res)
                 },

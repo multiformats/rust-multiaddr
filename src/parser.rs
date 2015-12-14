@@ -2,7 +2,7 @@ use std::fmt;
 use std::error;
 use std::str::from_utf8;
 
-use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
+use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
 use nom::IResult;
 
 use ::protocol_types::*;
@@ -26,7 +26,7 @@ named!(address <&[u8], Vec<u8> >,
             // TODO: Better error handling
             // Write the u16 code into the results vector
             if let Some(protocol) = ProtocolTypes::from_name(t) {
-                res.write_u16::<LittleEndian>(protocol.to_code()).unwrap();
+                res.write_u16::<BigEndian>(protocol.to_code()).unwrap();
 
                 let a = from_utf8(a).unwrap();
                 println!("{:?}, {:?}", protocol, a);
@@ -76,7 +76,7 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>, ParseError> {
 
 fn from_code(code: &[u8]) -> ProtocolTypes {
     let mut code = code;
-    let code = code.read_u16::<LittleEndian>().unwrap();
+    let code = code.read_u16::<BigEndian>().unwrap();
     println!("code {:?}", code);
     ProtocolTypes::from_code(code).unwrap()
 }
