@@ -35,16 +35,9 @@ fn multiaddr_eq() {
 
 
 fn assert_bytes(source: &str, target: &[u8]) -> () {
-    match Multiaddr::new(source) {
-        Result::Ok(address) => {
-            println!("source {:?}, target {:?}", source, target);
-            assert_eq!(address.to_bytes(), target);
-        },
-        Result::Err(err) => {
-            println!("{:?}", err);
-            panic!("failed")
-        },
-    }
+    let address = Multiaddr::new(source).unwrap();
+    println!("source {:?}, target {:?}", source, target);
+    assert_eq!(address.to_bytes(), target);
 }
 
 #[test]
