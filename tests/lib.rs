@@ -105,3 +105,37 @@ fn byte_formats() {
     // assert_bytes("/ip4/127.0.0.1/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC", &[], vec![]);
     // assert_bytes("/ip4/127.0.0.1/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234", &[], vec![]);
 }
+
+#[test]
+fn multiaddr_new_fail() {
+    let addresses = [
+        "/ip4",
+	"/ip4/::1",
+	"/ip4/fdpsofodsajfdoisa",
+	"/ip6",
+	"/udp",
+	"/tcp",
+	"/sctp",
+	"/udp/65536",
+	"/tcp/65536",
+	"/onion/9imaq4ygg2iegci7:80",
+	"/onion/aaimaq4ygg2iegci7:80",
+	"/onion/timaq4ygg2iegci7:0",
+	"/onion/timaq4ygg2iegci7:-1",
+	"/onion/timaq4ygg2iegci7",
+	"/onion/timaq4ygg2iegci@:666",
+	"/udp/1234/sctp",
+	"/udp/1234/udt/1234",
+	"/udp/1234/utp/1234",
+	"/ip4/127.0.0.1/udp/jfodsajfidosajfoidsa",
+	"/ip4/127.0.0.1/udp",
+	"/ip4/127.0.0.1/tcp/jfodsajfidosajfoidsa",
+	"/ip4/127.0.0.1/tcp",
+	"/ip4/127.0.0.1/ipfs",
+	"/ip4/127.0.0.1/ipfs/tcp",
+    ];
+
+    for address in &addresses {
+        assert!(Multiaddr::new(address).is_err());
+    }
+}
