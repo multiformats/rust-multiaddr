@@ -67,22 +67,22 @@ fn byte_formats() {
         0, 17, 4, 210,
         0, 132, 4, 210
     ]);
-    // assert_bytes("/udp/1234/udt", &[
-    //     0, 17, 4, 210,
-    //     0
-    // ]);
-    // assert_bytes("/udp/1234/utp", &[
-    //     0, 17, 4, 210,
-
-    // ]);
-    // assert_bytes("/tcp/1234/http", &[
-    //     0, 6, 4, 210,
-
-    // ]);
-    // assert_bytes("/tcp/1234/https", &[
-    //     0, 6, 4, 210,
-
-    // ]);
+    assert_bytes("/udp/1234/udt", &[
+        0, 17, 4, 210,
+        1, 46
+    ]);
+    assert_bytes("/udp/1234/utp", &[
+        0, 17, 4, 210,
+        1, 45
+    ]);
+    assert_bytes("/tcp/1234/http", &[
+        0, 6, 4, 210,
+        1, 224
+    ]);
+    assert_bytes("/tcp/1234/https", &[
+        0, 6, 4, 210,
+        1, 187
+    ]);
     // assert_bytes("/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234", &[]);
     assert_bytes("/ip4/127.0.0.1/udp/1234", &[
         0, 4, 127, 0, 0, 1,
@@ -96,10 +96,10 @@ fn byte_formats() {
         0, 4, 127, 0, 0, 1,
         0, 6, 4, 210
     ]);
-    // assert_bytes("/ip4/127.0.0.1/tcp/1234/", &[
-    //     0, 4, 127, 0, 0, 1,
-    //     0, 6, 4, 210
-    // ]);
+    assert_bytes("/ip4/127.0.0.1/tcp/1234/", &[
+        0, 4, 127, 0, 0, 1,
+        0, 6, 4, 210
+    ]);
     // assert_bytes("/ip4/127.0.0.1/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC", &&[]);
     // assert_bytes("/ip4/127.0.0.1/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234", &[]);
 }

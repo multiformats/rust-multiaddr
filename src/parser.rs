@@ -27,7 +27,7 @@ named!(address, chain!(
 /// Parse a single multiaddress in the form of `/ip4/127.0.0.1`.
 named!(proto_with_address <&[u8], Vec<u8> >, chain!(
     t: proto  ~
-    a: address?,
+    a: opt!(complete!(address)),
     || {
         let mut res: Vec<u8>= Vec::new();
 
