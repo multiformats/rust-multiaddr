@@ -144,3 +144,14 @@ fn multiaddr_new_fail() {
         assert!(Multiaddr::new(address).is_err());
     }
 }
+
+#[test]
+fn pt_into() {
+    let proto: u16 = ProtocolTypes::IP4.into();
+    assert_eq!(proto, 4u16);
+}
+
+#[test]
+fn pt_from() {
+
+}

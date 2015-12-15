@@ -5,36 +5,29 @@ use byteorder::{BigEndian, WriteBytesExt};
 // ProtocolTypes is the list of all supported protocols.
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum ProtocolTypes {
-    IP4,
-    TCP,
-    UDP,
-    DCCP,
-    IP6,
-    SCTP,
-    UTP,
-    UDT,
-    IPFS,
-    HTTP,
-    HTTPS,
-    ONION,
+    IP4   = 4,
+    TCP   = 6,
+    UDP   = 17,
+    DCCP  = 33,
+    IP6   = 41,
+    SCTP  = 132,
+    UTP   = 301,
+    UDT   = 302,
+    IPFS  = 421,
+    HTTP  = 480,
+    HTTPS = 443,
+    ONION = 444,
+}
+
+impl From<ProtocolTypes> for u16 {
+    fn from(t: ProtocolTypes) -> u16 {
+        t as u16
+    }
 }
 
 impl ProtocolTypes {
     pub fn to_code(&self) -> u16 {
-        match *self {
-            ProtocolTypes::IP4   => 4,
-	    ProtocolTypes::TCP   => 6,
-	    ProtocolTypes::UDP   => 17,
-	    ProtocolTypes::DCCP  => 33,
-	    ProtocolTypes::IP6   => 41,
-	    ProtocolTypes::SCTP  => 132,
-	    ProtocolTypes::UTP   => 301,
-	    ProtocolTypes::UDT   => 302,
-	    ProtocolTypes::IPFS  => 421,
-	    ProtocolTypes::HTTP  => 480,
-	    ProtocolTypes::HTTPS => 443,
-	    ProtocolTypes::ONION => 444,
-        }
+        self.into()
     }
 
     // Try to convert a u16 to a protocol
