@@ -25,12 +25,17 @@ fn protocols_to_name() {
 
 #[test]
 fn multiaddr_eq() {
-    assert!(
-        Multiaddr::new("/ip4/127.0.0.1").unwrap() == Multiaddr::new("/ip4/127.0.0.1").unwrap()
-    );
-    assert!(
-        Multiaddr::new("/ip4/127.0.0.1").unwrap() != Multiaddr::new("/ip4/128.0.0.1").unwrap()
-    );
+    let m1 = Multiaddr::new("/ip4/127.0.0.1/udp/1234").unwrap();
+    let m2 = Multiaddr::new("/ip4/127.0.0.1/tcp/1234").unwrap();
+    let m3 = Multiaddr::new("/ip4/127.0.0.1/tcp/1234").unwrap();
+    let m4 = Multiaddr::new("/ip4/127.0.0.1/tcp/1234/").unwrap();
+
+    assert!(m1 != m2);
+    assert!(m2 != m1);
+    assert!(m2 == m3);
+    assert!(m1 == m1);
+    assert!(m2 == m4);
+    assert!(m4 == m3);
 }
 
 
