@@ -2,8 +2,8 @@
 extern crate nom;
 extern crate byteorder;
 
-pub use self::protocol_types::*;
-pub mod protocol_types;
+pub use self::protocols::*;
+pub mod protocols;
 
 use self::parser::*;
 mod parser;

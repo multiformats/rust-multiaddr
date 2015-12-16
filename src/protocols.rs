@@ -46,10 +46,6 @@ impl ToString for Protocols {
 }
 
 impl Protocols {
-    pub fn to_code(&self) -> u16 {
-        (*self).into()
-    }
-
     // Try to convert a u16 to a protocol
     pub fn from_code(b: u16) -> Option<Protocols> {
         match b {

@@ -5,7 +5,7 @@ use std::str::from_utf8;
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
 use nom::IResult;
 
-use ::protocol_types::*;
+use ::protocols::*;
 
 /// Parse a single /
 named!(sep <&[u8], &[u8]>, tag!("/"));
@@ -34,8 +34,8 @@ named!(proto_with_address <&[u8], Vec<u8> >, chain!(
         // TODO: Better error handling
         // Write the u16 code into the results vector
         if let Some(protocol) = Protocols::from_name(t) {
-            res.write_u16::<BigEndian>(protocol.to_code()).unwrap();
-            println!("wrote {:?}", protocol.to_code());
+            res.write_u16::<BigEndian>(protocol as u16).unwrap();
+            println!("wrote {:?}", protocol as u16);
 
             if let Some(a) = a {
                 println!("Got an address {:?}", a);
