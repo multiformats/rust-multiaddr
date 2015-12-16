@@ -51,13 +51,13 @@ impl Multiaddr {
     /// A single protocol
     ///
     /// ```
-    /// use multiaddr::{Multiaddr, ProtocolTypes};
+    /// use multiaddr::{Multiaddr, Protocols};
     ///
     /// let address = Multiaddr::new("/ip4/127.0.0.1").unwrap();
-    /// assert_eq!(address.protocols(), vec![ProtocolTypes::IP4]);
+    /// assert_eq!(address.protocols(), vec![Protocols::IP4]);
     /// ```
     ///
-    pub fn protocols(&self) -> Vec<ProtocolTypes> {
+    pub fn protocols(&self) -> Vec<Protocols> {
         parser::protocols_from_bytes(&self.bytes[..])
     }
 }

@@ -3,9 +3,9 @@ use std::str::FromStr;
 use std::convert::From;
 use byteorder::{BigEndian, WriteBytesExt};
 
-// ProtocolTypes is the list of all supported protocols.
+// Protocols is the list of all supported protocols.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum ProtocolTypes {
+pub enum Protocols {
     IP4   = 4,
     TCP   = 6,
     UDP   = 17,
@@ -20,99 +20,101 @@ pub enum ProtocolTypes {
     ONION = 444,
 }
 
-impl From<ProtocolTypes> for u16 {
-    fn from(t: ProtocolTypes) -> u16 {
+impl From<Protocols> for u16 {
+    fn from(t: Protocols) -> u16 {
         t as u16
     }
 }
 
-impl ProtocolTypes {
+impl ToString for Protocols {
+    fn to_string(&self) -> String {
+        match *self {
+            Protocols::IP4   => "ip4".to_string(),
+	    Protocols::TCP   => "tcp".to_string(),
+	    Protocols::UDP   => "udp".to_string(),
+	    Protocols::DCCP  => "dccp".to_string(),
+	    Protocols::IP6   => "ip6".to_string(),
+	    Protocols::SCTP  => "sctp".to_string(),
+	    Protocols::UTP   => "utp".to_string(),
+	    Protocols::UDT   => "udt".to_string(),
+	    Protocols::IPFS  => "ipfs".to_string(),
+	    Protocols::HTTP  => "http".to_string(),
+	    Protocols::HTTPS => "https".to_string(),
+	    Protocols::ONION => "onion".to_string(),
+        }
+    }
+}
+
+impl Protocols {
     pub fn to_code(&self) -> u16 {
         (*self).into()
     }
 
     // Try to convert a u16 to a protocol
-    pub fn from_code(b: u16) -> Option<ProtocolTypes> {
+    pub fn from_code(b: u16) -> Option<Protocols> {
         match b {
-            4u16   => Some(ProtocolTypes::IP4),
-	    6u16   => Some(ProtocolTypes::TCP),
-	    17u16  => Some(ProtocolTypes::UDP),
-	    33u16  => Some(ProtocolTypes::DCCP),
-	    41u16  => Some(ProtocolTypes::IP6),
-	    132u16 => Some(ProtocolTypes::SCTP),
-	    301u16 => Some(ProtocolTypes::UTP),
-	    302u16 => Some(ProtocolTypes::UDT),
-	    421u16 => Some(ProtocolTypes::IPFS),
-	    480u16 => Some(ProtocolTypes::HTTP),
-	    443u16 => Some(ProtocolTypes::HTTPS),
-	    444u16 => Some(ProtocolTypes::ONION),
+            4u16   => Some(Protocols::IP4),
+	    6u16   => Some(Protocols::TCP),
+	    17u16  => Some(Protocols::UDP),
+	    33u16  => Some(Protocols::DCCP),
+	    41u16  => Some(Protocols::IP6),
+	    132u16 => Some(Protocols::SCTP),
+	    301u16 => Some(Protocols::UTP),
+	    302u16 => Some(Protocols::UDT),
+	    421u16 => Some(Protocols::IPFS),
+	    480u16 => Some(Protocols::HTTP),
+	    443u16 => Some(Protocols::HTTPS),
+	    444u16 => Some(Protocols::ONION),
             _ => None
         }
     }
 
-    pub fn to_size(&self) -> isize {
+    pub fn size(&self) -> isize {
         match *self {
-            ProtocolTypes::IP4   => 32,
-	    ProtocolTypes::TCP   => 16,
-	    ProtocolTypes::UDP   => 16,
-	    ProtocolTypes::DCCP  => 16,
-	    ProtocolTypes::IP6   => 128,
-	    ProtocolTypes::SCTP  => 16,
-	    ProtocolTypes::UTP   => 0,
-	    ProtocolTypes::UDT   => 0,
-	    ProtocolTypes::IPFS  => -1,
-	    ProtocolTypes::HTTP  => 0,
-	    ProtocolTypes::HTTPS => 0,
-	    ProtocolTypes::ONION => 80,
-        }
-    }
-
-    pub fn to_name(&self) -> String {
-        match *self {
-            ProtocolTypes::IP4   => "ip4".to_string(),
-	    ProtocolTypes::TCP   => "tcp".to_string(),
-	    ProtocolTypes::UDP   => "udp".to_string(),
-	    ProtocolTypes::DCCP  => "dccp".to_string(),
-	    ProtocolTypes::IP6   => "ip6".to_string(),
-	    ProtocolTypes::SCTP  => "sctp".to_string(),
-	    ProtocolTypes::UTP   => "utp".to_string(),
-	    ProtocolTypes::UDT   => "udt".to_string(),
-	    ProtocolTypes::IPFS  => "ipfs".to_string(),
-	    ProtocolTypes::HTTP  => "http".to_string(),
-	    ProtocolTypes::HTTPS => "https".to_string(),
-	    ProtocolTypes::ONION => "onion".to_string(),
+            Protocols::IP4   => 32,
+	    Protocols::TCP   => 16,
+	    Protocols::UDP   => 16,
+	    Protocols::DCCP  => 16,
+	    Protocols::IP6   => 128,
+	    Protocols::SCTP  => 16,
+	    Protocols::UTP   => 0,
+	    Protocols::UDT   => 0,
+	    Protocols::IPFS  => -1,
+	    Protocols::HTTP  => 0,
+	    Protocols::HTTPS => 0,
+	    Protocols::ONION => 80,
         }
     }
 
     // Try to convert a string to a protocol
-    pub fn from_name(s: &str) -> Option<ProtocolTypes> {
+    pub fn from_name(s: &str) -> Option<Protocols> {
         match s {
-            "ip4"   => Some(ProtocolTypes::IP4),
-	    "tcp"   => Some(ProtocolTypes::TCP),
-	    "udp"   => Some(ProtocolTypes::UDP),
-	    "dccp"  => Some(ProtocolTypes::DCCP),
-	    "ip6"   => Some(ProtocolTypes::IP6),
-	    "sctp"  => Some(ProtocolTypes::SCTP),
-	    "utp"   => Some(ProtocolTypes::UTP),
-	    "udt"   => Some(ProtocolTypes::UDT),
-	    "ipfs"  => Some(ProtocolTypes::IPFS),
-	    "http"  => Some(ProtocolTypes::HTTP),
-	    "https" => Some(ProtocolTypes::HTTPS),
-	    "onion" => Some(ProtocolTypes::ONION),
+            "ip4"   => Some(Protocols::IP4),
+	    "tcp"   => Some(Protocols::TCP),
+	    "udp"   => Some(Protocols::UDP),
+	    "dccp"  => Some(Protocols::DCCP),
+	    "ip6"   => Some(Protocols::IP6),
+	    "sctp"  => Some(Protocols::SCTP),
+	    "utp"   => Some(Protocols::UTP),
+	    "udt"   => Some(Protocols::UDT),
+	    "ipfs"  => Some(Protocols::IPFS),
+	    "http"  => Some(Protocols::HTTP),
+	    "https" => Some(Protocols::HTTPS),
+	    "onion" => Some(Protocols::ONION),
             _ => None
         }
     }
 
     pub fn address_string_to_bytes(&self, a: &str) -> Option<Vec<u8>> {
         match *self {
-            ProtocolTypes::IP4        => {
+            Protocols::IP4 => {
                 let octets = Ipv4Addr::from_str(a).unwrap().octets();
                 let mut res = Vec::new();
                 res.extend(octets.iter().cloned());
                 println!("{:?}", res);
                 Some(res)
             },
-            ProtocolTypes::IP6        => {
+            Protocols::IP6 => {
                 let segments = Ipv6Addr::from_str(a).unwrap().segments();
                 let mut res = Vec::new();
 
@@ -123,22 +125,22 @@ impl ProtocolTypes {
 
                 Some(res)
             },
-	    ProtocolTypes::TCP
-                | ProtocolTypes::UDP
-                | ProtocolTypes::DCCP
-                | ProtocolTypes::SCTP => {
+	    Protocols::TCP
+                | Protocols::UDP
+                | Protocols::DCCP
+                | Protocols::SCTP => {
                     let parsed: u16 = a.parse().unwrap();
                     let mut res = Vec::new();
                     res.write_u16::<BigEndian>(parsed).unwrap();
                     println!("{:?}", res);
                     Some(res)
                 },
-	    ProtocolTypes::IPFS       => Some(Vec::new()),
-	    ProtocolTypes::ONION      => Some(Vec::new()),
-	    ProtocolTypes::UTP
-	        | ProtocolTypes::UDT
-	        | ProtocolTypes::HTTP
-	        | ProtocolTypes::HTTPS => {
+	    Protocols::IPFS => Some(Vec::new()),
+	    Protocols::ONION => Some(Vec::new()),
+	    Protocols::UTP
+	        | Protocols::UDT
+	        | Protocols::HTTP
+	        | Protocols::HTTPS => {
                     // These all have length 0 so just return an empty vector
                     // for consistency
                     Some(Vec::new())
