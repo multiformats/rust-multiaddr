@@ -5,10 +5,10 @@ extern crate byteorder;
 pub use self::protocol_types::*;
 pub mod protocol_types;
 
-use std::cmp::PartialEq;
 use self::parser::*;
 mod parser;
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Multiaddr {
     bytes: Vec<u8>
 }
@@ -59,11 +59,5 @@ impl Multiaddr {
     ///
     pub fn protocols(&self) -> Vec<ProtocolTypes> {
         parser::protocols_from_bytes(&self.bytes[..])
-    }
-}
-
-impl PartialEq for Multiaddr {
-    fn eq(&self, other: &Multiaddr) -> bool {
-        self.bytes == other.bytes
     }
 }

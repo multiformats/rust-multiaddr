@@ -4,7 +4,7 @@ use std::convert::From;
 use byteorder::{BigEndian, WriteBytesExt};
 
 // ProtocolTypes is the list of all supported protocols.
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum ProtocolTypes {
     IP4   = 4,
     TCP   = 6,
