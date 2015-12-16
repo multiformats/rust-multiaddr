@@ -1,5 +1,6 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
+use std::convert::From;
 use byteorder::{BigEndian, WriteBytesExt};
 
 // ProtocolTypes is the list of all supported protocols.
@@ -27,7 +28,7 @@ impl From<ProtocolTypes> for u16 {
 
 impl ProtocolTypes {
     pub fn to_code(&self) -> u16 {
-        self.into()
+        (*self).into()
     }
 
     // Try to convert a u16 to a protocol
