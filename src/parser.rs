@@ -1,5 +1,4 @@
-use std::fmt;
-use std::error;
+use std::io;
 use std::str::from_utf8;
 
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
@@ -55,22 +54,8 @@ named!(proto_with_address <&[u8], Vec<u8> >, chain!(
 /// Parse a list of addresses
 named!(addresses < &[u8], Vec< Vec<u8> > >, many1!(proto_with_address));
 
-#[derive(Debug)]
-pub struct ParseError;
 
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "The given multiaddress is invalid")
-    }
-}
-
-impl error::Error for ParseError {
-    fn description(&self) -> &str {
-        "Invalid multiaddress"
-    }
-}
-
-pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>, ParseError> {
+pub fn multiaddr_from_str(input: &str) -> io::Result<Vec<u8>> {
     match addresses(input.as_bytes()) {
         IResult::Done(i, res) => {
             println!("remain: {:?}", from_utf8(i).unwrap());
@@ -84,7 +69,7 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>, ParseError> {
         },
         e => {
             println!("{:?}", e);
-            Err(ParseError)
+            Err(io::Error::new(io::ErrorKind::Other, "Failed to parse multiaddr"))
         },
     }
 }

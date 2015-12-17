@@ -2,6 +2,7 @@ extern crate multiaddr;
 
 use multiaddr::*;
 
+use std::net::{SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 
 #[test]
 fn pt_into() {
@@ -149,3 +150,32 @@ fn byte_formats() {
 //         assert!(Multiaddr::new(address).is_err());
 //     }
 // }
+
+
+#[test]
+fn to_multiaddr() {
+    assert_eq!(
+        Ipv4Addr::new(127, 0, 0, 1).to_multiaddr().unwrap(),
+        Multiaddr::new("/ip4/127.0.0.1").unwrap()
+    );
+    assert_eq!(
+        Ipv6Addr::new(0x2601, 0x9, 0x4f81, 0x9700, 0x803e, 0xca65, 0x66e8, 0xc21).to_multiaddr().unwrap(),
+        Multiaddr::new("/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21").unwrap()
+    );
+    assert_eq!(
+        "/ip4/127.0.0.1/tcp/1234".to_string().to_multiaddr().unwrap(),
+        Multiaddr::new("/ip4/127.0.0.1/tcp/1234").unwrap()
+    );
+    assert_eq!(
+        "/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21".to_multiaddr().unwrap(),
+        Multiaddr::new("/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21").unwrap()
+    );
+    assert_eq!(
+        SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 1234).to_multiaddr().unwrap(),
+        Multiaddr::new("/ip4/127.0.0.1/tcp/1234").unwrap()
+    );
+    assert_eq!(
+        SocketAddrV6::new(Ipv6Addr::new(0x2601, 0x9, 0x4f81, 0x9700, 0x803e, 0xca65, 0x66e8, 0xc21), 1234, 0, 0).to_multiaddr().unwrap(),
+        Multiaddr::new("/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21/tcp/1234").unwrap()
+    );
+}

@@ -13,7 +13,7 @@ unused_qualifications, unused_results, variant_size_differences)]
 #![allow(box_pointers, fat_ptr_transmutes, missing_copy_implementations,
 missing_debug_implementations)]
 
-///! # Multiaddr
+///! # multiaddr
 ///!
 ///! Implementation of [multiaddr](https://github.com/jbenet/multiaddr)
 ///! in Rust.
@@ -28,6 +28,10 @@ pub mod protocols;
 use self::parser::*;
 mod parser;
 
+use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
+use std::io;
+
+/// Representation of a Multiaddr.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Multiaddr {
     bytes: Vec<u8>
@@ -38,7 +42,7 @@ impl ToString for Multiaddr {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use multiaddr::Multiaddr;
     ///
     /// let address = Multiaddr::new("/ip4/127.0.0.1/udt").unwrap();
@@ -68,7 +72,7 @@ impl Multiaddr {
     /// ]);
     /// ```
     ///
-    pub fn new(input: &str) -> Result<Multiaddr, ParseError> {
+    pub fn new(input: &str) -> io::Result<Multiaddr> {
         let bytes = try!(multiaddr_from_str(input));
 
         Ok(Multiaddr {
@@ -110,7 +114,7 @@ impl Multiaddr {
     /// assert_eq!(nested, Multiaddr::new("/ip4/127.0.0.1/udt").unwrap());
     /// ```
     ///
-    pub fn encapsulate(&self, input: &str) -> Result<Multiaddr, ParseError> {
+    pub fn encapsulate(&self, input: &str) -> io::Result<Multiaddr> {
         let mut bytes = self.bytes.clone();
         let new = try!(multiaddr_from_str(input));
         println!("bytes: {:?}, new: {:?}", bytes, new);
@@ -176,5 +180,74 @@ impl Multiaddr {
         Multiaddr {
             bytes: bytes
         }
+    }
+}
+
+
+/// A trait for objects which can be converted to a
+/// Multiaddr.
+///
+/// This trait is implemented by default for
+///
+/// * `SocketAddr`, `SocketAddrV4` and `SocketAddrV6`, assuming that the
+///   the given port is a tcp port.
+///
+/// * `Ipv4Addr`, `Ipv6Addr`
+///
+/// * `String` and `&str`, requiring the default string format for a Multiaddr.
+///
+pub trait ToMultiaddr {
+    /// Converts this object to a Multiaddr
+    ///
+    /// # Errors
+    ///
+    /// Any errors encountered during parsing will be returned
+    /// as an `Err`.
+    fn to_multiaddr(&self) -> io::Result<Multiaddr>;
+}
+
+impl ToMultiaddr for SocketAddr {
+    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+        match *self {
+            SocketAddr::V4(ref a) => (*a).to_multiaddr(),
+            SocketAddr::V6(ref a) => (*a).to_multiaddr(),
+        }
+    }
+}
+
+impl ToMultiaddr for SocketAddrV4 {
+    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+        Multiaddr::new(&format!("/ip4/{}/tcp/{}", self.ip(), self.port()))
+    }
+}
+
+impl ToMultiaddr for SocketAddrV6 {
+    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+        // TODO: Should how should we handle `flowinfo` and `scope_id`?
+        Multiaddr::new(&format!("/ip6/{}/tcp/{}", self.ip(), self.port()))
+    }
+}
+
+impl ToMultiaddr for Ipv4Addr {
+    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+        Multiaddr::new(&format!("/ip4/{}", &self))
+    }
+}
+
+impl ToMultiaddr for Ipv6Addr {
+    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+        Multiaddr::new(&format!("/ip6/{}", &self))
+    }
+}
+
+impl ToMultiaddr for String {
+    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+        Multiaddr::new(&self)
+    }
+}
+
+impl<'a> ToMultiaddr for &'a str {
+    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+        Multiaddr::new(self)
     }
 }
