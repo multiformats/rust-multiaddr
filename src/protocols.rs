@@ -4,20 +4,37 @@ use std::convert::From;
 use std::io::Cursor;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
-// Protocols is the list of all supported protocols.
+///! # Protocols
+///!
+///! A type to describe the possible protocols used in a
+///! Multiaddr.
+
+/// Protocols is the list of all possible protocols.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Protocols {
+    /// [IP4](https://en.wikipedia.org/wiki/IPv4)
     IP4   = 4,
+    /// [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)
     TCP   = 6,
+    /// [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol)
     UDP   = 17,
+    /// [DCCP](https://en.wikipedia.org/wiki/Datagram_Congestion_Control_Protocol)
     DCCP  = 33,
+    /// [IP6](https://en.wikipedia.org/wiki/IPv6)
     IP6   = 41,
+    /// [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol)
     SCTP  = 132,
+    /// [UTP](https://en.wikipedia.org/wiki/Micro_Transport_Protocol)
     UTP   = 301,
+    /// [UDT](https://en.wikipedia.org/wiki/UDP-based_Data_Transfer_Protocol)
     UDT   = 302,
+    /// [IPFS](https://github.com/ipfs/specs/tree/master/protocol#341-merkledag-paths)
     IPFS  = 421,
+    /// [HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol)
     HTTP  = 480,
+    /// [HTTPS](https://en.wikipedia.org/wiki/HTTPS)
     HTTPS = 443,
+    /// Onion
     ONION = 444,
 }
 
@@ -47,7 +64,21 @@ impl ToString for Protocols {
 }
 
 impl Protocols {
-    // Try to convert a u16 to a protocol
+    /// Convert a `u16` based code to a `Protocol`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multiaddr::Protocols;
+    ///
+    /// assert_eq!(Protocols::from_code(6u16), Some(Protocols::TCP));
+    /// assert_eq!(Protocols::from_code(455u16), None);
+    /// ```
+    ///
+    /// # Failures
+    ///
+    /// If no matching code is found `None` is returned.
+    ///
     pub fn from_code(b: u16) -> Option<Protocols> {
         match b {
             4u16   => Some(Protocols::IP4),
@@ -66,6 +97,16 @@ impl Protocols {
         }
     }
 
+    /// Get the size from a `Protocol`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multiaddr::Protocols;
+    ///
+    /// assert_eq!(Protocols::TCP.size(), 16);
+    /// ```
+    ///
     pub fn size(&self) -> isize {
         match *self {
             Protocols::IP4   => 32,
@@ -83,7 +124,20 @@ impl Protocols {
         }
     }
 
-    // Try to convert a string to a protocol
+    /// Get the `Protocol` from a `&str` name.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multiaddr::Protocols;
+    ///
+    /// assert_eq!(Protocols::from_name("tcp").unwrap(), Protocols::TCP);
+    /// ```
+    ///
+    /// # Failures
+    ///
+    /// If no matching protocol is found `None` is returned.
+    ///
     pub fn from_name(s: &str) -> Option<Protocols> {
         match s {
             "ip4"   => Some(Protocols::IP4),
@@ -102,21 +156,36 @@ impl Protocols {
         }
     }
 
+    /// Convert an array slice to the string representation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multiaddr::Protocols;
+    ///
+    /// let proto = Protocols::IP4;
+    /// assert_eq!(proto.address_string_to_bytes("127.0.0.1").unwrap(), [127, 0, 0, 1]);
+    /// ```
+    ///
+    /// # Failures
+    ///
+    /// If there is no address representation for the protocol, like for `https`
+    /// then `None` is returned.
+    ///
     pub fn address_string_to_bytes(&self, a: &str) -> Option<Vec<u8>> {
         match *self {
             Protocols::IP4 => {
-                let octets = Ipv4Addr::from_str(a).unwrap().octets();
+                let addr = Ipv4Addr::from_str(a).unwrap();
                 let mut res = Vec::new();
-                res.extend(octets.iter().cloned());
-                println!("{:?}", res);
+                res.extend(addr.octets().iter().cloned());
+
                 Some(res)
             },
             Protocols::IP6 => {
-                let segments = Ipv6Addr::from_str(a).unwrap().segments();
+                let addr = Ipv6Addr::from_str(a).unwrap();
                 let mut res = Vec::new();
 
-                for segment in &segments {
-                    println!("{}", *segment);
+                for segment in &addr.segments() {
                     res.write_u16::<BigEndian>(*segment).unwrap();
                 }
 
@@ -129,7 +198,7 @@ impl Protocols {
                     let parsed: u16 = a.parse().unwrap();
                     let mut res = Vec::new();
                     res.write_u16::<BigEndian>(parsed).unwrap();
-                    println!("{:?}", res);
+
                     Some(res)
                 },
 	    Protocols::IPFS => Some(Vec::new()),
@@ -145,6 +214,23 @@ impl Protocols {
         }
     }
 
+    /// Convert an array slice to the string representation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multiaddr::Protocols;
+    ///
+    /// let proto = Protocols::IP4;
+    /// let bytes = [127, 0, 0, 1];
+    /// assert_eq!(proto.bytes_to_string(&bytes).unwrap(), "127.0.0.1");
+    /// ```
+    ///
+    /// # Failures
+    ///
+    /// If there is no address representation for the protocol, like for `https`
+    /// then `None` is returned.
+    ///
     pub fn bytes_to_string(&self, b: &[u8]) -> Option<String> {
         match *self {
             Protocols::IP4 => {

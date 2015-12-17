@@ -11,17 +11,6 @@ fn pt_into() {
 }
 
 #[test]
-fn protocols_from_u16() {
-    assert_eq!(Protocols::from_code(6u16), Some(Protocols::TCP));
-    assert_eq!(Protocols::from_code(455u16), None);
-}
-
-#[test]
-fn protocols_to_size() {
-    assert_eq!(Protocols::TCP.size(), 16);
-}
-
-#[test]
 fn protocols_to_name() {
     assert_eq!(Protocols::TCP.to_string(), "tcp");
 }
