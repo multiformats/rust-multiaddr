@@ -114,12 +114,12 @@ impl Multiaddr {
     /// assert_eq!(nested, Multiaddr::new("/ip4/127.0.0.1/udt").unwrap());
     /// ```
     ///
-    pub fn encapsulate(&self, input: &str) -> io::Result<Multiaddr> {
+    pub fn encapsulate<T: ToMultiaddr>(&self, input: T) -> io::Result<Multiaddr> {
+        let new = try!(input.to_multiaddr());
         let mut bytes = self.bytes.clone();
-        let new = try!(multiaddr_from_str(input));
-        println!("bytes: {:?}, new: {:?}", bytes, new);
-        bytes.extend(new);
-        println!("res {:?}", bytes);
+
+        bytes.extend(new.to_bytes());
+
         Ok(Multiaddr {
             bytes: bytes
         })
@@ -130,24 +130,31 @@ impl Multiaddr {
     /// # Examples
     ///
     /// ```
-    /// use multiaddr::Multiaddr;
+    /// use multiaddr::{Multiaddr, ToMultiaddr};
     ///
     /// let address = Multiaddr::new("/ip4/127.0.0.1/udt/sctp/5678").unwrap();
-    /// let unwrapped = address.decapsulate(Multiaddr::new("/udt").unwrap());
+    /// let unwrapped = address.decapsulate("/udt").unwrap();
     /// assert_eq!(unwrapped, Multiaddr::new("/ip4/127.0.0.1").unwrap());
+    ///
+    /// assert_eq!(
+    ///     address.decapsulate("/udt").unwrap(),
+    ///     "/ip4/127.0.0.1/".to_multiaddr().unwrap()
+    /// );
     /// ```
     ///
     /// Returns the original if the passed in address is not found
     ///
     /// ```
-    /// use multiaddr::Multiaddr;
+    /// use multiaddr::{Multiaddr, ToMultiaddr};
     ///
-    /// let address = Multiaddr::new("/ip4/127.0.0.1/udt/sctp/5678").unwrap();
-    /// let unwrapped = address.decapsulate(Multiaddr::new("/ip4/127.0.1.1").unwrap());
+    /// let address = "/ip4/127.0.0.1/udt/sctp/5678".to_multiaddr().unwrap();
+    /// let unwrapped = address.decapsulate("/ip4/127.0.1.1").unwrap();
     /// assert_eq!(unwrapped, address);
     /// ```
     ///
-    pub fn decapsulate(&self, input: Multiaddr) -> Multiaddr {
+    pub fn decapsulate<T: ToMultiaddr>(&self, input: T) -> io::Result<Multiaddr> {
+        let input = try!(input.to_multiaddr());
+
         let bytes = self.bytes.clone();
         let input = input.to_bytes();
         let bytes_len = bytes.len();
@@ -171,15 +178,15 @@ impl Multiaddr {
         }
 
         if !matches {
-            return Multiaddr {bytes: bytes}
+            return Ok(Multiaddr {bytes: bytes})
         }
 
         let mut bytes = bytes;
         bytes.truncate(input_pos);
 
-        Multiaddr {
+        Ok(Multiaddr {
             bytes: bytes
-        }
+        })
     }
 }
 
@@ -249,5 +256,11 @@ impl ToMultiaddr for String {
 impl<'a> ToMultiaddr for &'a str {
     fn to_multiaddr(&self) -> io::Result<Multiaddr> {
         Multiaddr::new(self)
+    }
+}
+
+impl ToMultiaddr for Multiaddr {
+    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+        Ok(self.clone())
     }
 }
