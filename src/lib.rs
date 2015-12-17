@@ -13,6 +13,23 @@ pub struct Multiaddr {
     bytes: Vec<u8>
 }
 
+impl ToString for Multiaddr {
+    /// Convert a Multiaddr to a string
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use multiaddr::Multiaddr;
+    ///
+    /// let address = Multiaddr::new("/ip4/127.0.0.1/udt").unwrap();
+    /// assert_eq!(address.to_string(), "/ip4/127.0.0.1/udt");
+    /// ```
+    ///
+    fn to_string(&self) -> String {
+        parser::address_from_bytes(&self.bytes[..])
+    }
+}
+
 impl Multiaddr {
     /// Create a new multiaddr based on a string representation, like
     /// `/ip4/127.0.0.1/udp/1234`.

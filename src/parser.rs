@@ -105,15 +105,37 @@ fn take_size<'a>(i: &'a [u8], code: &[u8]) -> IResult<&'a [u8], &'a [u8]> {
 named!(protocol < &[u8], Protocols >,
     chain!(
         code: take!(2) ~
-        a   : apply!(take_size, code),
-        || {
-            println!("code {:?}, {:?}", code, a);
-            from_code(code)
-        }
+        apply!(take_size, code),
+        || {from_code(code)}
     )
 );
 
 named!(protocols < &[u8], Vec<Protocols> >, many1!(protocol));
+
+named!(address_bytes < &[u8], String >,
+    chain!(
+        code: take!(2) ~
+        addr: apply!(take_size, code),
+        || {
+            println!("code {:?}, {:?}", code, addr);
+            let mut res = String::new();
+            let protocol = from_code(code);
+            let addr = protocol.bytes_to_string(addr);
+
+            res.push('/');
+            res.push_str(&protocol.to_string());
+
+            if let Some(addr) = addr {
+                res.push('/');
+                res.push_str(&addr);
+            }
+
+            res
+        }
+    )
+);
+
+named!(addresses_bytes < &[u8], Vec<String> >, many1!(address_bytes));
 
 /// Panics on invalid bytes as this would mean data corruption!
 pub fn protocols_from_bytes(input: &[u8]) -> Vec<Protocols> {
@@ -122,6 +144,25 @@ pub fn protocols_from_bytes(input: &[u8]) -> Vec<Protocols> {
             println!("remaining {:?}", i);
             for p in &res {
                 println!("results {:?}", p);
+            }
+            res
+        },
+        e => {
+            println!("{:?}", e);
+            panic!("Failed to parse internal bytes, possible corruption")
+        },
+    }
+}
+
+
+pub fn address_from_bytes(input: &[u8]) -> String {
+    match addresses_bytes(input) {
+        IResult::Done(i, addresses) => {
+            let mut res = String::new();
+            println!("remaining {:?}", i);
+            for address in &addresses {
+                println!("results {:?}", address);
+                res.push_str(address);
             }
             res
         },

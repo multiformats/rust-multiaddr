@@ -1,7 +1,8 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 use std::convert::From;
-use byteorder::{BigEndian, WriteBytesExt};
+use std::io::Cursor;
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 // Protocols is the list of all supported protocols.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -140,6 +141,39 @@ impl Protocols {
                     // These all have length 0 so just return an empty vector
                     // for consistency
                     Some(Vec::new())
+                },
+        }
+    }
+
+    pub fn bytes_to_string(&self, b: &[u8]) -> Option<String> {
+        match *self {
+            Protocols::IP4 => {
+                Some(Ipv4Addr::new(b[0], b[1], b[2], b[3]).to_string())
+            },
+            Protocols::IP6 => {
+                let mut rdr = Cursor::new(b);
+                let seg: Vec<u16> = (0..8).into_iter().map(|_| {
+                    rdr.read_u16::<BigEndian>().unwrap()
+                }).collect();
+
+                Some(Ipv6Addr::new(
+                    seg[0], seg[1], seg[2], seg[3], seg[4], seg[5], seg[6], seg[7]
+                ).to_string())
+            },
+	    Protocols::TCP
+                | Protocols::UDP
+                | Protocols::DCCP
+                | Protocols::SCTP => {
+                    let mut rdr = Cursor::new(b);
+                    rdr.read_u16::<BigEndian>().map(|num| num.to_string()).ok()
+                },
+	    Protocols::IPFS => None,
+	    Protocols::ONION => None,
+	    Protocols::UTP
+	        | Protocols::UDT
+	        | Protocols::HTTP
+	        | Protocols::HTTPS => {
+                    None
                 },
         }
     }
