@@ -22,8 +22,8 @@ extern crate nom;
 
 extern crate byteorder;
 
-pub use self::protocols::*;
-pub mod protocols;
+pub use self::protocol::*;
+pub mod protocol;
 
 use self::parser::*;
 mod parser;
@@ -92,14 +92,14 @@ impl Multiaddr {
     /// A single protocol
     ///
     /// ```
-    /// use multiaddr::{Multiaddr, Protocols};
+    /// use multiaddr::{Multiaddr, Protocol};
     ///
     /// let address = Multiaddr::new("/ip4/127.0.0.1").unwrap();
-    /// assert_eq!(address.protocols(), vec![Protocols::IP4]);
+    /// assert_eq!(address.protocol(), vec![Protocol::IP4]);
     /// ```
     ///
-    pub fn protocols(&self) -> Vec<Protocols> {
-        protocols_from_bytes(&self.bytes[..])
+    pub fn protocol(&self) -> Vec<Protocol> {
+        protocol_from_bytes(&self.bytes[..])
     }
 
     /// Wrap a given Multiaddr and return the combination.

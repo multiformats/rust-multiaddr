@@ -4,7 +4,7 @@ use std::str::from_utf8;
 use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
 use nom::IResult;
 
-use ::protocols::*;
+use ::protocol::Protocol;
 
 /// Parse a single /
 named!(sep <&[u8], &[u8]>, tag!("/"));
@@ -32,7 +32,7 @@ named!(proto_with_address <&[u8], Vec<u8> >, chain!(
 
         // TODO: Better error handling
         // Write the u16 code into the results vector
-        if let Some(protocol) = Protocols::from_name(t) {
+        if let Some(protocol) = Protocol::from_name(t) {
             res.write_u16::<BigEndian>(protocol as u16).unwrap();
             println!("wrote {:?}", protocol as u16);
 
@@ -74,11 +74,11 @@ pub fn multiaddr_from_str(input: &str) -> io::Result<Vec<u8>> {
     }
 }
 
-fn from_code(code: &[u8]) -> Protocols {
+fn from_code(code: &[u8]) -> Protocol {
     let mut code = code;
     let code = code.read_u16::<BigEndian>().unwrap();
     println!("code {:?}", code);
-    Protocols::from_code(code).unwrap()
+    Protocol::from_code(code).unwrap()
 }
 
 fn take_size<'a>(i: &'a [u8], code: &[u8]) -> IResult<&'a [u8], &'a [u8]> {
@@ -87,7 +87,7 @@ fn take_size<'a>(i: &'a [u8], code: &[u8]) -> IResult<&'a [u8], &'a [u8]> {
     take!(i, from_code(code).size() / 8)
 }
 
-named!(protocol < &[u8], Protocols >,
+named!(protocol < &[u8], Protocol >,
     chain!(
         code: take!(2) ~
         apply!(take_size, code),
@@ -95,7 +95,7 @@ named!(protocol < &[u8], Protocols >,
     )
 );
 
-named!(protocols < &[u8], Vec<Protocols> >, many1!(protocol));
+named!(protocols < &[u8], Vec<Protocol> >, many1!(protocol));
 
 named!(address_bytes < &[u8], String >,
     chain!(
@@ -123,7 +123,7 @@ named!(address_bytes < &[u8], String >,
 named!(addresses_bytes < &[u8], Vec<String> >, many1!(address_bytes));
 
 /// Panics on invalid bytes as this would mean data corruption!
-pub fn protocols_from_bytes(input: &[u8]) -> Vec<Protocols> {
+pub fn protocol_from_bytes(input: &[u8]) -> Vec<Protocol> {
     match protocols(input) {
         IResult::Done(i, res) => {
             println!("remaining {:?}", i);
