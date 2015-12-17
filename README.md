@@ -1,7 +1,7 @@
 # rust-multiaddr
 
 [![Build Status](https://img.shields.io/travis/Dignifiedquire/rust-multiaddr/master.svg?style=flat-square)](https://travis-ci.org/Dignifiedquire/rust-multiaddr)
-[![](https://img.shields.io/badge/docs-blue.svg?style=flat-square)](http://dignifiedquire.github.io/rust-multiaddr/multiaddr/struct.Multiaddr.html)
+[![](https://img.shields.io/badge/rust-docs-blue.svg?style=flat-square)](http://dignifiedquire.github.io/rust-multiaddr/multiaddr/struct.Multiaddr.html)
 
 > [multiaddr](https://github.com/jbenet/multiaddr) implementation in Rust.
 
