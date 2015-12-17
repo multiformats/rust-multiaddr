@@ -18,11 +18,14 @@ multiaddr = "*"
 ```rust
 crate extern multiaddr
 
-use multiaddr::Multiaddr;
+use multiaddr::{Multiaddr, ToMultiaddr};
 
 let address = Multiaddr::new("/ip4/127.0.0.1/udp/1234").unwrap();
+// or directly from a string
+let other = "/ip4/127.0.0.1".to_multiaddr().unwrap();
 
 assert_eq!(address.to_string(), "/ip4/127.0.0.1/udp/1234");
+assert_eq!(other.to_string(), "/ip4/127.0.0.1");
 ```
 
 
