@@ -80,11 +80,11 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>, ParseError> {
                     v
                 });
 
-            Result::Ok(res)
+            Ok(res)
         },
         e => {
             println!("{:?}", e);
-            Result::Err(ParseError)
+            Err(ParseError)
         },
     }
 }

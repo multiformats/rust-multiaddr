@@ -1,5 +1,25 @@
+// For explanation of lint checks, run `rustc -W help`
+// This is adapted from
+// https://github.com/maidsafe/QA/blob/master/Documentation/Rust%20Lint%20Checks.md
+#![forbid(bad_style, exceeding_bitshifts, mutable_transmutes, no_mangle_const_items,
+unknown_crate_types, warnings)]
+#![deny(deprecated, drop_with_repr_extern, improper_ctypes, //missing_docs,
+non_shorthand_field_patterns, overflowing_literals, plugin_as_library,
+private_no_mangle_fns, private_no_mangle_statics, stable_features, unconditional_recursion,
+unknown_lints, unsafe_code, unused, unused_allocation, unused_attributes,
+unused_comparisons, unused_features, unused_parens, while_true)]
+#![warn(trivial_casts, unused_extern_crates, unused_import_braces,
+unused_qualifications, unused_results, variant_size_differences)]
+#![allow(box_pointers, fat_ptr_transmutes, missing_copy_implementations,
+missing_debug_implementations)]
+
+///! # Multiaddr
+///!
+///! Implementation of [multiaddr](https://github.com/jbenet/multiaddr)
+///! in Rust.
 #[macro_use]
 extern crate nom;
+
 extern crate byteorder;
 
 pub use self::protocols::*;
@@ -26,7 +46,7 @@ impl ToString for Multiaddr {
     /// ```
     ///
     fn to_string(&self) -> String {
-        parser::address_from_bytes(&self.bytes[..])
+        address_from_bytes(&self.bytes[..])
     }
 }
 
@@ -49,9 +69,9 @@ impl Multiaddr {
     /// ```
     ///
     pub fn new(input: &str) -> Result<Multiaddr, ParseError> {
-        let bytes = try!(parser::multiaddr_from_str(input));
+        let bytes = try!(multiaddr_from_str(input));
 
-        Result::Ok(Multiaddr {
+        Ok(Multiaddr {
             bytes: bytes,
         })
     }
@@ -75,7 +95,7 @@ impl Multiaddr {
     /// ```
     ///
     pub fn protocols(&self) -> Vec<Protocols> {
-        parser::protocols_from_bytes(&self.bytes[..])
+        protocols_from_bytes(&self.bytes[..])
     }
 
     /// Wrap a given Multiaddr and return the combination.
@@ -92,11 +112,11 @@ impl Multiaddr {
     ///
     pub fn encapsulate(&self, input: &str) -> Result<Multiaddr, ParseError> {
         let mut bytes = self.bytes.clone();
-        let new = try!(parser::multiaddr_from_str(input));
+        let new = try!(multiaddr_from_str(input));
         println!("bytes: {:?}, new: {:?}", bytes, new);
         bytes.extend(new);
         println!("res {:?}", bytes);
-        Result::Ok(Multiaddr {
+        Ok(Multiaddr {
             bytes: bytes
         })
     }
