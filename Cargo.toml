@@ -15,4 +15,4 @@ readme = "README.md"
 
 [dependencies]
 byteorder = "~0.4"
-nom = {git = "https://github.com/Geal/nom.git"}
+nom = "~1.0.1"
