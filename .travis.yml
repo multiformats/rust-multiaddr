@@ -8,13 +8,9 @@ addons:
     - libdw-dev
     - binutils-dev
 rust:
-- nightly
+# - nightly # enable when passing
 - beta
 - stable
-
-matrix:
-  allow_failures:
-  - nightly
 
 before_script:
 - |
