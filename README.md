@@ -16,7 +16,7 @@ multiaddr = "*"
 ```
 
 ```rust
-crate extern multiaddr
+extern crate multiaddr;
 
 use multiaddr::{Multiaddr, ToMultiaddr};
 
