@@ -16,3 +16,6 @@ readme = "README.md"
 [dependencies]
 byteorder = "~0.4"
 nom = "~1.0.1"
+
+[features]
+nightly = []
