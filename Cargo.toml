@@ -1,7 +1,7 @@
 [package]
 name = "multiaddr"
 description = "Implementation of the multiaddr format"
-homepage = "https://github.com/Dignifiedquire/rust-multiaddr"
+homepage = "https://github.com/multiformats/rust-multiaddr"
 
 keywords = ["multiaddr", "ipfs"]
 
