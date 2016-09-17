@@ -1,10 +1,12 @@
 # rust-multiaddr
 
-[![Build Status](https://img.shields.io/travis/Dignifiedquire/rust-multiaddr/master.svg?style=flat-square)](https://travis-ci.org/Dignifiedquire/rust-multiaddr)
-[![](https://img.shields.io/badge/rust-docs-blue.svg?style=flat-square)](http://dignifiedquire.github.io/rust-multiaddr/multiaddr/struct.Multiaddr.html)
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
 [![](https://img.shields.io/badge/project-multiformats-blue.svg?style=flat-square)](http://github.com/multiformats/multiformats)
 [![](https://img.shields.io/badge/freenode-%23ipfs-blue.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23ipfs)
+[![Build Status](https://img.shields.io/travis/multiformats/rust-multiaddr/master.svg?style=flat-square)](https://travis-ci.org/multiformats/rust-multiaddr)
+[![Coverage Status](https://coveralls.io/repos/multiformats/rust-multiaddr/badge.svg?style=flat-square&branch=master)](https://coveralls.io/r/multiformats/rust-multiaddr?branch=master)
+[![](https://img.shields.io/badge/rust-docs-blue.svg?style=flat-square)](http://multiformats.github.io/rust-multiaddr/multiaddr/struct.Multiaddr.html)
+[![crates.io](http://meritbadge.herokuapp.com/multiaddr?style=flat-square)](https://crates.io/crates/multiaddr)
 
 > [multiaddr](https://github.com/multiformats/multiaddr) implementation in Rust.
 
