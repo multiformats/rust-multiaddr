@@ -20,18 +20,16 @@
 
 ## Install
 
-```
-> TODO
-```
-
-## Usage
-
 First add this to your `Cargo.toml`
 
 ```toml
 [dependencies]
 multiaddr = "*"
 ```
+
+then run `cargo build`.
+
+## Usage
 
 ```rust
 extern crate multiaddr;
