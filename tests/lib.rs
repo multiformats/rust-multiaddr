@@ -70,11 +70,11 @@ fn byte_formats() {
     ], vec![Protocol::UDP, Protocol::SCTP]);
     assert_bytes_all("/udp/1234/udt", &[
         0, 17, 4, 210,
-        1, 46
+        1, 45
     ], vec![Protocol::UDP, Protocol::UDT]);
     assert_bytes_all("/udp/1234/utp", &[
         0, 17, 4, 210,
-        1, 45
+        1, 46
     ], vec![Protocol::UDP, Protocol::UTP]);
     assert_bytes_all("/tcp/1234/http", &[
         0, 6, 4, 210,

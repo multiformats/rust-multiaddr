@@ -24,10 +24,10 @@ pub enum Protocol {
     IP6   = 41,
     /// [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol)
     SCTP  = 132,
-    /// [UTP](https://en.wikipedia.org/wiki/Micro_Transport_Protocol)
-    UTP   = 301,
     /// [UDT](https://en.wikipedia.org/wiki/UDP-based_Data_Transfer_Protocol)
-    UDT   = 302,
+    UDT   = 301,
+    /// [UTP](https://en.wikipedia.org/wiki/Micro_Transport_Protocol)
+    UTP   = 302,
     /// [IPFS](https://github.com/ipfs/specs/tree/master/protocol#341-merkledag-paths)
     IPFS  = 421,
     /// [HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol)
@@ -53,8 +53,8 @@ impl ToString for Protocol {
 	    Protocol::DCCP  => "dccp".to_string(),
 	    Protocol::IP6   => "ip6".to_string(),
 	    Protocol::SCTP  => "sctp".to_string(),
-	    Protocol::UTP   => "utp".to_string(),
 	    Protocol::UDT   => "udt".to_string(),
+	    Protocol::UTP   => "utp".to_string(),
 	    Protocol::IPFS  => "ipfs".to_string(),
 	    Protocol::HTTP  => "http".to_string(),
 	    Protocol::HTTPS => "https".to_string(),
@@ -87,8 +87,8 @@ impl Protocol {
 	    33u16  => Some(Protocol::DCCP),
 	    41u16  => Some(Protocol::IP6),
 	    132u16 => Some(Protocol::SCTP),
-	    301u16 => Some(Protocol::UTP),
-	    302u16 => Some(Protocol::UDT),
+	    301u16 => Some(Protocol::UDT),
+	    302u16 => Some(Protocol::UTP),
 	    421u16 => Some(Protocol::IPFS),
 	    480u16 => Some(Protocol::HTTP),
 	    443u16 => Some(Protocol::HTTPS),
