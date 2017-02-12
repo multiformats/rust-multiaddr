@@ -3,159 +3,128 @@ use std::str::FromStr;
 use std::convert::From;
 use std::io::Cursor;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use cid::Cid;
+use varmint::WriteVarInt;
+
+use {Result, Error};
 
 ///! # Protocol
 ///!
 ///! A type to describe the possible protocol used in a
 ///! Multiaddr.
 
-/// Protocol is the list of all possible protocols.
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum Protocol {
-    /// [IP4](https://en.wikipedia.org/wiki/IPv4)
-    IP4   = 4,
-    /// [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)
-    TCP   = 6,
-    /// [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol)
-    UDP   = 17,
-    /// [DCCP](https://en.wikipedia.org/wiki/Datagram_Congestion_Control_Protocol)
-    DCCP  = 33,
-    /// [IP6](https://en.wikipedia.org/wiki/IPv6)
-    IP6   = 41,
-    /// [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol)
-    SCTP  = 132,
-    /// [UDT](https://en.wikipedia.org/wiki/UDP-based_Data_Transfer_Protocol)
-    UDT   = 301,
-    /// [UTP](https://en.wikipedia.org/wiki/Micro_Transport_Protocol)
-    UTP   = 302,
-    /// [IPFS](https://github.com/ipfs/specs/tree/master/protocol#341-merkledag-paths)
-    IPFS  = 421,
-    /// [HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol)
-    HTTP  = 480,
-    /// [HTTPS](https://en.wikipedia.org/wiki/HTTPS)
-    HTTPS = 443,
-    /// Onion
-    ONION = 444,
-}
+macro_rules! build_protocol_enum {
+    {$( $val:expr => $var:ident: $alph:expr, $size:expr, )*} => {
+        /// Protocol is the list of all possible protocols.
+        #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+        pub enum Protocol {
+            $( $var = $val, )*
+        }
 
-impl From<Protocol> for u16 {
-    fn from(t: Protocol) -> u16 {
-        t as u16
-    }
-}
+        use Protocol::*;
 
-impl ToString for Protocol {
-    fn to_string(&self) -> String {
-        match *self {
-            Protocol::IP4   => "ip4".to_string(),
-	    Protocol::TCP   => "tcp".to_string(),
-	    Protocol::UDP   => "udp".to_string(),
-	    Protocol::DCCP  => "dccp".to_string(),
-	    Protocol::IP6   => "ip6".to_string(),
-	    Protocol::SCTP  => "sctp".to_string(),
-	    Protocol::UDT   => "udt".to_string(),
-	    Protocol::UTP   => "utp".to_string(),
-	    Protocol::IPFS  => "ipfs".to_string(),
-	    Protocol::HTTP  => "http".to_string(),
-	    Protocol::HTTPS => "https".to_string(),
-	    Protocol::ONION => "onion".to_string(),
+        impl From<Protocol> for u64 {
+            /// Convert to the matching integer code
+            fn from(proto: Protocol) -> u64 {
+                match proto {
+                    $( $var => $val, )*
+                }
+            }
+        }
+
+        impl ToString for Protocol {
+            fn to_string(&self) -> String {
+                match *self {
+                    $( $var => $alph.to_string(), )*
+                }
+            }
+        }
+
+        impl FromStr for Protocol {
+            type Err = Error;
+
+            fn from_str(raw: &str) -> Result<Self> {
+                match raw {
+                    $( $alph => Ok($var), )*
+                    _ => Err(Error::UnkownProtocolString),
+                }
+            }
+        }
+
+
+        impl Protocol {
+            /// Convert a `u64` based code to a `Protocol`.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use multiaddr::Protocol;
+            ///
+            /// assert_eq!(Protocol::from(6).unwrap(), Protocol::TCP);
+            /// assert!(Protocol::from(455).is_err());
+            /// ```
+            pub fn from(raw: u64) -> Result<Protocol> {
+                match raw {
+                    $( $val => Ok($var), )*
+                    _ => Err(Error::UnkownProtocol),
+                }
+            }
+
+            /// Get the size from a `Protocol`.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use multiaddr::Protocol;
+            ///
+            /// assert_eq!(Protocol::TCP.size(), 16);
+            /// ```
+            ///
+            pub fn size(&self) -> isize {
+                match *self {
+                    $( $var => $size, )*
+                }
+            }
         }
     }
 }
+
+build_protocol_enum!(
+    // [IP4](https://en.wikipedia.org/wiki/IPv4)
+    4 => IP4: "ip4", 32,
+    // [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)
+    6 => TCP: "tcp", 16,
+    // [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol)
+    17 => UDP: "udp", 16,
+    // [DCCP](https://en.wikipedia.org/wiki/Datagram_Congestion_Control_Protocol)
+    33 => DCCP: "dccp", 16,
+    // [IP6](https://en.wikipedia.org/wiki/IPv6)
+    41 => IP6: "ip6", 128,
+    // [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol)
+    132 => SCTP: "sctp", 16,
+    // [UDT](https://en.wikipedia.org/wiki/UDP-based_Data_Transfer_Protocol)
+    301 => UDT: "udt", 0,
+    // [UTP](https://en.wikipedia.org/wiki/Micro_Transport_Protocol)
+    302 => UTP: "utp", 0,
+    // [IPFS](https://github.com/ipfs/specs/tree/master/protocol#341-merkledag-paths)
+    421 => IPFS: "ipfs", -1,
+    // [HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol)
+    480 => HTTP: "http", 0,
+    // [HTTPS](https://en.wikipedia.org/wiki/HTTPS)
+    443 => HTTPS: "https", 0,
+    // Onion
+    444 => ONION: "onion", 80,
+    // Websockets
+    477 => WS: "ws", 0,
+    // Websockets secure
+    478 => WSS: "wss", 0,
+    // libp2p webrtc protocols
+    275 => Libp2pWebrtcStar: "libp2p-webrtc-star", 0,
+    276 => Libp2pWebrtcDirect: "libp2p-webrtc-direct", 0,
+);
+
 
 impl Protocol {
-    /// Convert a `u16` based code to a `Protocol`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use multiaddr::Protocol;
-    ///
-    /// assert_eq!(Protocol::from_code(6u16), Some(Protocol::TCP));
-    /// assert_eq!(Protocol::from_code(455u16), None);
-    /// ```
-    ///
-    /// # Failures
-    ///
-    /// If no matching code is found `None` is returned.
-    ///
-    pub fn from_code(b: u16) -> Option<Protocol> {
-        match b {
-            4u16   => Some(Protocol::IP4),
-	    6u16   => Some(Protocol::TCP),
-	    17u16  => Some(Protocol::UDP),
-	    33u16  => Some(Protocol::DCCP),
-	    41u16  => Some(Protocol::IP6),
-	    132u16 => Some(Protocol::SCTP),
-	    301u16 => Some(Protocol::UDT),
-	    302u16 => Some(Protocol::UTP),
-	    421u16 => Some(Protocol::IPFS),
-	    480u16 => Some(Protocol::HTTP),
-	    443u16 => Some(Protocol::HTTPS),
-	    444u16 => Some(Protocol::ONION),
-            _ => None
-        }
-    }
-
-    /// Get the size from a `Protocol`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use multiaddr::Protocol;
-    ///
-    /// assert_eq!(Protocol::TCP.size(), 16);
-    /// ```
-    ///
-    pub fn size(&self) -> isize {
-        match *self {
-            Protocol::IP4   => 32,
-	    Protocol::TCP   => 16,
-	    Protocol::UDP   => 16,
-	    Protocol::DCCP  => 16,
-	    Protocol::IP6   => 128,
-	    Protocol::SCTP  => 16,
-	    Protocol::UTP   => 0,
-	    Protocol::UDT   => 0,
-	    Protocol::IPFS  => -1,
-	    Protocol::HTTP  => 0,
-	    Protocol::HTTPS => 0,
-	    Protocol::ONION => 80,
-        }
-    }
-
-    /// Get the `Protocol` from a `&str` name.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use multiaddr::Protocol;
-    ///
-    /// assert_eq!(Protocol::from_name("tcp").unwrap(), Protocol::TCP);
-    /// ```
-    ///
-    /// # Failures
-    ///
-    /// If no matching protocol is found `None` is returned.
-    ///
-    pub fn from_name(s: &str) -> Option<Protocol> {
-        match s {
-            "ip4"   => Some(Protocol::IP4),
-	    "tcp"   => Some(Protocol::TCP),
-	    "udp"   => Some(Protocol::UDP),
-	    "dccp"  => Some(Protocol::DCCP),
-	    "ip6"   => Some(Protocol::IP6),
-	    "sctp"  => Some(Protocol::SCTP),
-	    "utp"   => Some(Protocol::UTP),
-	    "udt"   => Some(Protocol::UDT),
-	    "ipfs"  => Some(Protocol::IPFS),
-	    "http"  => Some(Protocol::HTTP),
-	    "https" => Some(Protocol::HTTPS),
-	    "onion" => Some(Protocol::ONION),
-            _ => None
-        }
-    }
-
     /// Convert an array slice to the string representation.
     ///
     /// # Examples
@@ -164,53 +133,58 @@ impl Protocol {
     /// use multiaddr::Protocol;
     ///
     /// let proto = Protocol::IP4;
-    /// assert_eq!(proto.address_string_to_bytes("127.0.0.1").unwrap(), [127, 0, 0, 1]);
+    /// assert_eq!(proto.string_to_bytes("127.0.0.1").unwrap(), [127, 0, 0, 1]);
     /// ```
     ///
-    /// # Failures
-    ///
-    /// If there is no address representation for the protocol, like for `https`
-    /// then `None` is returned.
-    ///
-    pub fn address_string_to_bytes(&self, a: &str) -> Option<Vec<u8>> {
+    pub fn string_to_bytes(&self, a: &str) -> Result<Vec<u8>> {
+        use Protocol::*;
+
         match *self {
-            Protocol::IP4 => {
-                let addr = Ipv4Addr::from_str(a).unwrap();
+            IP4 => {
+                let addr = Ipv4Addr::from_str(a)?;
                 let mut res = Vec::new();
                 res.extend(addr.octets().iter().cloned());
 
-                Some(res)
-            },
-            Protocol::IP6 => {
-                let addr = Ipv6Addr::from_str(a).unwrap();
+                Ok(res)
+            }
+            IP6 => {
+                let addr = Ipv6Addr::from_str(a)?;
                 let mut res = Vec::new();
 
                 for segment in &addr.segments() {
-                    res.write_u16::<BigEndian>(*segment).unwrap();
+                    res.write_u16::<BigEndian>(*segment)?;
                 }
 
-                Some(res)
-            },
-	    Protocol::TCP
-                | Protocol::UDP
-                | Protocol::DCCP
-                | Protocol::SCTP => {
-                    let parsed: u16 = a.parse().unwrap();
-                    let mut res = Vec::new();
-                    res.write_u16::<BigEndian>(parsed).unwrap();
+                Ok(res)
+            }
+            TCP | UDP | DCCP | SCTP => {
+                let parsed: u16 = a.parse()?;
+                let mut res = Vec::new();
+                res.write_u16::<BigEndian>(parsed)?;
 
-                    Some(res)
-                },
-	    Protocol::IPFS => Some(Vec::new()),
-	    Protocol::ONION => Some(Vec::new()),
-	    Protocol::UTP
-	        | Protocol::UDT
-	        | Protocol::HTTP
-	        | Protocol::HTTPS => {
-                    // These all have length 0 so just return an empty vector
-                    // for consistency
-                    Some(Vec::new())
-                },
+                Ok(res)
+            }
+            IPFS => {
+                let bytes = Cid::from(a)?.to_bytes();
+                let mut res = vec![];
+                res.write_u64_varint(bytes.len() as u64)?;
+                res.extend(bytes);
+
+                Ok(res)
+            }
+            ONION => Ok(Vec::new()),
+            UTP |
+            UDT |
+            HTTP |
+            HTTPS |
+            WS |
+            WSS |
+            Libp2pWebrtcStar |
+            Libp2pWebrtcDirect => {
+                // These all have length 0 so just return an empty vector
+                // for consistency
+                Ok(Vec::new())
+            }
         }
     }
 
@@ -223,7 +197,7 @@ impl Protocol {
     ///
     /// let proto = Protocol::IP4;
     /// let bytes = [127, 0, 0, 1];
-    /// assert_eq!(proto.bytes_to_string(&bytes).unwrap(), "127.0.0.1");
+    /// assert_eq!(proto.bytes_to_string(&bytes).unwrap(), Some("127.0.0.1".to_string()));
     /// ```
     ///
     /// # Failures
@@ -231,36 +205,49 @@ impl Protocol {
     /// If there is no address representation for the protocol, like for `https`
     /// then `None` is returned.
     ///
-    pub fn bytes_to_string(&self, b: &[u8]) -> Option<String> {
-        match *self {
-            Protocol::IP4 => {
-                Some(Ipv4Addr::new(b[0], b[1], b[2], b[3]).to_string())
-            },
-            Protocol::IP6 => {
-                let mut rdr = Cursor::new(b);
-                let seg: Vec<u16> = (0..8).into_iter().map(|_| {
-                    rdr.read_u16::<BigEndian>().unwrap()
-                }).collect();
+    pub fn bytes_to_string(&self, b: &[u8]) -> Result<Option<String>> {
+        use Protocol::*;
 
-                Some(Ipv6Addr::new(
-                    seg[0], seg[1], seg[2], seg[3], seg[4], seg[5], seg[6], seg[7]
-                ).to_string())
-            },
-	    Protocol::TCP
-                | Protocol::UDP
-                | Protocol::DCCP
-                | Protocol::SCTP => {
-                    let mut rdr = Cursor::new(b);
-                    rdr.read_u16::<BigEndian>().map(|num| num.to_string()).ok()
-                },
-	    Protocol::IPFS => None,
-	    Protocol::ONION => None,
-	    Protocol::UTP
-	        | Protocol::UDT
-	        | Protocol::HTTP
-	        | Protocol::HTTPS => {
-                    None
-                },
+        match *self {
+            IP4 => Ok(Some(Ipv4Addr::new(b[0], b[1], b[2], b[3]).to_string())),
+            IP6 => {
+                let mut rdr = Cursor::new(b);
+                let mut seg = vec![];
+
+                for _ in 0..8 {
+                    seg.push(rdr.read_u16::<BigEndian>()?);
+                }
+
+                Ok(Some(Ipv6Addr::new(seg[0],
+                                      seg[1],
+                                      seg[2],
+                                      seg[3],
+                                      seg[4],
+                                      seg[5],
+                                      seg[6],
+                                      seg[7])
+                    .to_string()))
+            }
+            TCP | UDP | DCCP | SCTP => {
+                let mut rdr = Cursor::new(b);
+                let num = rdr.read_u16::<BigEndian>()?;
+
+                Ok(Some(num.to_string()))
+            }
+            IPFS => {
+                let c = Cid::from(b)?;
+
+                Ok(Some(c.to_string()))
+            }
+            ONION => Ok(None),
+            UTP |
+            UDT |
+            HTTP |
+            HTTPS |
+            WS |
+            WSS |
+            Libp2pWebrtcStar |
+            Libp2pWebrtcDirect => Ok(None),
         }
     }
 }

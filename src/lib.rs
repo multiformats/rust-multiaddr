@@ -1,40 +1,24 @@
-// For explanation of lint checks, run `rustc -W help`
-// This is adapted from
-// https://github.com/maidsafe/QA/blob/master/Documentation/Rust%20Lint%20Checks.md
-#![forbid(bad_style, exceeding_bitshifts, mutable_transmutes, no_mangle_const_items,
-unknown_crate_types, warnings)]
-#![deny(deprecated, drop_with_repr_extern, improper_ctypes, //missing_docs,
-non_shorthand_field_patterns, overflowing_literals, plugin_as_library,
-private_no_mangle_fns, private_no_mangle_statics, stable_features, unconditional_recursion,
-unknown_lints, unsafe_code, unused, unused_allocation, unused_attributes,
-unused_comparisons, unused_features, unused_parens, while_true)]
-#![warn(trivial_casts, unused_extern_crates, unused_import_braces,
-unused_qualifications, unused_results, variant_size_differences)]
-#![allow(box_pointers, fat_ptr_transmutes, missing_copy_implementations,
-missing_debug_implementations)]
-
 ///! # multiaddr
 ///!
 ///! Implementation of [multiaddr](https://github.com/jbenet/multiaddr)
 ///! in Rust.
-#[macro_use]
-extern crate nom;
-
 extern crate byteorder;
+extern crate cid;
+extern crate varmint;
 
-pub use self::protocol::*;
-pub mod protocol;
-
-use self::parser::*;
+mod protocol;
 mod parser;
+mod errors;
+
+pub use errors::{Result, Error};
+pub use protocol::Protocol;
 
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
-use std::io;
 
 /// Representation of a Multiaddr.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Multiaddr {
-    bytes: Vec<u8>
+    bytes: Vec<u8>,
 }
 
 impl ToString for Multiaddr {
@@ -50,7 +34,7 @@ impl ToString for Multiaddr {
     /// ```
     ///
     fn to_string(&self) -> String {
-        address_from_bytes(&self.bytes[..])
+        parser::address_from_bytes(self.as_slice()).expect("failed to validate at construction")
     }
 }
 
@@ -67,22 +51,25 @@ impl Multiaddr {
     ///
     /// let address = Multiaddr::new("/ip4/127.0.0.1/udp/1234").unwrap();
     /// assert_eq!(address.to_bytes(), [
-    ///     0, 4, 127, 0, 0, 1,
-    ///     0, 17, 4, 210
+    ///     4, 127, 0, 0, 1,
+    ///     17, 4, 210
     /// ]);
     /// ```
     ///
-    pub fn new(input: &str) -> io::Result<Multiaddr> {
-        let bytes = try!(multiaddr_from_str(input));
+    pub fn new(input: &str) -> Result<Multiaddr> {
+        let bytes = parser::multiaddr_from_str(input)?;
 
-        Ok(Multiaddr {
-            bytes: bytes,
-        })
+        Ok(Multiaddr { bytes: bytes })
     }
 
     /// Return a copy to disallow changing the bytes directly
     pub fn to_bytes(&self) -> Vec<u8> {
         self.bytes.to_owned()
+    }
+
+    /// Extracts a slice containing the entire underlying vector.
+    pub fn as_slice(&self) -> &[u8] {
+        &self.bytes
     }
 
     /// Return a list of protocols
@@ -99,7 +86,7 @@ impl Multiaddr {
     /// ```
     ///
     pub fn protocol(&self) -> Vec<Protocol> {
-        protocol_from_bytes(&self.bytes[..])
+        parser::protocol_from_bytes(&self.bytes[..]).expect("failed to validate at construction")
     }
 
     /// Wrap a given Multiaddr and return the combination.
@@ -114,15 +101,13 @@ impl Multiaddr {
     /// assert_eq!(nested, Multiaddr::new("/ip4/127.0.0.1/udt").unwrap());
     /// ```
     ///
-    pub fn encapsulate<T: ToMultiaddr>(&self, input: T) -> io::Result<Multiaddr> {
-        let new = try!(input.to_multiaddr());
+    pub fn encapsulate<T: ToMultiaddr>(&self, input: T) -> Result<Multiaddr> {
+        let new = input.to_multiaddr()?;
         let mut bytes = self.bytes.clone();
 
         bytes.extend(new.to_bytes());
 
-        Ok(Multiaddr {
-            bytes: bytes
-        })
+        Ok(Multiaddr { bytes: bytes })
     }
 
     /// Remove the outer most address from itself.
@@ -145,32 +130,30 @@ impl Multiaddr {
     /// Returns the original if the passed in address is not found
     ///
     /// ```
-    /// use multiaddr::{Multiaddr, ToMultiaddr};
+    /// use multiaddr::ToMultiaddr;
     ///
     /// let address = "/ip4/127.0.0.1/udt/sctp/5678".to_multiaddr().unwrap();
     /// let unwrapped = address.decapsulate("/ip4/127.0.1.1").unwrap();
     /// assert_eq!(unwrapped, address);
     /// ```
     ///
-    pub fn decapsulate<T: ToMultiaddr>(&self, input: T) -> io::Result<Multiaddr> {
-        let input = try!(input.to_multiaddr());
+    pub fn decapsulate<T: ToMultiaddr>(&self, input: T) -> Result<Multiaddr> {
+        let input = input.to_multiaddr()?.to_bytes();
 
-        let bytes = self.bytes.clone();
-        let input = input.to_bytes();
-        let bytes_len = bytes.len();
+        let bytes_len = self.bytes.len();
         let input_length = input.len();
 
         let mut input_pos = 0;
         let mut matches = false;
 
-        for (i, _) in bytes.iter().enumerate() {
+        for (i, _) in self.bytes.iter().enumerate() {
             let next = i + input_length;
 
             if next > bytes_len {
                 continue;
             }
 
-            if &bytes[i..next] == &input[..] {
+            if &self.bytes[i..next] == input.as_slice() {
                 matches = true;
                 input_pos = i;
                 break;
@@ -178,15 +161,13 @@ impl Multiaddr {
         }
 
         if !matches {
-            return Ok(Multiaddr {bytes: bytes})
+            return Ok(Multiaddr { bytes: self.bytes.clone() });
         }
 
-        let mut bytes = bytes;
+        let mut bytes = self.bytes.clone();
         bytes.truncate(input_pos);
 
-        Ok(Multiaddr {
-            bytes: bytes
-        })
+        Ok(Multiaddr { bytes: bytes })
     }
 }
 
@@ -210,11 +191,11 @@ pub trait ToMultiaddr {
     ///
     /// Any errors encountered during parsing will be returned
     /// as an `Err`.
-    fn to_multiaddr(&self) -> io::Result<Multiaddr>;
+    fn to_multiaddr(&self) -> Result<Multiaddr>;
 }
 
 impl ToMultiaddr for SocketAddr {
-    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
         match *self {
             SocketAddr::V4(ref a) => (*a).to_multiaddr(),
             SocketAddr::V6(ref a) => (*a).to_multiaddr(),
@@ -223,44 +204,44 @@ impl ToMultiaddr for SocketAddr {
 }
 
 impl ToMultiaddr for SocketAddrV4 {
-    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
         Multiaddr::new(&format!("/ip4/{}/tcp/{}", self.ip(), self.port()))
     }
 }
 
 impl ToMultiaddr for SocketAddrV6 {
-    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
         // TODO: Should how should we handle `flowinfo` and `scope_id`?
         Multiaddr::new(&format!("/ip6/{}/tcp/{}", self.ip(), self.port()))
     }
 }
 
 impl ToMultiaddr for Ipv4Addr {
-    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
         Multiaddr::new(&format!("/ip4/{}", &self))
     }
 }
 
 impl ToMultiaddr for Ipv6Addr {
-    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
         Multiaddr::new(&format!("/ip6/{}", &self))
     }
 }
 
 impl ToMultiaddr for String {
-    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
-        Multiaddr::new(&self)
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
+        Multiaddr::new(self)
     }
 }
 
 impl<'a> ToMultiaddr for &'a str {
-    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
         Multiaddr::new(self)
     }
 }
 
 impl ToMultiaddr for Multiaddr {
-    fn to_multiaddr(&self) -> io::Result<Multiaddr> {
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
         Ok(self.clone())
     }
 }
