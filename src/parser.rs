@@ -1,159 +1,100 @@
-use std::io;
-use std::str::from_utf8;
+use std::str::FromStr;
 
-use byteorder::{BigEndian, WriteBytesExt, ReadBytesExt};
-use nom::IResult;
+use varmint::{self, WriteVarInt, ReadVarInt};
 
-use ::protocol::Protocol;
+use protocol::Protocol;
+use {Result, Error};
 
-/// Parse a single /
-named!(sep <&[u8], &[u8]>, tag!("/"));
+pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>> {
+    // drdop trailing slashes
+    let input = input.trim_right_matches('/');
 
-/// Parse the protocol part `/ip4`
-named!(proto <&[u8], &str>, chain!(
-    sep? ~
-    a: map_res!(is_not!("/"), from_utf8),
-    || {a}
-));
+    let mut bytes = vec![];
+    let mut parts = input.split('/');
+    let next = parts.next().ok_or(Error::InvalidMultiaddr)?;
 
-/// Parse the the address part `/127.0.0.1`
-named!(address, chain!(
-           sep ~
-    inner: is_not!("/"),
-    || {inner}
-));
+    if !next.is_empty() {
+        return Err(Error::InvalidMultiaddr);
+    }
 
-/// Parse a single multiaddress in the form of `/ip4/127.0.0.1`.
-named!(proto_with_address <&[u8], Vec<u8> >, chain!(
-    t: proto  ~
-    a: opt!(complete!(address)),
-    || {
-        let mut res: Vec<u8>= Vec::new();
+    while let Some(n) = parts.next() {
+        let p = Protocol::from_str(n)?;
 
-        // TODO: Better error handling
-        // Write the u16 code into the results vector
-        if let Some(protocol) = Protocol::from_name(t) {
-            res.write_u16::<BigEndian>(protocol as u16).unwrap();
-            println!("wrote {:?}", protocol as u16);
+        bytes.write_u64_varint(p as u64)?;
 
-            if let Some(a) = a {
-                println!("Got an address {:?}", a);
-                let a = from_utf8(a).unwrap();
-                println!("{:?}, {:?}", protocol, a);
-                let address_bytes = protocol.address_string_to_bytes(a).unwrap();
-                println!("address {:?}", address_bytes);
-                // Write the address into the results vector
-                res.extend(address_bytes);
-            }
+        if p.size() == 0 {
+            continue;
         }
 
-        res
+        let next = match parts.next() {
+            Some(path) => path,
+            None => return Err(Error::MissingAddress),
+        };
+
+        bytes.extend(p.string_to_bytes(next)?);
     }
-));
 
-/// Parse a list of addresses
-named!(addresses < &[u8], Vec< Vec<u8> > >, many1!(proto_with_address));
+    Ok(bytes)
+}
 
 
-pub fn multiaddr_from_str(input: &str) -> io::Result<Vec<u8>> {
-    match addresses(input.as_bytes()) {
-        IResult::Done(i, res) => {
-            println!("remain: {:?}", from_utf8(i).unwrap());
-            let res = res.iter()
-                .fold(Vec::new(), |mut v, a| {
-                    v.extend(a.iter().cloned());
-                    v
-                });
+fn read_varint_code(input: &[u8]) -> Result<(u64, usize)> {
+    let mut input = input;
+    let dec = input.read_u64_varint()?;
 
-            Ok(res)
-        },
-        e => {
-            println!("{:?}", e);
-            Err(io::Error::new(io::ErrorKind::Other, "Failed to parse multiaddr"))
-        },
+    Ok((dec, varmint::len_u64_varint(dec)))
+}
+
+fn size_for_addr(protocol: Protocol, input: &[u8]) -> Result<(usize, usize)> {
+    if protocol.size() > 0 {
+        Ok((protocol.size() as usize / 8, 0))
+    } else if protocol.size() == 0 {
+        Ok((0, 0))
+    } else {
+        let (size, n) = read_varint_code(input)?;
+        Ok((size as usize, n))
     }
 }
 
-fn from_code(code: &[u8]) -> Protocol {
-    let mut code = code;
-    let code = code.read_u16::<BigEndian>().unwrap();
-    println!("code {:?}", code);
-    Protocol::from_code(code).unwrap()
+pub fn protocol_from_bytes(input: &[u8]) -> Result<Vec<Protocol>> {
+    let mut ps = vec![];
+    let mut i = 0;
+
+    while i < input.len() {
+        let (code, n) = read_varint_code(&input[i..])?;
+        let p = Protocol::from(code)?;
+        ps.push(p);
+
+        i += n;
+        let (size, adv) = size_for_addr(p, &input[i..])?;
+        i += size + adv;
+    }
+
+    Ok(ps)
 }
 
-fn take_size<'a>(i: &'a [u8], code: &[u8]) -> IResult<&'a [u8], &'a [u8]> {
-    println!("taking size {:?}", from_code(code).size());
-    println!("{:?}", i);
-    take!(i, from_code(code).size() / 8)
-}
 
-named!(protocol < &[u8], Protocol >,
-    chain!(
-        code: take!(2) ~
-        apply!(take_size, code),
-        || {from_code(code)}
-    )
-);
+pub fn address_from_bytes(input: &[u8]) -> Result<String> {
+    let mut protos = vec!["".to_string()];
+    let mut i = 0;
 
-named!(protocols < &[u8], Vec<Protocol> >, many1!(protocol));
+    while i < input.len() {
 
-named!(address_bytes < &[u8], String >,
-    chain!(
-        code: take!(2) ~
-        addr: apply!(take_size, code),
-        || {
-            println!("code {:?}, {:?}", code, addr);
-            let mut res = String::new();
-            let protocol = from_code(code);
-            let addr = protocol.bytes_to_string(addr);
+        let (code, n) = read_varint_code(&input[i..])?;
+        i += n;
 
-            res.push('/');
-            res.push_str(&protocol.to_string());
+        let p = Protocol::from(code)?;
+        protos.push(p.to_string());
 
-            if let Some(addr) = addr {
-                res.push('/');
-                res.push_str(&addr);
-            }
+        let (size, adv) = size_for_addr(p, &input[i..])?;
+        i += adv;
 
-            res
+        if let Some(s) = p.bytes_to_string(&input[i..i + size])? {
+            protos.push(s);
         }
-    )
-);
 
-named!(addresses_bytes < &[u8], Vec<String> >, many1!(address_bytes));
-
-/// Panics on invalid bytes as this would mean data corruption!
-pub fn protocol_from_bytes(input: &[u8]) -> Vec<Protocol> {
-    match protocols(input) {
-        IResult::Done(i, res) => {
-            println!("remaining {:?}", i);
-            for p in &res {
-                println!("results {:?}", p);
-            }
-            res
-        },
-        e => {
-            println!("{:?}", e);
-            panic!("Failed to parse internal bytes, possible corruption")
-        },
+        i += size;
     }
-}
 
-
-pub fn address_from_bytes(input: &[u8]) -> String {
-    match addresses_bytes(input) {
-        IResult::Done(i, addresses) => {
-            let mut res = String::new();
-            println!("remaining {:?}", i);
-            for address in &addresses {
-                println!("results {:?}", address);
-                res.push_str(address);
-            }
-            res
-        },
-        e => {
-            println!("{:?}", e);
-            panic!("Failed to parse internal bytes, possible corruption")
-        },
-    }
+    Ok(protos.join("/"))
 }

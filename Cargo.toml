@@ -1,18 +1,18 @@
 [package]
-name = "multiaddr"
+authors = ["dignifiedquire <dignifiedquire@gmail.com>"]
 description = "Implementation of the multiaddr format"
 homepage = "https://github.com/multiformats/rust-multiaddr"
-
 keywords = ["multiaddr", "ipfs"]
-
-version = "0.1.0"
-
-authors = ["dignifiedquire <dignifiedquire@gmail.com>"]
-
 license = "MIT"
-
+name = "multiaddr"
 readme = "README.md"
+version = "0.1.0"
 
 [dependencies]
 byteorder = "~0.4"
-nom = "~1.0.1"
+cid = "~0.2"
+nom = "~2.0"
+varmint = "0.1.2"
+
+[dev-dependencies]
+data-encoding = "~1.1.2"
