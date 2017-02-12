@@ -88,6 +88,21 @@ fn construct_success() {
     // /unix/stdio,
     // /ip4/1.2.3.4/tcp/80/unix/a/b/c/d/e/f,
     // /ip4/127.0.0.1/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234/unix/stdio
+    ma_valid("/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:\
+              7095/tcp/8000/ws/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+             "29200108A07AC542013AC986FFFE317095061F40DD03A5\
+03221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
+             vec![IP6, TCP, WS, IPFS]);
+    ma_valid("/libp2p-webrtc-star/ip4/127.0.0.\
+              1/tcp/9090/ws/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+             "9302047F000001062382DD03A503221220D52EBB89D85B\
+02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
+             vec![Libp2pWebrtcStar, IP4, TCP, WS, IPFS]);
+    ma_valid("/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:\
+              7095/tcp/8000/wss/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+             "29200108A07AC542013AC986FFFE317095061F40DE03A503221220D52EBB8\
+9D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
+             vec![IP6, TCP, WSS, IPFS]);
 }
 
 #[test]

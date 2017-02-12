@@ -28,7 +28,7 @@ macro_rules! build_protocol_enum {
             fn from(proto: Protocol) -> u64 {
                 match proto {
                     $( $var => $val, )*
-                }                
+                }
             }
         }
 
@@ -42,7 +42,7 @@ macro_rules! build_protocol_enum {
 
         impl FromStr for Protocol {
             type Err = Error;
-            
+
             fn from_str(raw: &str) -> Result<Self> {
                 match raw {
                     $( $alph => Ok($var), )*
@@ -84,7 +84,7 @@ macro_rules! build_protocol_enum {
                 match *self {
                     $( $var => $size, )*
                 }
-            }               
+            }
         }
     }
 }
@@ -114,6 +114,13 @@ build_protocol_enum!(
     443 => HTTPS: "https", 0,
     // Onion
     444 => ONION: "onion", 80,
+    // Websockets
+    477 => WS: "ws", 0,
+    // Websockets secure
+    478 => WSS: "wss", 0,
+    // libp2p webrtc protocols
+    275 => Libp2pWebrtcStar: "libp2p-webrtc-star", 0,
+    276 => Libp2pWebrtcDirect: "libp2p-webrtc-direct", 0,
 );
 
 
@@ -162,11 +169,18 @@ impl Protocol {
                 let mut res = vec![];
                 res.write_u64_varint(bytes.len() as u64)?;
                 res.extend(bytes);
-                    
+
                 Ok(res)
             }
             ONION => Ok(Vec::new()),
-            UTP | UDT | HTTP | HTTPS => {
+            UTP |
+            UDT |
+            HTTP |
+            HTTPS |
+            WS |
+            WSS |
+            Libp2pWebrtcStar |
+            Libp2pWebrtcDirect => {
                 // These all have length 0 so just return an empty vector
                 // for consistency
                 Ok(Vec::new())
@@ -199,19 +213,19 @@ impl Protocol {
             IP6 => {
                 let mut rdr = Cursor::new(b);
                 let mut seg = vec![];
-                
+
                 for _ in 0..8 {
                     seg.push(rdr.read_u16::<BigEndian>()?);
                 }
 
                 Ok(Some(Ipv6Addr::new(seg[0],
-                                   seg[1],
-                                   seg[2],
-                                   seg[3],
-                                   seg[4],
-                                   seg[5],
-                                   seg[6],
-                                   seg[7])
+                                      seg[1],
+                                      seg[2],
+                                      seg[3],
+                                      seg[4],
+                                      seg[5],
+                                      seg[6],
+                                      seg[7])
                     .to_string()))
             }
             TCP | UDP | DCCP | SCTP => {
@@ -222,11 +236,18 @@ impl Protocol {
             }
             IPFS => {
                 let c = Cid::from(b)?;
-                
+
                 Ok(Some(c.to_string()))
             }
             ONION => Ok(None),
-            UTP | UDT | HTTP | HTTPS => Ok(None),
+            UTP |
+            UDT |
+            HTTP |
+            HTTPS |
+            WS |
+            WSS |
+            Libp2pWebrtcStar |
+            Libp2pWebrtcDirect => Ok(None),
         }
     }
 }
