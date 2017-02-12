@@ -6,7 +6,7 @@
 [![Travis CI](https://img.shields.io/travis/multiformats/rust-multiaddr.svg?style=flat-square&branch=master)](https://travis-ci.org/multiformats/rust-multiaddr)
 [![codecov.io](https://img.shields.io/codecov/c/github/multiformats/rust-multiaddr.svg?style=flat-square&branch=master)](https://codecov.io/github/multiformats/rust-multiaddr?branch=master)
 [![](https://img.shields.io/badge/rust-docs-blue.svg?style=flat-square)](https://docs.rs/crate/multiaddr)
-[![crates.io](https://img.shields.io/badge/crates.io-v0.1.0-orange.svg?style=flat-square )](https://crates.io/crates/multiaddr)
+[![crates.io](https://img.shields.io/badge/crates.io-v0.2.0-orange.svg?style=flat-square )](https://crates.io/crates/multiaddr)
 [![](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 
 
