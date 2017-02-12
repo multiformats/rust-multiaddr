@@ -11,7 +11,6 @@ version = "0.1.0"
 [dependencies]
 byteorder = "~0.4"
 cid = "~0.2"
-nom = "~2.0"
 varmint = "0.1.2"
 
 [dev-dependencies]
