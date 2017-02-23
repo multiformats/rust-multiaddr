@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use varmint::{self, WriteVarInt, ReadVarInt};
+use integer_encoding::{VarInt, VarIntWriter};
 
 use protocol::Protocol;
 use {Result, Error};
@@ -20,7 +20,7 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>> {
     while let Some(n) = parts.next() {
         let p = Protocol::from_str(n)?;
 
-        bytes.write_u64_varint(p as u64)?;
+        bytes.write_varint(p as u64)?;
 
         if p.size() == 0 {
             continue;
@@ -37,12 +37,14 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>> {
     Ok(bytes)
 }
 
-
 fn read_varint_code(input: &[u8]) -> Result<(u64, usize)> {
-    let mut input = input;
-    let dec = input.read_u64_varint()?;
+    let res = u64::decode_var(input);
 
-    Ok((dec, varmint::len_u64_varint(dec)))
+    if res.0 == 0 {
+        return Err(Error::ParsingError)
+    }
+
+    Ok(res)
 }
 
 fn size_for_addr(protocol: Protocol, input: &[u8]) -> Result<(usize, usize)> {

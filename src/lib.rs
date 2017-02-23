@@ -4,7 +4,7 @@
 ///! in Rust.
 extern crate byteorder;
 extern crate cid;
-extern crate varmint;
+extern crate integer_encoding;
 
 mod protocol;
 mod parser;

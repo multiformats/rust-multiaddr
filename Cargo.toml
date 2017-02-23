@@ -11,7 +11,7 @@ version = "0.2.0"
 [dependencies]
 byteorder = "~0.4"
 cid = "~0.2"
-varmint = "0.1.2"
+integer-encoding = "~1.0.3"
 
 [dev-dependencies]
 data-encoding = "~1.1.2"
