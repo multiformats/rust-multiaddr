@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Base",""],["Error","Error types"]],"fn":[["decode","Decode the string."],["encode","Encode with the given string"]],"trait":[["Decodable","Trait implemented for string-like types."],["Encodable","Trait implemented for byte-array-like types."]],"type":[["Result",""]]});

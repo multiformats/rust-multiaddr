@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Codec",""],["Error","Error types"],["Version",""]],"struct":[["Cid","Representation of a CID."],["Prefix","Prefix represents all metadata of a CID, without the actual content."]],"trait":[["ToCid",""]],"type":[["Result",""]]});

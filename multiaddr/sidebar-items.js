@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Error","Error types"],["Protocol","Protocol is the list of all possible protocols."]],"struct":[["Multiaddr","Representation of a Multiaddr."]],"trait":[["ToMultiaddr","A trait for objects which can be converted to a Multiaddr."]],"type":[["Result",""]]});
