@@ -4,7 +4,7 @@ use std::convert::From;
 use std::io::Cursor;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use cid::Cid;
-use varmint::WriteVarInt;
+use integer_encoding::VarIntWriter;
 
 use {Result, Error};
 
@@ -167,7 +167,7 @@ impl Protocol {
             IPFS => {
                 let bytes = Cid::from(a)?.to_bytes();
                 let mut res = vec![];
-                res.write_u64_varint(bytes.len() as u64)?;
+                res.write_varint(bytes.len())?;
                 res.extend(bytes);
 
                 Ok(res)
