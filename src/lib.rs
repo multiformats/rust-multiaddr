@@ -171,6 +171,19 @@ impl Multiaddr {
     }
 }
 
+#[test]
+fn decapsulate_no_substring() {
+    // 01e0:: -> [1, 224, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    // and [1, 224] is the code for HTTP
+    let addr = Multiaddr::new("/ip6/01e0::/http/example.com").unwrap();
+    let http = Multiaddr::new("/http").unwrap();
+    println!("{:?}", addr);
+    println!("{:?}", http);
+    let decaps = addr.decapsulate(http).unwrap();
+    println!("{:?}", decaps);
+    println!("{}", decaps.to_string());
+}
+
 
 /// A trait for objects which can be converted to a
 /// Multiaddr.
