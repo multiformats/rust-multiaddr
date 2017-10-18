@@ -16,7 +16,7 @@ pub use protocol::Protocol;
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 
 /// Representation of a Multiaddr.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct Multiaddr {
     bytes: Vec<u8>,
 }
