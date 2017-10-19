@@ -14,7 +14,7 @@ use {Result, Error};
 ///! Multiaddr.
 
 macro_rules! build_protocol_enum {
-    {$( $val:expr => $var:ident: $alph:expr, $size:expr, )*} => {
+    {$( $val:expr => $var:ident ( $alph:expr, $size:expr ) ),*} => {
         /// Protocol is the list of all possible protocols.
         #[derive(PartialEq, Eq, Clone, Copy, Debug)]
         pub enum Protocol {
@@ -91,36 +91,36 @@ macro_rules! build_protocol_enum {
 
 build_protocol_enum!(
     // [IP4](https://en.wikipedia.org/wiki/IPv4)
-    4 => IP4: "ip4", 32,
+    4 => IP4("ip4", 32),
     // [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)
-    6 => TCP: "tcp", 16,
+    6 => TCP("tcp", 16),
     // [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol)
-    17 => UDP: "udp", 16,
+    17 => UDP("udp", 16),
     // [DCCP](https://en.wikipedia.org/wiki/Datagram_Congestion_Control_Protocol)
-    33 => DCCP: "dccp", 16,
+    33 => DCCP("dccp", 16),
     // [IP6](https://en.wikipedia.org/wiki/IPv6)
-    41 => IP6: "ip6", 128,
+    41 => IP6("ip6", 128),
     // [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol)
-    132 => SCTP: "sctp", 16,
+    132 => SCTP("sctp", 16),
     // [UDT](https://en.wikipedia.org/wiki/UDP-based_Data_Transfer_Protocol)
-    301 => UDT: "udt", 0,
+    301 => UDT("udt", 0),
     // [UTP](https://en.wikipedia.org/wiki/Micro_Transport_Protocol)
-    302 => UTP: "utp", 0,
+    302 => UTP("utp", 0),
     // [IPFS](https://github.com/ipfs/specs/tree/master/protocol#341-merkledag-paths)
-    421 => IPFS: "ipfs", -1,
+    421 => IPFS("ipfs", -1),
     // [HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol)
-    480 => HTTP: "http", 0,
+    480 => HTTP("http", 0),
     // [HTTPS](https://en.wikipedia.org/wiki/HTTPS)
-    443 => HTTPS: "https", 0,
+    443 => HTTPS("https", 0),
     // Onion
-    444 => ONION: "onion", 80,
+    444 => ONION("onion", 80),
     // Websockets
-    477 => WS: "ws", 0,
+    477 => WS("ws", 0),
     // Websockets secure
-    478 => WSS: "wss", 0,
+    478 => WSS("wss", 0),
     // libp2p webrtc protocols
-    275 => Libp2pWebrtcStar: "libp2p-webrtc-star", 0,
-    276 => Libp2pWebrtcDirect: "libp2p-webrtc-direct", 0,
+    275 => Libp2pWebrtcStar("libp2p-webrtc-star", 0),
+    276 => Libp2pWebrtcDirect("libp2p-webrtc-direct", 0)
 );
 
 
