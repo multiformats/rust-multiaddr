@@ -6,12 +6,12 @@ extern crate byteorder;
 extern crate cid;
 extern crate integer_encoding;
 
-mod protocol;
+pub mod protocol;
 mod parser;
 mod errors;
 
 pub use errors::{Result, Error};
-pub use protocol::Protocol;
+pub use protocol::{Protocol, Addr, AddressSegment, AddressSegmentReaderExt, AddressSegmentWriterExt};
 
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 
