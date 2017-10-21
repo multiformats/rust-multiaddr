@@ -9,7 +9,7 @@ use std::io::Read;
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use cid;
-use integer_encoding::{VarInt, VarIntReader, VarIntWriter};
+use integer_encoding::{VarIntReader, VarIntWriter};
 
 use {Result, Error};
 
@@ -22,6 +22,8 @@ use {Result, Error};
 
 /// Single multiaddress segment with its attached data
 pub trait AddressSegment : fmt::Display + ToString {
+    const STREAM_LENGTH: usize = 0;
+
     fn protocol(&self) -> Protocol;
 
     /// Read address segment data from stream
@@ -35,7 +37,7 @@ pub trait AddressSegment : fmt::Display + ToString {
     ///
     /// In order to obtain a human-readable string representation use
     /// `ToString.to_string` instead.
-    fn to_bytes(&self) -> Vec<u8>;
+    fn to_stream(&self, stream: &mut io::Write) -> io::Result<()>;
 }
 
 impl<T> From<T> for Protocol where T: AddressSegment {
@@ -65,7 +67,7 @@ pub trait AddressSegmentWriterExt<T: AddressSegment> {
 }
 impl<T: AddressSegment, W: io::Write> AddressSegmentWriterExt<T> for W {
     fn write_addr(&mut self, addr: &T) -> io::Result<()> {
-        self.write_all(addr.to_bytes().as_slice())
+        addr.to_stream(self)
     }
 }
 
@@ -148,8 +150,8 @@ macro_rules! derive_for_empty_addr {
                 Ok($name {})
             }
 
-            fn to_bytes(&self) -> Vec<u8> {
-                Vec::new()
+            fn to_stream(&self, _: &mut io::Write) -> io::Result<()> {
+                Ok(())
             }
         }
 
@@ -164,6 +166,8 @@ pub struct IP4Addr(pub Ipv4Addr);
 
 derive_for_wrapping_addr!(IP4Addr: Display, FromStr, From<Ipv4Addr>);
 impl AddressSegment for IP4Addr {
+    const STREAM_LENGTH: usize = 4;
+
     fn protocol(&self) -> Protocol {
         Protocol::IP4
     }
@@ -175,10 +179,8 @@ impl AddressSegment for IP4Addr {
         Ok(IP4Addr(Ipv4Addr::new(buf[0], buf[1], buf[2], buf[3])))
     }
 
-    fn to_bytes(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(4);
-        res.extend(self.0.octets().iter().cloned());
-        res
+    fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
+        stream.write_all(&self.0.octets())
     }
 }
 
@@ -189,6 +191,8 @@ pub struct TCPAddr(pub u16);
 
 derive_for_wrapping_addr!(TCPAddr: Display, FromStr, From<u16>);
 impl AddressSegment for TCPAddr {
+    const STREAM_LENGTH: usize = 2;
+
     fn protocol(&self) -> Protocol {
         Protocol::TCP
     }
@@ -197,10 +201,8 @@ impl AddressSegment for TCPAddr {
         Ok(TCPAddr(stream.read_u16::<BigEndian>()?))
     }
 
-    fn to_bytes(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(2);
-        res.write_u16::<BigEndian>(self.0).unwrap();
-        res
+    fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
+        Ok(stream.write_u16::<BigEndian>(self.0)?)
     }
 }
 
@@ -211,6 +213,8 @@ pub struct UDPAddr(pub u16);
 
 derive_for_wrapping_addr!(UDPAddr: Display, FromStr, From<u16>);
 impl AddressSegment for UDPAddr {
+    const STREAM_LENGTH: usize = 2;
+
     fn protocol(&self) -> Protocol {
         Protocol::UDP
     }
@@ -219,10 +223,8 @@ impl AddressSegment for UDPAddr {
         Ok(UDPAddr(stream.read_u16::<BigEndian>()?))
     }
 
-    fn to_bytes(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(2);
-        res.write_u16::<BigEndian>(self.0).unwrap();
-        res
+    fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
+        Ok(stream.write_u16::<BigEndian>(self.0)?)
     }
 }
 
@@ -233,6 +235,8 @@ pub struct DCCPAddr(pub u16);
 
 derive_for_wrapping_addr!(DCCPAddr: Display, FromStr, From<u16>);
 impl AddressSegment for DCCPAddr {
+    const STREAM_LENGTH: usize = 2;
+
     fn protocol(&self) -> Protocol {
         Protocol::DCCP
     }
@@ -241,10 +245,8 @@ impl AddressSegment for DCCPAddr {
         Ok(DCCPAddr(stream.read_u16::<BigEndian>()?))
     }
 
-    fn to_bytes(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(2);
-        res.write_u16::<BigEndian>(self.0).unwrap();
-        res
+    fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
+        Ok(stream.write_u16::<BigEndian>(self.0)?)
     }
 }
 
@@ -255,6 +257,8 @@ pub struct IP6Addr(pub Ipv6Addr);
 
 derive_for_wrapping_addr!(IP6Addr: Display, FromStr, From<Ipv6Addr>);
 impl AddressSegment for IP6Addr {
+    const STREAM_LENGTH: usize = 16;
+
     fn protocol(&self) -> Protocol {
         Protocol::IP6
     }
@@ -274,12 +278,11 @@ impl AddressSegment for IP6Addr {
         ))
     }
 
-    fn to_bytes(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(16);
+    fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
         for segment in &self.0.segments() {
-            res.write_u16::<BigEndian>(*segment).unwrap();
+            stream.write_u16::<BigEndian>(*segment)?;
         }
-        res
+        Ok(())
     }
 }
 
@@ -290,6 +293,8 @@ pub struct SCTPAddr(pub u16);
 
 derive_for_wrapping_addr!(SCTPAddr: Display, FromStr, From<u16>);
 impl AddressSegment for SCTPAddr {
+    const STREAM_LENGTH: usize = 2;
+
     fn protocol(&self) -> Protocol {
         Protocol::SCTP
     }
@@ -298,10 +303,8 @@ impl AddressSegment for SCTPAddr {
         Ok(SCTPAddr(stream.read_u16::<BigEndian>()?))
     }
 
-    fn to_bytes(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(2);
-        res.write_u16::<BigEndian>(self.0).unwrap();
-        res
+    fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
+        Ok(stream.write_u16::<BigEndian>(self.0)?)
     }
 }
 
@@ -360,6 +363,8 @@ impl IPFSAddr {
 }
 
 impl AddressSegment for IPFSAddr {
+    const STREAM_LENGTH: usize = 34;
+
     fn protocol(&self) -> Protocol {
         Protocol::IPFS
     }
@@ -377,13 +382,13 @@ impl AddressSegment for IPFSAddr {
         Ok(IPFSAddr(cid))
     }
 
-    fn to_bytes(&self) -> Vec<u8> {
+    fn to_stream(&self, mut stream: &mut io::Write) -> io::Result<()> {
         let bytes = self.0.to_bytes();
 
-        let mut res = Vec::with_capacity(bytes.len().required_space() + bytes.len());
-        res.write_varint(bytes.len()).unwrap();
-        res.extend(bytes);
-        res
+        stream.write_varint(bytes.len())?;
+        stream.write_all(bytes.as_ref())?;
+
+        Ok(())
     }
 }
 
@@ -427,6 +432,8 @@ pub struct OnionAddr(pub Box<[u8; 10]>);
 
 derive_for_empty_addr!(OnionAddr: Display);
 impl AddressSegment for OnionAddr {
+    const STREAM_LENGTH: usize = 80;
+
     fn protocol(&self) -> Protocol {
         Protocol::Onion
     }
@@ -435,8 +442,8 @@ impl AddressSegment for OnionAddr {
         Err(Error::ParsingError)
     }
 
-    fn to_bytes(&self) -> Vec<u8> {
-        Vec::new()
+    fn to_stream(&self, _: &mut io::Write) -> io::Result<()> {
+        Err(io::Error::from(io::ErrorKind::BrokenPipe))
     }
 }
 
@@ -610,9 +617,32 @@ macro_rules! build_enums {
                 Addr::from_protocol_stream(protocol, stream)
             }
 
-            fn to_bytes(&self) -> Vec<u8> {
+            fn to_stream(&self, mut stream: &mut io::Write) -> io::Result<()> {
                 match self {
-                    $( &Addr::$var(ref addr) => addr.to_bytes(), )*
+                    $( &Addr::$var(ref addr) => {
+                        // Write protocol number
+                        stream.write_varint(u64::from(addr.protocol()))?;
+
+                        // Serialize data of the underlying protocol
+                        addr.to_stream(stream)?;
+                    }, )*
+                    
+                    // Need extra match arm because of non-exhaustiveness
+                    _ => unreachable!()
+                }
+                
+                Ok(())
+            }
+        }
+
+        impl Addr {
+            /// Serialize only the variant's data to bytes
+            ///
+            /// Will return the result of calling `.to_bytes()` on the inner
+            /// address segment instance.
+            pub fn data_to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
+                match self {
+                    $( &Addr::$var(ref addr) => addr.to_stream(stream), )*
                     _ => unreachable!()
                 }
             }
@@ -671,7 +701,9 @@ impl Protocol {
     ///
     #[deprecated(note = "Use `Addr::from_protocol_str` and `.to_bytes()` instead")]
     pub fn string_to_bytes(&self, a: &str) -> Result<Vec<u8>> {
-        Ok(Addr::from_protocol_str(*self, a)?.to_bytes())
+        let mut vec = Vec::new();
+        Addr::from_protocol_str(*self, a)?.data_to_stream(&mut vec).unwrap();
+        Ok(vec)
     }
 
     /// Convert an array slice to the string representation.
