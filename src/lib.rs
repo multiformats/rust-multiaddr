@@ -11,14 +11,14 @@ mod parser;
 mod errors;
 
 pub use errors::{Result, Error};
-pub use protocol::{Protocol, Addr, AddressSegment, AddressSegmentReaderExt, AddressSegmentWriterExt};
+pub use protocol::{Protocol, Segment, AddressSegment, AddressSegmentReaderExt, AddressSegmentWriterExt};
 
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 
 /// Representation of a Multiaddr.
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct Multiaddr {
-    addr: Vec<Addr>,
+    addr: Vec<Segment>,
 
     #[deprecated]
     bytes: Vec<u8>
@@ -66,7 +66,7 @@ impl Multiaddr {
         Ok(Multiaddr { bytes: Self::_addr_to_bytes(&addr), addr: addr })
     }
 
-    fn _addr_to_bytes(addr: &Vec<Addr>) -> Vec<u8> {
+    fn _addr_to_bytes(addr: &Vec<Segment>) -> Vec<u8> {
         let mut bytes = Vec::new();
         for addr_segment in addr {
             addr_segment.to_stream(&mut bytes).unwrap();
@@ -114,10 +114,10 @@ impl Multiaddr {
     /// use multiaddr::{Multiaddr, protocol};
     ///
     /// let address = Multiaddr::new("/ip4/127.0.0.1").unwrap();
-    /// assert_eq!(address.segments(), [protocol::Addr::IP4(protocol::IP4Addr(Ipv4Addr::new(127, 0, 0, 1)))]);
+    /// assert_eq!(address.segments(), [protocol::Segment::IP4(protocol::IP4Segment(Ipv4Addr::new(127, 0, 0, 1)))]);
     /// ```
     ///
-    pub fn segments(&self) -> &[Addr] {
+    pub fn segments(&self) -> &[Segment] {
         &self.addr
     }
 

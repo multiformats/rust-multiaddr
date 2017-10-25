@@ -72,10 +72,10 @@ impl<T: AddressSegment, W: io::Write> AddressSegmentWriterExt<T> for W {
 }
 
 
-macro_rules! derive_for_wrapping_addr {
+macro_rules! derive_for_wrapping_segment {
     ( $name:ident ) => {};
     ( $name:ident , $( $rest:tt )+ ) => {
-        derive_for_wrapping_addr!($name : $($rest)*);
+        derive_for_wrapping_segment!($name : $($rest)*);
     };
 
     ( $name:ident : Display $( $rest:tt )* ) => {
@@ -85,7 +85,7 @@ macro_rules! derive_for_wrapping_addr {
             }
         }
 
-        derive_for_wrapping_addr!($name $($rest)*);
+        derive_for_wrapping_segment!($name $($rest)*);
     };
 
     ( $name:ident : FromStr $( $rest:tt )* ) => {
@@ -97,7 +97,7 @@ macro_rules! derive_for_wrapping_addr {
             }
         }
 
-        derive_for_wrapping_addr!($name $($rest)*);
+        derive_for_wrapping_segment!($name $($rest)*);
     };
 
     ( $name:ident : From < $type:path > $( $rest:tt )* ) => {
@@ -107,15 +107,15 @@ macro_rules! derive_for_wrapping_addr {
             }
         }
 
-        derive_for_wrapping_addr!($name $($rest)*);
+        derive_for_wrapping_segment!($name $($rest)*);
     };
 }
 
 
-macro_rules! derive_for_empty_addr {
+macro_rules! derive_for_empty_segment {
     ( $name:ident ) => {};
     ( $name:ident , $( $rest:tt )+ ) => {
-        derive_for_empty_addr!($name : $($rest)*);
+        derive_for_empty_segment!($name : $($rest)*);
     };
 
     ( $name:ident : Display $( $rest:tt )* ) => {
@@ -125,7 +125,7 @@ macro_rules! derive_for_empty_addr {
             }
         }
 
-        derive_for_empty_addr!($name $($rest)*);
+        derive_for_empty_segment!($name $($rest)*);
     };
 
     ( $name:ident : FromStr $( $rest:tt )* ) => {
@@ -137,10 +137,10 @@ macro_rules! derive_for_empty_addr {
             }
         }
 
-        derive_for_empty_addr!($name $($rest)*);
+        derive_for_empty_segment!($name $($rest)*);
     };
 
-    ( $name:ident : Addr < $proto:ident > $( $rest:tt )* ) => {
+    ( $name:ident : AddressSegment < $proto:ident > $( $rest:tt )* ) => {
         impl AddressSegment for $name {
             fn protocol(&self) -> Protocol {
                 Protocol::$proto
@@ -155,17 +155,17 @@ macro_rules! derive_for_empty_addr {
             }
         }
 
-        derive_for_empty_addr!($name $($rest)*);
+        derive_for_empty_segment!($name $($rest)*);
     };
 }
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct IP4Addr(pub Ipv4Addr);
+pub struct IP4Segment(pub Ipv4Addr);
 
-derive_for_wrapping_addr!(IP4Addr: Display, FromStr, From<Ipv4Addr>);
-impl AddressSegment for IP4Addr {
+derive_for_wrapping_segment!(IP4Segment: Display, FromStr, From<Ipv4Addr>);
+impl AddressSegment for IP4Segment {
     const STREAM_LENGTH: usize = 4;
 
     fn protocol(&self) -> Protocol {
@@ -176,7 +176,7 @@ impl AddressSegment for IP4Addr {
         let mut buf = [0u8; 4];
         stream.read_exact(&mut buf)?;
 
-        Ok(IP4Addr(Ipv4Addr::new(buf[0], buf[1], buf[2], buf[3])))
+        Ok(IP4Segment(Ipv4Addr::new(buf[0], buf[1], buf[2], buf[3])))
     }
 
     fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
@@ -187,10 +187,10 @@ impl AddressSegment for IP4Addr {
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct TCPAddr(pub u16);
+pub struct TCPSegment(pub u16);
 
-derive_for_wrapping_addr!(TCPAddr: Display, FromStr, From<u16>);
-impl AddressSegment for TCPAddr {
+derive_for_wrapping_segment!(TCPSegment: Display, FromStr, From<u16>);
+impl AddressSegment for TCPSegment {
     const STREAM_LENGTH: usize = 2;
 
     fn protocol(&self) -> Protocol {
@@ -198,7 +198,7 @@ impl AddressSegment for TCPAddr {
     }
 
     fn from_stream(stream: &mut io::Read) -> Result<Self> {
-        Ok(TCPAddr(stream.read_u16::<BigEndian>()?))
+        Ok(TCPSegment(stream.read_u16::<BigEndian>()?))
     }
 
     fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
@@ -209,10 +209,10 @@ impl AddressSegment for TCPAddr {
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct UDPAddr(pub u16);
+pub struct UDPSegment(pub u16);
 
-derive_for_wrapping_addr!(UDPAddr: Display, FromStr, From<u16>);
-impl AddressSegment for UDPAddr {
+derive_for_wrapping_segment!(UDPSegment: Display, FromStr, From<u16>);
+impl AddressSegment for UDPSegment {
     const STREAM_LENGTH: usize = 2;
 
     fn protocol(&self) -> Protocol {
@@ -220,7 +220,7 @@ impl AddressSegment for UDPAddr {
     }
 
     fn from_stream(stream: &mut io::Read) -> Result<Self> {
-        Ok(UDPAddr(stream.read_u16::<BigEndian>()?))
+        Ok(UDPSegment(stream.read_u16::<BigEndian>()?))
     }
 
     fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
@@ -231,10 +231,10 @@ impl AddressSegment for UDPAddr {
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct DCCPAddr(pub u16);
+pub struct DCCPSegment(pub u16);
 
-derive_for_wrapping_addr!(DCCPAddr: Display, FromStr, From<u16>);
-impl AddressSegment for DCCPAddr {
+derive_for_wrapping_segment!(DCCPSegment: Display, FromStr, From<u16>);
+impl AddressSegment for DCCPSegment {
     const STREAM_LENGTH: usize = 2;
 
     fn protocol(&self) -> Protocol {
@@ -242,7 +242,7 @@ impl AddressSegment for DCCPAddr {
     }
 
     fn from_stream(stream: &mut io::Read) -> Result<Self> {
-        Ok(DCCPAddr(stream.read_u16::<BigEndian>()?))
+        Ok(DCCPSegment(stream.read_u16::<BigEndian>()?))
     }
 
     fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
@@ -253,10 +253,10 @@ impl AddressSegment for DCCPAddr {
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct IP6Addr(pub Ipv6Addr);
+pub struct IP6Segment(pub Ipv6Addr);
 
-derive_for_wrapping_addr!(IP6Addr: Display, FromStr, From<Ipv6Addr>);
-impl AddressSegment for IP6Addr {
+derive_for_wrapping_segment!(IP6Segment: Display, FromStr, From<Ipv6Addr>);
+impl AddressSegment for IP6Segment {
     const STREAM_LENGTH: usize = 16;
 
     fn protocol(&self) -> Protocol {
@@ -264,7 +264,7 @@ impl AddressSegment for IP6Addr {
     }
 
     fn from_stream(stream: &mut io::Read) -> Result<Self> {
-        Ok(IP6Addr(
+        Ok(IP6Segment(
             Ipv6Addr::new(
                 stream.read_u16::<BigEndian>()?,
                 stream.read_u16::<BigEndian>()?,
@@ -289,10 +289,10 @@ impl AddressSegment for IP6Addr {
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct SCTPAddr(pub u16);
+pub struct SCTPSegment(pub u16);
 
-derive_for_wrapping_addr!(SCTPAddr: Display, FromStr, From<u16>);
-impl AddressSegment for SCTPAddr {
+derive_for_wrapping_segment!(SCTPSegment: Display, FromStr, From<u16>);
+impl AddressSegment for SCTPSegment {
     const STREAM_LENGTH: usize = 2;
 
     fn protocol(&self) -> Protocol {
@@ -300,7 +300,7 @@ impl AddressSegment for SCTPAddr {
     }
 
     fn from_stream(stream: &mut io::Read) -> Result<Self> {
-        Ok(SCTPAddr(stream.read_u16::<BigEndian>()?))
+        Ok(SCTPSegment(stream.read_u16::<BigEndian>()?))
     }
 
     fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
@@ -311,24 +311,24 @@ impl AddressSegment for SCTPAddr {
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct UDTAddr;
+pub struct UDTSegment;
 
-derive_for_empty_addr!(UDTAddr: Display, FromStr, Addr<UDT>);
+derive_for_empty_segment!(UDTSegment: Display, FromStr, AddressSegment<UDT>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct UTPAddr;
+pub struct UTPSegment;
 
-derive_for_empty_addr!(UTPAddr: Display, FromStr, Addr<UTP>);
+derive_for_empty_segment!(UTPSegment: Display, FromStr, AddressSegment<UTP>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct IPFSAddr(pub cid::Cid);
+pub struct IPFSSegment(pub cid::Cid);
 
-derive_for_wrapping_addr!(IPFSAddr: Display, From<cid::Cid>);
-impl IPFSAddr {
+derive_for_wrapping_segment!(IPFSSegment: Display, From<cid::Cid>);
+impl IPFSSegment {
     fn _read_cid_polyfill(stream: &mut io::Read) -> Result<cid::Cid> {
         // Read minimal CID length at start to check for CIDv0
         let mut buf = [0u8; 34];
@@ -362,7 +362,7 @@ impl IPFSAddr {
     }
 }
 
-impl AddressSegment for IPFSAddr {
+impl AddressSegment for IPFSSegment {
     const STREAM_LENGTH: usize = 34;
 
     fn protocol(&self) -> Protocol {
@@ -379,7 +379,7 @@ impl AddressSegment for IPFSAddr {
             err
         })?;
 
-        Ok(IPFSAddr(cid))
+        Ok(IPFSSegment(cid))
     }
 
     fn to_stream(&self, mut stream: &mut io::Write) -> io::Result<()> {
@@ -392,16 +392,16 @@ impl AddressSegment for IPFSAddr {
     }
 }
 
-impl FromStr for IPFSAddr {
+impl FromStr for IPFSSegment {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
         //FIXME: `cid::Cid` does not implement `FromStr`
-        Ok(IPFSAddr(cid::Cid::from(s)?))
+        Ok(IPFSSegment(cid::Cid::from(s)?))
     }
 }
 
-impl hash::Hash for IPFSAddr {
+impl hash::Hash for IPFSSegment {
     fn hash<H>(&self, state: &mut H) where H: hash::Hasher {
         //FIXME: `cid::Cid` does not derive `Hash`
         state.write_usize(self.0.version as usize);
@@ -413,25 +413,25 @@ impl hash::Hash for IPFSAddr {
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct HTTPAddr;
+pub struct HTTPSegment;
 
-derive_for_empty_addr!(HTTPAddr: Display, FromStr, Addr<HTTP>);
+derive_for_empty_segment!(HTTPSegment: Display, FromStr, AddressSegment<HTTP>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct HTTPSAddr;
+pub struct HTTPSSegment;
 
-derive_for_empty_addr!(HTTPSAddr: Display, FromStr, Addr<HTTPS>);
+derive_for_empty_segment!(HTTPSSegment: Display, FromStr, AddressSegment<HTTPS>);
 
 
 
 //TODO: Properly parse and format union addresses
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct OnionAddr(pub Box<[u8; 10]>);
+pub struct OnionSegment(pub Box<[u8; 10]>);
 
-derive_for_empty_addr!(OnionAddr: Display);
-impl AddressSegment for OnionAddr {
+derive_for_empty_segment!(OnionSegment: Display);
+impl AddressSegment for OnionSegment {
     const STREAM_LENGTH: usize = 80;
 
     fn protocol(&self) -> Protocol {
@@ -447,7 +447,7 @@ impl AddressSegment for OnionAddr {
     }
 }
 
-impl FromStr for OnionAddr {
+impl FromStr for OnionSegment {
     type Err = Error;
 
     fn from_str(_: &str) -> Result<Self> {
@@ -458,30 +458,30 @@ impl FromStr for OnionAddr {
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct WSAddr;
+pub struct WSSegment;
 
-derive_for_empty_addr!(WSAddr: Display, FromStr, Addr<WS>);
-
-
-
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct WSSAddr;
-
-derive_for_empty_addr!(WSSAddr: Display, FromStr, Addr<WSS>);
+derive_for_empty_segment!(WSSegment: Display, FromStr, AddressSegment<WS>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct Libp2pWebrtcStarAddr;
+pub struct WSSSegment;
 
-derive_for_empty_addr!(Libp2pWebrtcStarAddr: Display, FromStr, Addr<Libp2pWebrtcStar>);
+derive_for_empty_segment!(WSSSegment: Display, FromStr, AddressSegment<WSS>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct Libp2pWebrtcDirectAddr;
+pub struct Libp2pWebrtcStarSegment;
 
-derive_for_empty_addr!(Libp2pWebrtcDirectAddr: Display, FromStr, Addr<Libp2pWebrtcDirect>);
+derive_for_empty_segment!(Libp2pWebrtcStarSegment: Display, FromStr, AddressSegment<Libp2pWebrtcStar>);
+
+
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct Libp2pWebrtcDirectSegment;
+
+derive_for_empty_segment!(Libp2pWebrtcDirectSegment: Display, FromStr, AddressSegment<Libp2pWebrtcDirect>);
 
 
 
@@ -548,7 +548,7 @@ macro_rules! build_enums {
             /// `Protocol` in bits.
             ///
             /// Note the values are only estimates and calling `.to_stream()`
-            /// on a corresponding `Addr` instance may result in a buffer of a
+            /// on a corresponding `Segment` instance may result in a buffer of a
             /// different size. The only noteworthy execption is a returned
             /// value of `0` which guarantees that the given protocol will
             /// never expect a value parameter and will never read or write
@@ -584,7 +584,7 @@ macro_rules! build_enums {
         /// Enumeration of all known address segment types
         //XXX: #[non_exhaustive] is not stable yet
         #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-        pub enum Addr {
+        pub enum Segment {
             $( $var( $addr_type ), )*
             
             /// We want to be able to add new multiaddrs types in the future
@@ -592,49 +592,49 @@ macro_rules! build_enums {
             __Nonexhaustive
         }
 
-        impl Addr {
+        impl Segment {
             /// Create address segment for the given protocol number and with
             /// data from `stream`
             pub fn from_protocol_stream(protocol: Protocol, stream: &mut io::Read) -> Result<Self> {
                 Ok(match protocol {
-                    $( Protocol::$var => Addr::$var($addr_type::from_stream(stream)?), )*
+                    $( Protocol::$var => Segment::$var($addr_type::from_stream(stream)?), )*
                     _ => unreachable!()
                 })
             }
 
             pub fn from_protocol_str(protocol: Protocol, s: &str) -> Result<Self> {
                 Ok(match protocol {
-                    $( Protocol::$var => Addr::$var($addr_type::from_str(s)?), )*
+                    $( Protocol::$var => Segment::$var($addr_type::from_str(s)?), )*
                     _ => unreachable!()
                 })
             }
         }
 
-        impl fmt::Display for Addr {
+        impl fmt::Display for Segment {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 match self {
-                    $( &Addr::$var(ref addr) => fmt::Display::fmt(addr, f), )*
+                    $( &Segment::$var(ref addr) => fmt::Display::fmt(addr, f), )*
                     _ => unreachable!()
                 }
             }
         }
 
-        impl AddressSegment for Addr {
+        impl AddressSegment for Segment {
             fn protocol(&self) -> Protocol {
                 match self {
-                    $( &Addr::$var(ref addr) => addr.protocol(), )*
+                    $( &Segment::$var(ref addr) => addr.protocol(), )*
                     _ => unreachable!()
                 }
             }
 
             fn from_stream(mut stream: &mut io::Read) -> Result<Self> {
                 let protocol = Protocol::from(stream.read_varint()?)?;
-                Addr::from_protocol_stream(protocol, stream)
+                Segment::from_protocol_stream(protocol, stream)
             }
 
             fn to_stream(&self, mut stream: &mut io::Write) -> io::Result<()> {
                 match self {
-                    $( &Addr::$var(ref addr) => {
+                    $( &Segment::$var(ref addr) => {
                         // Write protocol number
                         stream.write_varint(u64::from(addr.protocol()))?;
 
@@ -650,14 +650,14 @@ macro_rules! build_enums {
             }
         }
 
-        impl Addr {
+        impl Segment {
             /// Serialize only the variant's data to bytes
             ///
             /// Will return the result of calling `.to_bytes()` on the inner
             /// address segment instance.
             pub fn data_to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
                 match self {
-                    $( &Addr::$var(ref addr) => addr.to_stream(stream), )*
+                    $( &Segment::$var(ref addr) => addr.to_stream(stream), )*
                     _ => unreachable!()
                 }
             }
@@ -668,36 +668,36 @@ macro_rules! build_enums {
 
 build_enums!(
     // [IP4](https://en.wikipedia.org/wiki/IPv4)
-    4 => IP4("ip4") for IP4Addr,
+    4 => IP4("ip4") for IP4Segment,
     // [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)
-    6 => TCP("tcp") for TCPAddr,
+    6 => TCP("tcp") for TCPSegment,
     // [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol)
-    17 => UDP("udp") for UDPAddr,
+    17 => UDP("udp") for UDPSegment,
     // [DCCP](https://en.wikipedia.org/wiki/Datagram_Congestion_Control_Protocol)
-    33 => DCCP("dccp") for DCCPAddr,
+    33 => DCCP("dccp") for DCCPSegment,
     // [IP6](https://en.wikipedia.org/wiki/IPv6)
-    41 => IP6("ip6") for IP6Addr,
+    41 => IP6("ip6") for IP6Segment,
     // [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol)
-    132 => SCTP("sctp") for SCTPAddr,
+    132 => SCTP("sctp") for SCTPSegment,
     // [UDT](https://en.wikipedia.org/wiki/UDP-based_Data_Transfer_Protocol)
-    301 => UDT("udt") for UDTAddr,
+    301 => UDT("udt") for UDTSegment,
     // [UTP](https://en.wikipedia.org/wiki/Micro_Transport_Protocol)
-    302 => UTP("utp") for UTPAddr,
+    302 => UTP("utp") for UTPSegment,
     // [IPFS](https://github.com/ipfs/specs/tree/master/protocol#341-merkledag-paths)
-    421 => IPFS("ipfs") for IPFSAddr,
+    421 => IPFS("ipfs") for IPFSSegment,
     // [HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol)
-    480 => HTTP("http") for HTTPAddr,
+    480 => HTTP("http") for HTTPSegment,
     // [HTTPS](https://en.wikipedia.org/wiki/HTTPS)
-    443 => HTTPS("https") for HTTPSAddr,
+    443 => HTTPS("https") for HTTPSSegment,
     // Onion
-    444 => Onion("onion") for OnionAddr,
+    444 => Onion("onion") for OnionSegment,
     // Websockets
-    477 => WS("ws") for WSAddr,
+    477 => WS("ws") for WSSegment,
     // Websockets secure
-    478 => WSS("wss") for WSSAddr,
+    478 => WSS("wss") for WSSSegment,
     // libp2p webrtc protocols
-    275 => Libp2pWebrtcStar("libp2p-webrtc-star") for Libp2pWebrtcStarAddr,
-    276 => Libp2pWebrtcDirect("libp2p-webrtc-direct") for Libp2pWebrtcDirectAddr
+    275 => Libp2pWebrtcStar("libp2p-webrtc-star") for Libp2pWebrtcStarSegment,
+    276 => Libp2pWebrtcDirect("libp2p-webrtc-direct") for Libp2pWebrtcDirectSegment
 );
 
 
@@ -714,10 +714,10 @@ impl Protocol {
     /// assert_eq!(proto.string_to_bytes("127.0.0.1").unwrap(), [127, 0, 0, 1]);
     /// ```
     ///
-    #[deprecated(note = "Use `Addr::from_protocol_str` and `.to_bytes()` instead")]
+    #[deprecated(note = "Use `Segment::from_protocol_str` and `.data_to_stream()` instead")]
     pub fn string_to_bytes(&self, a: &str) -> Result<Vec<u8>> {
         let mut vec = Vec::new();
-        Addr::from_protocol_str(*self, a)?.data_to_stream(&mut vec).unwrap();
+        Segment::from_protocol_str(*self, a)?.data_to_stream(&mut vec).unwrap();
         Ok(vec)
     }
 
@@ -738,11 +738,11 @@ impl Protocol {
     /// If there is no address representation for the protocol, like for `https`
     /// then `None` is returned.
     ///
-    #[deprecated(note = "Use `Addr::from_protocol_stream` and `.to_string()` instead")]
+    #[deprecated(note = "Use `Segment::from_protocol_stream` and `.to_string()` instead")]
     pub fn bytes_to_string(&self, b: &[u8]) -> Result<Option<String>> {
         let mut cursor = Cursor::new(b);
 
-        let string = Addr::from_protocol_stream(*self, &mut cursor)?.to_string();
+        let string = Segment::from_protocol_stream(*self, &mut cursor)?.to_string();
         if string.len() < 1 {
             Ok(None)
         } else {

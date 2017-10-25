@@ -1,10 +1,10 @@
 use std::str::FromStr;
 use std::fmt::Write;
 
-use protocol::{Addr, AddressSegment, Protocol};
+use protocol::{Segment, AddressSegment, Protocol};
 use {Result, Error};
 
-pub fn multiaddr_from_str(input: &str) -> Result<Vec<Addr>> {
+pub fn multiaddr_from_str(input: &str) -> Result<Vec<Segment>> {
     // Drop trailing slashes then split address into segment parts
     let input = input.trim_right_matches('/');
     let mut parts = input.split('/');
@@ -25,14 +25,14 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<Addr>> {
         };
 
         // Parse and store segment data
-        multiaddr.push(Addr::from_protocol_str(p, s)?);
+        multiaddr.push(Segment::from_protocol_str(p, s)?);
     }
 
     Ok(multiaddr)
 }
 
 
-pub fn multiaddr_to_str(addr: &Vec<Addr>) -> String {
+pub fn multiaddr_to_str(addr: &Vec<Segment>) -> String {
     let mut result = String::new();
 
     for addr_segment in addr {
