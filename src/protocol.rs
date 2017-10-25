@@ -510,10 +510,7 @@ macro_rules! build_enums {
 
         impl ToString for Protocol {
             fn to_string(&self) -> String {
-                match *self {
-                    $( Protocol::$var => $alph.to_string(), )*
-                    _ => unreachable!()
-                }
+                self.as_str().to_string()
             }
         }
 
@@ -560,6 +557,15 @@ macro_rules! build_enums {
             pub fn size(&self) -> isize {
                 match *self {
                     $( Protocol::$var => $size, )*
+                    _ => unreachable!()
+                }
+            }
+
+            /// Obtain the name of this protocol variant as an human-readable
+            /// string
+            pub fn as_str(&self) -> &str {
+                match *self {
+                    $( Protocol::$var => $alph, )*
                     _ => unreachable!()
                 }
             }

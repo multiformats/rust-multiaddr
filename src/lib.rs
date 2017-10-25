@@ -18,7 +18,10 @@ use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 /// Representation of a Multiaddr.
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct Multiaddr {
-    bytes: Vec<u8>,
+    addr: Vec<Addr>,
+
+    #[deprecated]
+    bytes: Vec<u8>
 }
 
 impl ToString for Multiaddr {
@@ -34,10 +37,11 @@ impl ToString for Multiaddr {
     /// ```
     ///
     fn to_string(&self) -> String {
-        parser::address_from_bytes(self.as_slice()).expect("failed to validate at construction")
+        parser::multiaddr_to_str(&self.addr)
     }
 }
 
+#[allow(deprecated)] // We have to access our own deprecated `bytes` field
 impl Multiaddr {
     /// Create a new multiaddr based on a string representation, like
     /// `/ip4/127.0.0.1/udp/1234`.
@@ -57,17 +61,26 @@ impl Multiaddr {
     /// ```
     ///
     pub fn new(input: &str) -> Result<Multiaddr> {
-        let bytes = parser::multiaddr_from_str(input)?;
+        let addr = parser::multiaddr_from_str(input)?;
 
-        Ok(Multiaddr { bytes: bytes })
+        Ok(Multiaddr { bytes: Self::_addr_to_bytes(&addr), addr: addr })
+    }
+
+    fn _addr_to_bytes(addr: &Vec<Addr>) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        for addr_segment in addr {
+            addr_segment.to_stream(&mut bytes).unwrap();
+        }
+        bytes
     }
 
     /// Return a copy to disallow changing the bytes directly
     pub fn to_bytes(&self) -> Vec<u8> {
-        self.bytes.to_owned()
+        Self::_addr_to_bytes(&self.addr)
     }
 
     /// Extracts a slice containing the entire underlying vector.
+    #[deprecated(note="Use `.to_bytes()` instead")]
     pub fn as_slice(&self) -> &[u8] {
         &self.bytes
     }
@@ -85,8 +98,27 @@ impl Multiaddr {
     /// assert_eq!(address.protocol(), vec![Protocol::IP4]);
     /// ```
     ///
+    #[deprecated(note="Use `.segments()` instead")]
     pub fn protocol(&self) -> Vec<Protocol> {
-        parser::protocol_from_bytes(&self.bytes[..]).expect("failed to validate at construction")
+        self.addr.iter().map(|s| s.protocol()).collect()
+    }
+
+    /// Return the individual address segments of this multiaddr
+    ///
+    /// # Examples
+    ///
+    /// A single protocol
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use multiaddr::{Multiaddr, protocol};
+    ///
+    /// let address = Multiaddr::new("/ip4/127.0.0.1").unwrap();
+    /// assert_eq!(address.segments(), [protocol::Addr::IP4(protocol::IP4Addr(Ipv4Addr::new(127, 0, 0, 1)))]);
+    /// ```
+    ///
+    pub fn segments(&self) -> &[Addr] {
+        &self.addr
     }
 
     /// Wrap a given Multiaddr and return the combination.
@@ -102,12 +134,10 @@ impl Multiaddr {
     /// ```
     ///
     pub fn encapsulate<T: ToMultiaddr>(&self, input: T) -> Result<Multiaddr> {
-        let new = input.to_multiaddr()?;
-        let mut bytes = self.bytes.clone();
-
-        bytes.extend(new.to_bytes());
-
-        Ok(Multiaddr { bytes: bytes })
+        let mut multiaddr = self.clone();
+        multiaddr.addr.extend(input.to_multiaddr()?.addr);
+        multiaddr.bytes = Self::_addr_to_bytes(&multiaddr.addr);
+        Ok(multiaddr)
     }
 
     /// Remove the outer most address from itself.
@@ -138,36 +168,16 @@ impl Multiaddr {
     /// ```
     ///
     pub fn decapsulate<T: ToMultiaddr>(&self, input: T) -> Result<Multiaddr> {
-        let input = input.to_multiaddr()?.to_bytes();
+        let input = input.to_multiaddr()?;
 
-        let bytes_len = self.bytes.len();
-        let input_length = input.len();
-
-        let mut input_pos = 0;
-        let mut matches = false;
-
-        for (i, _) in self.bytes.iter().enumerate() {
-            let next = i + input_length;
-
-            if next > bytes_len {
-                continue;
-            }
-
-            if &self.bytes[i..next] == input.as_slice() {
-                matches = true;
-                input_pos = i;
-                break;
+        for (idx, addr_window) in self.addr.windows(input.addr.len()).enumerate() {
+            if addr_window == input.addr.as_slice() {
+                let addr = self.addr.iter().take(idx).map(|s| s.clone()).collect();
+                return Ok(Multiaddr { bytes: Self::_addr_to_bytes(&addr), addr: addr });
             }
         }
 
-        if !matches {
-            return Ok(Multiaddr { bytes: self.bytes.clone() });
-        }
-
-        let mut bytes = self.bytes.clone();
-        bytes.truncate(input_pos);
-
-        Ok(Multiaddr { bytes: bytes })
+        Ok(self.clone())
     }
 }
 
