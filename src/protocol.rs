@@ -486,7 +486,7 @@ derive_for_empty_addr!(Libp2pWebrtcDirectAddr: Display, FromStr, Addr<Libp2pWebr
 
 
 macro_rules! build_enums {
-    { $( $val:expr => $var:ident ( $alph:expr, $size:expr ) for $addr_type:ident ),* } => {
+    { $( $val:expr => $var:ident ( $alph:expr ) for $addr_type:ident ),* } => {
         /// Protocol is the list of all possible protocols.
         //XXX: #[non_exhaustive] is not stable yet
         #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -544,7 +544,16 @@ macro_rules! build_enums {
                 }
             }
 
-            /// Get the size from a `Protocol`.
+            /// Get the estimated size of the binary representation of this
+            /// `Protocol` in bits.
+            ///
+            /// Note the values are only estimates and calling `.to_stream()`
+            /// on a corresponding `Addr` instance may result in a buffer of a
+            /// different size. The only noteworthy execption is a returned
+            /// value of `0` which guarantees that the given protocol will
+            /// never expect a value parameter and will never read or write
+            /// anything when being asked to process serialize/deserialize
+            /// itself.
             ///
             /// # Examples
             ///
@@ -556,7 +565,7 @@ macro_rules! build_enums {
             ///
             pub fn size(&self) -> isize {
                 match *self {
-                    $( Protocol::$var => $size, )*
+                    $( Protocol::$var => ($addr_type::STREAM_LENGTH * 8) as isize, )*
                     _ => unreachable!()
                 }
             }
@@ -659,36 +668,36 @@ macro_rules! build_enums {
 
 build_enums!(
     // [IP4](https://en.wikipedia.org/wiki/IPv4)
-    4 => IP4("ip4", 32) for IP4Addr,
+    4 => IP4("ip4") for IP4Addr,
     // [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)
-    6 => TCP("tcp", 16) for TCPAddr,
+    6 => TCP("tcp") for TCPAddr,
     // [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol)
-    17 => UDP("udp", 16) for UDPAddr,
+    17 => UDP("udp") for UDPAddr,
     // [DCCP](https://en.wikipedia.org/wiki/Datagram_Congestion_Control_Protocol)
-    33 => DCCP("dccp", 16) for DCCPAddr,
+    33 => DCCP("dccp") for DCCPAddr,
     // [IP6](https://en.wikipedia.org/wiki/IPv6)
-    41 => IP6("ip6", 128) for IP6Addr,
+    41 => IP6("ip6") for IP6Addr,
     // [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol)
-    132 => SCTP("sctp", 16) for SCTPAddr,
+    132 => SCTP("sctp") for SCTPAddr,
     // [UDT](https://en.wikipedia.org/wiki/UDP-based_Data_Transfer_Protocol)
-    301 => UDT("udt", 0) for UDTAddr,
+    301 => UDT("udt") for UDTAddr,
     // [UTP](https://en.wikipedia.org/wiki/Micro_Transport_Protocol)
-    302 => UTP("utp", 0) for UTPAddr,
+    302 => UTP("utp") for UTPAddr,
     // [IPFS](https://github.com/ipfs/specs/tree/master/protocol#341-merkledag-paths)
-    421 => IPFS("ipfs", -1) for IPFSAddr,
+    421 => IPFS("ipfs") for IPFSAddr,
     // [HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol)
-    480 => HTTP("http", 0) for HTTPAddr,
+    480 => HTTP("http") for HTTPAddr,
     // [HTTPS](https://en.wikipedia.org/wiki/HTTPS)
-    443 => HTTPS("https", 0) for HTTPSAddr,
+    443 => HTTPS("https") for HTTPSAddr,
     // Onion
-    444 => Onion("onion", 80) for OnionAddr,
+    444 => Onion("onion") for OnionAddr,
     // Websockets
-    477 => WS("ws", 0) for WSAddr,
+    477 => WS("ws") for WSAddr,
     // Websockets secure
-    478 => WSS("wss", 0) for WSSAddr,
+    478 => WSS("wss") for WSSAddr,
     // libp2p webrtc protocols
-    275 => Libp2pWebrtcStar("libp2p-webrtc-star", 0) for Libp2pWebrtcStarAddr,
-    276 => Libp2pWebrtcDirect("libp2p-webrtc-direct", 0) for Libp2pWebrtcDirectAddr
+    275 => Libp2pWebrtcStar("libp2p-webrtc-star") for Libp2pWebrtcStarAddr,
+    276 => Libp2pWebrtcDirect("libp2p-webrtc-direct") for Libp2pWebrtcDirectAddr
 );
 
 
