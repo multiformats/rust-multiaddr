@@ -205,7 +205,7 @@ impl AddressSegment for TCPSegment {
     }
 
     fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
-        Ok(stream.write_u16::<BigEndian>(self.0)?)
+        stream.write_u16::<BigEndian>(self.0)
     }
 }
 
@@ -227,7 +227,7 @@ impl AddressSegment for UDPSegment {
     }
 
     fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
-        Ok(stream.write_u16::<BigEndian>(self.0)?)
+        stream.write_u16::<BigEndian>(self.0)
     }
 }
 
@@ -249,7 +249,7 @@ impl AddressSegment for DCCPSegment {
     }
 
     fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
-        Ok(stream.write_u16::<BigEndian>(self.0)?)
+        stream.write_u16::<BigEndian>(self.0)
     }
 }
 
@@ -307,7 +307,7 @@ impl AddressSegment for SCTPSegment {
     }
 
     fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
-        Ok(stream.write_u16::<BigEndian>(self.0)?)
+        stream.write_u16::<BigEndian>(self.0)
     }
 }
 
