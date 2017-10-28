@@ -2,6 +2,7 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 use std::convert::From;
 use std::fmt;
+use std::fmt::Write;
 use std::hash;
 use std::io;
 use std::io::Cursor;
@@ -21,8 +22,8 @@ use {Result, Error};
 
 
 /// Single multiaddress segment with its attached data
-pub trait AddressSegment : fmt::Display + ToString {
-    const STREAM_LENGTH: usize = 0;
+pub trait AddressSegment : ToString {
+    const STREAM_LENGTH: usize;
 
     fn protocol(&self) -> Protocol;
 
@@ -118,10 +119,10 @@ macro_rules! derive_for_empty_segment {
         derive_for_empty_segment!($name : $($rest)*);
     };
 
-    ( $name:ident : Display $( $rest:tt )* ) => {
-        impl fmt::Display for $name {
-            fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
-                Ok(())
+    ( $name:ident : ToString $( $rest:tt )* ) => {
+        impl ToString for $name {
+            fn to_string(&self) -> String {
+                String::new()
             }
         }
 
@@ -142,6 +143,8 @@ macro_rules! derive_for_empty_segment {
 
     ( $name:ident : AddressSegment < $proto:ident > $( $rest:tt )* ) => {
         impl AddressSegment for $name {
+            const STREAM_LENGTH: usize = 0;
+
             fn protocol(&self) -> Protocol {
                 Protocol::$proto
             }
@@ -313,14 +316,14 @@ impl AddressSegment for SCTPSegment {
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct UDTSegment;
 
-derive_for_empty_segment!(UDTSegment: Display, FromStr, AddressSegment<UDT>);
+derive_for_empty_segment!(UDTSegment: ToString, FromStr, AddressSegment<UDT>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct UTPSegment;
 
-derive_for_empty_segment!(UTPSegment: Display, FromStr, AddressSegment<UTP>);
+derive_for_empty_segment!(UTPSegment: ToString, FromStr, AddressSegment<UTP>);
 
 
 
@@ -374,10 +377,7 @@ impl AddressSegment for IPFSSegment {
         //       overloading `io::Read`
 
         // Read CID hash from stream
-        let cid = Self::_read_cid_polyfill(stream).map_err(|err| {
-            println!("CID Parsing failed!");
-            err
-        })?;
+        let cid = Self::_read_cid_polyfill(stream)?;
 
         Ok(IPFSSegment(cid))
     }
@@ -415,14 +415,14 @@ impl hash::Hash for IPFSSegment {
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct HTTPSegment;
 
-derive_for_empty_segment!(HTTPSegment: Display, FromStr, AddressSegment<HTTP>);
+derive_for_empty_segment!(HTTPSegment: ToString, FromStr, AddressSegment<HTTP>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct HTTPSSegment;
 
-derive_for_empty_segment!(HTTPSSegment: Display, FromStr, AddressSegment<HTTPS>);
+derive_for_empty_segment!(HTTPSSegment: ToString, FromStr, AddressSegment<HTTPS>);
 
 
 
@@ -430,7 +430,7 @@ derive_for_empty_segment!(HTTPSSegment: Display, FromStr, AddressSegment<HTTPS>)
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct OnionSegment(pub Box<[u8; 10]>);
 
-derive_for_empty_segment!(OnionSegment: Display);
+derive_for_empty_segment!(OnionSegment: ToString);
 impl AddressSegment for OnionSegment {
     const STREAM_LENGTH: usize = 80;
 
@@ -460,28 +460,28 @@ impl FromStr for OnionSegment {
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct WSSegment;
 
-derive_for_empty_segment!(WSSegment: Display, FromStr, AddressSegment<WS>);
+derive_for_empty_segment!(WSSegment: ToString, FromStr, AddressSegment<WS>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct WSSSegment;
 
-derive_for_empty_segment!(WSSSegment: Display, FromStr, AddressSegment<WSS>);
+derive_for_empty_segment!(WSSSegment: ToString, FromStr, AddressSegment<WSS>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct Libp2pWebrtcStarSegment;
 
-derive_for_empty_segment!(Libp2pWebrtcStarSegment: Display, FromStr, AddressSegment<Libp2pWebrtcStar>);
+derive_for_empty_segment!(Libp2pWebrtcStarSegment: ToString, FromStr, AddressSegment<Libp2pWebrtcStar>);
 
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct Libp2pWebrtcDirectSegment;
 
-derive_for_empty_segment!(Libp2pWebrtcDirectSegment: Display, FromStr, AddressSegment<Libp2pWebrtcDirect>);
+derive_for_empty_segment!(Libp2pWebrtcDirectSegment: ToString, FromStr, AddressSegment<Libp2pWebrtcDirect>);
 
 
 
@@ -503,14 +503,16 @@ macro_rules! build_enums {
             fn from(proto: Protocol) -> u64 {
                 match proto {
                     $( Protocol::$var => $val, )*
+
+                    // Need extra match arm because of non-exhaustiveness
                     _ => unreachable!()
                 }
             }
         }
 
-        impl ToString for Protocol {
-            fn to_string(&self) -> String {
-                self.as_str().to_string()
+        impl fmt::Display for Protocol {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                f.write_str(self.as_str())
             }
         }
 
@@ -566,6 +568,8 @@ macro_rules! build_enums {
             pub fn size(&self) -> isize {
                 match *self {
                     $( Protocol::$var => ($addr_type::STREAM_LENGTH * 8) as isize, )*
+
+                    // Need extra match arm because of non-exhaustiveness
                     _ => unreachable!()
                 }
             }
@@ -575,6 +579,8 @@ macro_rules! build_enums {
             pub fn as_str(&self) -> &str {
                 match *self {
                     $( Protocol::$var => $alph, )*
+
+                    // Need extra match arm because of non-exhaustiveness
                     _ => unreachable!()
                 }
             }
@@ -598,6 +604,8 @@ macro_rules! build_enums {
             pub fn from_protocol_stream(protocol: Protocol, stream: &mut io::Read) -> Result<Self> {
                 Ok(match protocol {
                     $( Protocol::$var => Segment::$var($addr_type::from_stream(stream)?), )*
+
+                    // Need extra match arm because of non-exhaustiveness
                     _ => unreachable!()
                 })
             }
@@ -605,6 +613,8 @@ macro_rules! build_enums {
             pub fn from_protocol_str(protocol: Protocol, s: &str) -> Result<Self> {
                 Ok(match protocol {
                     $( Protocol::$var => Segment::$var($addr_type::from_str(s)?), )*
+
+                    // Need extra match arm because of non-exhaustiveness
                     _ => unreachable!()
                 })
             }
@@ -613,16 +623,30 @@ macro_rules! build_enums {
         impl fmt::Display for Segment {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 match self {
-                    $( &Segment::$var(ref addr) => fmt::Display::fmt(addr, f), )*
+                    $( &Segment::$var(ref addr) => {
+                        f.write_str(addr.protocol().as_str())?;
+                        if $addr_type::STREAM_LENGTH > 0 {
+                            f.write_char('/')?;
+                            f.write_str(addr.to_string().as_ref())?;
+                        }
+
+                        Ok(())
+                    }, )*
+
+                    // Need extra match arm because of non-exhaustiveness
                     _ => unreachable!()
                 }
             }
         }
 
         impl AddressSegment for Segment {
+            const STREAM_LENGTH: usize = 4;
+
             fn protocol(&self) -> Protocol {
                 match self {
                     $( &Segment::$var(ref addr) => addr.protocol(), )*
+
+                    // Need extra match arm because of non-exhaustiveness
                     _ => unreachable!()
                 }
             }
@@ -653,11 +677,26 @@ macro_rules! build_enums {
         impl Segment {
             /// Serialize only the variant's data to bytes
             ///
-            /// Will return the result of calling `.to_bytes()` on the inner
+            /// Will return the result of calling `.to_stream()` on the inner
             /// address segment instance.
             pub fn data_to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
                 match self {
                     $( &Segment::$var(ref addr) => addr.to_stream(stream), )*
+
+                    // Need extra match arm because of non-exhaustiveness
+                    _ => unreachable!()
+                }
+            }
+
+            /// Serialize only the variant's data to a string
+            ///
+            /// Will return the result of calling `.to_string()` on the inner
+            /// address segment instance.
+            pub fn data_to_string(&self) -> String {
+                match self {
+                    $( &Segment::$var(ref addr) => addr.to_string(), )*
+
+                    // Need extra match arm because of non-exhaustiveness
                     _ => unreachable!()
                 }
             }
@@ -742,7 +781,7 @@ impl Protocol {
     pub fn bytes_to_string(&self, b: &[u8]) -> Result<Option<String>> {
         let mut cursor = Cursor::new(b);
 
-        let string = Segment::from_protocol_stream(*self, &mut cursor)?.to_string();
+        let string = Segment::from_protocol_stream(*self, &mut cursor)?.data_to_string();
         if string.len() < 1 {
             Ok(None)
         } else {

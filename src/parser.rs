@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::fmt::Write;
 
-use protocol::{Segment, AddressSegment, Protocol};
+use protocol::{Segment, Protocol};
 use {Result, Error};
 
 pub fn multiaddr_from_str(input: &str) -> Result<Vec<Segment>> {
@@ -37,11 +37,7 @@ pub fn multiaddr_to_str(addr: &Vec<Segment>) -> String {
 
     for addr_segment in addr {
         result.push('/');
-        result.push_str(addr_segment.protocol().as_str());
-
-        if addr_segment.protocol().size() != 0 {
-            write!(result, "/{}", addr_segment).unwrap();
-        }
+        write!(result, "{}", addr_segment).unwrap();
     }
 
     result
