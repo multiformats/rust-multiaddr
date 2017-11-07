@@ -5,6 +5,7 @@ extern crate data_encoding;
 use data_encoding::hex;
 use multiaddr::*;
 use std::net::{SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
+use std::io::Cursor;
 
 #[test]
 fn protocol_to_code() {
@@ -221,4 +222,32 @@ fn to_multiaddr() {
                    .to_multiaddr()
                    .unwrap(),
                Multiaddr::new("/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21/tcp/1234").unwrap());
+}
+
+
+#[test]
+fn streams() {
+	use AddressSegmentReaderExt;
+	use AddressSegmentWriterExt;
+	
+	let mut data = Vec::new();
+	data.write_addr(&Segment::IP4(protocol::IP4Segment(Ipv4Addr::new(1, 2, 3, 4)))).unwrap();
+	data.write_addr(&Segment::UDP(protocol::UDPSegment(4001))).unwrap();
+	data.write_addr(&Segment::IPFS(protocol::IPFSSegment(cid::Cid::from("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC").unwrap()))).unwrap();
+	
+	let mut cursor = Cursor::new(&mut data);
+	
+	let ip_addr: Segment = cursor.read_addr().unwrap();
+	assert_eq!(ip_addr, Segment::IP4(protocol::IP4Segment(Ipv4Addr::new(1, 2, 3, 4))));
+	
+	let position = cursor.position();
+	let result: std::io::Result<protocol::IPFSSegment> = cursor.read_addr();
+	assert!(result.is_err());
+	cursor.set_position(position);
+	
+	let udp_addr: Segment = cursor.read_addr().unwrap();
+	assert_eq!(udp_addr, Segment::UDP(protocol::UDPSegment(4001)));
+	
+	let ipfs_addr: Segment = cursor.read_addr().unwrap();
+	assert_eq!(ipfs_addr, Segment::IPFS(protocol::IPFSSegment(cid::Cid::from("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC").unwrap())));
 }
