@@ -26,10 +26,14 @@ fn ma_valid(source: &str, target: &str, segments: &[Segment]) -> () {
 	assert_eq!(address.to_string(), source);
 	
 	// Serialize MultiAddr to bytes and compare with the expected value
-	assert_eq!(hex::encode(address.to_bytes().as_slice()), target);
+	let bytes = address.to_bytes();
+	assert_eq!(hex::encode(bytes.as_slice()), target);
 	
 	// Validate that the parsed MultiAddr representation matches the expected values
 	assert_eq!(address.segments(), segments);
+	
+	// Validate that the parsed MultiAddr matches the original address
+	assert_eq!(bytes.to_multiaddr().unwrap(), address);
 	
 	// Test the deprecated `.protocol()` API
 	assert_eq!(address.protocol(), address.segments().iter().map(|s: &Segment| s.protocol()).collect::<Vec<Protocol>>());

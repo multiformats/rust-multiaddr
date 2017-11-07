@@ -332,36 +332,49 @@ pub struct IPFSSegment(pub cid::Cid);
 
 derive_for_wrapping_segment!(IPFSSegment: Display, From<cid::Cid>);
 impl IPFSSegment {
-    fn _read_cid_polyfill(stream: &mut io::Read) -> Result<cid::Cid> {
-        // Read minimal CID length at start to check for CIDv0
-        let mut buf = [0u8; 34];
-        stream.read_exact(&mut buf)?;
+    fn _read_cid_polyfill(mut stream: &mut io::Read) -> Result<cid::Cid> {
+        let len: u64 = stream.read_varint()?;
 
-        if cid::Version::is_v0_binary(&buf) {
-            Ok(cid::Cid::from(&buf as &[u8])?)
-        } else {
-            // Do normal CID parsing using the already read data
-            let mut stream = Cursor::new(&buf as &[u8]).chain(stream);
+        let buf = &mut [0u8; 34];
+        let buf_slice: &[u8] =
+            if len == 34 {
+                // Read length of CIDv0 data block
+                stream.read_exact(buf)?;
 
-            // Read and parse CID header
-            let raw_version = stream.read_varint()?;
-            let raw_codec = stream.read_varint()?;
-            let _: u64 = stream.read_varint()?;
+                // Check if data is indeed CIDv0 and parse and return it
+                // in this case
+                if cid::Version::is_v0_binary(buf) {
+                    return Ok(cid::Cid::from(buf as &[u8])?)
+                }
 
-            let version = cid::Version::from(raw_version)?;
-            let codec = cid::Codec::from(raw_codec)?;
+                // Prepend the data to parse with the data we have jsut read
+                buf
+            } else {
+                // Nothing was read, nothing needs to be prepended
+                &[]
+            };
 
-            let mh_len = stream.read_varint()?;
+        // Do normal CID parsing starting with whatever data was already read
+        let mut stream = Cursor::new(buf_slice).chain(stream);
 
-            // Read CID hash data
-            // (Unsafe because data in `Vec` contains uninitialized memory
-            //  until we overwrite it with data read from `stream`.)
-            let mut hash = Vec::with_capacity(mh_len);
-            unsafe { hash.set_len(mh_len) };
-            stream.read_exact(hash.as_mut())?;
+        // Read and parse CID header
+        let raw_version = stream.read_varint()?;
+        let raw_codec = stream.read_varint()?;
+        let _: u64 = stream.read_varint()?;
 
-            Ok(cid::Cid::new(codec, version, hash.as_slice()))
-        }
+        let version = cid::Version::from(raw_version)?;
+        let codec = cid::Codec::from(raw_codec)?;
+
+        let mh_len = stream.read_varint()?;
+
+        // Read CID hash data
+        // (Unsafe because data in `Vec` contains uninitialized memory
+        //  until we overwrite it with data read from `stream`.)
+        let mut hash = Vec::with_capacity(mh_len);
+        unsafe { hash.set_len(mh_len) };
+        stream.read_exact(hash.as_mut())?;
+
+        Ok(cid::Cid::new(codec, version, hash.as_slice()))
     }
 }
 
