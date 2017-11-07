@@ -13,6 +13,9 @@ mod errors;
 pub use errors::{Result, Error};
 pub use protocol::{Protocol, Segment, AddressSegment, AddressSegmentReaderExt, AddressSegmentWriterExt};
 
+use std::str::FromStr;
+use std::io;
+use std::io::Read;
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 
 /// Representation of a Multiaddr.
@@ -41,6 +44,14 @@ impl ToString for Multiaddr {
     }
 }
 
+impl FromStr for Multiaddr {
+    type Err = Error;
+
+    fn from_str(input: &str) -> Result<Self> {
+        Multiaddr::new(input)
+    }
+}
+
 #[allow(deprecated)] // We have to access our own deprecated `bytes` field
 impl Multiaddr {
     /// Create a new multiaddr based on a string representation, like
@@ -66,6 +77,7 @@ impl Multiaddr {
         Ok(Multiaddr { bytes: Self::_addr_to_bytes(&addr), addr: addr })
     }
 
+    #[deprecated(note = "Used only for populating the deprecated `bytes` field")]
     fn _addr_to_bytes(addr: &Vec<Segment>) -> Vec<u8> {
         let mut bytes = Vec::new();
         for addr_segment in addr {
@@ -74,9 +86,53 @@ impl Multiaddr {
         bytes
     }
 
+    /// Read binary data from the given stream and try to create an address
+    /// from it
+    pub fn from_stream(stream: &mut io::Read) -> Result<Self> {
+        let mut segments = Vec::new();
+
+        loop {
+            let mut buf = [0u8; 1];
+            match stream.read_exact(&mut buf) {
+                Ok(_) => {
+                    let mut stream = io::Cursor::new(&buf as &[u8]).chain(&mut *stream);
+                    segments.push(Segment::from_stream(&mut stream)?);
+                },
+
+                Err(err) => if err.kind() == io::ErrorKind::UnexpectedEof {
+                    // Stop processing on EOF
+                    break
+                } else {
+                    // Treat all other errors as fatal
+                    return Err(err.into())
+                }
+            };
+        }
+
+        Ok(Multiaddr { bytes: Self::_addr_to_bytes(&segments), addr: segments })
+    }
+
+    /// Parse the given set of bytes and try to create an address instance based
+    /// on these
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        let mut cursor = io::Cursor::new(bytes);
+        Self::from_stream(&mut cursor)
+    }
+
+    /// Serialize the contents of this address and write it to a byte stream
+    pub fn to_stream(&self, stream: &mut io::Write) -> io::Result<()> {
+        for addr_segment in &self.addr {
+            addr_segment.to_stream(stream)?;
+        }
+
+        Ok(())
+    }
+
     /// Return a copy to disallow changing the bytes directly
     pub fn to_bytes(&self) -> Vec<u8> {
-        Self::_addr_to_bytes(&self.addr)
+        let mut bytes = Vec::new();
+        self.to_stream(&mut bytes).unwrap();
+        bytes
     }
 
     /// Extracts a slice containing the entire underlying vector.
@@ -247,6 +303,18 @@ impl ToMultiaddr for String {
 impl<'a> ToMultiaddr for &'a str {
     fn to_multiaddr(&self) -> Result<Multiaddr> {
         Multiaddr::new(self)
+    }
+}
+
+impl ToMultiaddr for Vec<u8> {
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
+        Multiaddr::from_bytes(self.as_slice())
+    }
+}
+
+impl<'a> ToMultiaddr for &'a [u8] {
+    fn to_multiaddr(&self) -> Result<Multiaddr> {
+        Multiaddr::from_bytes(self)
     }
 }
 
