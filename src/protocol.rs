@@ -76,11 +76,12 @@ macro_rules! build_protocol_enum {
             ///
             /// ```
             /// use multiaddr::Protocol;
+            /// use multiaddr::ProtocolArgSize;
             ///
-            /// assert_eq!(Protocol::TCP.size(), 16);
+            /// assert_eq!(Protocol::TCP.size(), ProtocolArgSize::Fixed { bytes: 2 });
             /// ```
             ///
-            pub fn size(&self) -> isize {
+            pub fn size(&self) -> ProtocolArgSize {
                 match *self {
                     $( $var => $size, )*
                 }
@@ -91,38 +92,46 @@ macro_rules! build_protocol_enum {
 
 build_protocol_enum!(
     // [IP4](https://en.wikipedia.org/wiki/IPv4)
-    4 => IP4: "ip4", 32,
+    4 => IP4: "ip4", ProtocolArgSize::Fixed { bytes: 4 },
     // [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol)
-    6 => TCP: "tcp", 16,
+    6 => TCP: "tcp", ProtocolArgSize::Fixed { bytes: 2 },
     // [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol)
-    17 => UDP: "udp", 16,
+    17 => UDP: "udp", ProtocolArgSize::Fixed { bytes: 2 },
     // [DCCP](https://en.wikipedia.org/wiki/Datagram_Congestion_Control_Protocol)
-    33 => DCCP: "dccp", 16,
+    33 => DCCP: "dccp", ProtocolArgSize::Fixed { bytes: 2 },
     // [IP6](https://en.wikipedia.org/wiki/IPv6)
-    41 => IP6: "ip6", 128,
+    41 => IP6: "ip6", ProtocolArgSize::Fixed { bytes: 16 },
     // [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol)
-    132 => SCTP: "sctp", 16,
+    132 => SCTP: "sctp", ProtocolArgSize::Fixed { bytes: 2 },
     // [UDT](https://en.wikipedia.org/wiki/UDP-based_Data_Transfer_Protocol)
-    301 => UDT: "udt", 0,
+    301 => UDT: "udt", ProtocolArgSize::Fixed { bytes: 0 },
     // [UTP](https://en.wikipedia.org/wiki/Micro_Transport_Protocol)
-    302 => UTP: "utp", 0,
+    302 => UTP: "utp", ProtocolArgSize::Fixed { bytes: 0 },
     // [IPFS](https://github.com/ipfs/specs/tree/master/protocol#341-merkledag-paths)
-    421 => IPFS: "ipfs", -1,
+    421 => IPFS: "ipfs", ProtocolArgSize::Variable,
     // [HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol)
-    480 => HTTP: "http", 0,
+    480 => HTTP: "http", ProtocolArgSize::Fixed { bytes: 0 },
     // [HTTPS](https://en.wikipedia.org/wiki/HTTPS)
-    443 => HTTPS: "https", 0,
+    443 => HTTPS: "https", ProtocolArgSize::Fixed { bytes: 0 },
     // Onion
-    444 => ONION: "onion", 80,
+    444 => ONION: "onion", ProtocolArgSize::Fixed { bytes: 10 },
     // Websockets
-    477 => WS: "ws", 0,
+    477 => WS: "ws", ProtocolArgSize::Fixed { bytes: 0 },
     // Websockets secure
-    478 => WSS: "wss", 0,
+    478 => WSS: "wss", ProtocolArgSize::Fixed { bytes: 0 },
     // libp2p webrtc protocols
-    275 => Libp2pWebrtcStar: "libp2p-webrtc-star", 0,
-    276 => Libp2pWebrtcDirect: "libp2p-webrtc-direct", 0,
+    275 => Libp2pWebrtcStar: "libp2p-webrtc-star", ProtocolArgSize::Fixed { bytes: 0 },
+    276 => Libp2pWebrtcDirect: "libp2p-webrtc-direct", ProtocolArgSize::Fixed { bytes: 0 },
 );
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum ProtocolArgSize {
+    /// The size of the argument is of fixed length. The length can be 0, in which case there is no
+    /// argument.
+    Fixed { bytes: usize },
+    /// The size of the argument is of variable length.
+    Variable,
+}
 
 impl Protocol {
     /// Convert an array slice to the string representation.

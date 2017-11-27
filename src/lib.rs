@@ -11,7 +11,7 @@ mod parser;
 mod errors;
 
 pub use errors::{Result, Error};
-pub use protocol::Protocol;
+pub use protocol::{Protocol, ProtocolArgSize};
 
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 

@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use integer_encoding::{VarInt, VarIntWriter};
 
-use protocol::Protocol;
+use protocol::{Protocol, ProtocolArgSize};
 use {Result, Error};
 
 pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>> {
@@ -22,7 +22,7 @@ pub fn multiaddr_from_str(input: &str) -> Result<Vec<u8>> {
 
         bytes.write_varint(p as u64)?;
 
-        if p.size() == 0 {
+        if p.size() == (ProtocolArgSize::Fixed { bytes: 0 }) {
             continue;
         }
 
@@ -48,13 +48,17 @@ fn read_varint_code(input: &[u8]) -> Result<(u64, usize)> {
 }
 
 fn size_for_addr(protocol: Protocol, input: &[u8]) -> Result<(usize, usize)> {
-    if protocol.size() > 0 {
-        Ok((protocol.size() as usize / 8, 0))
-    } else if protocol.size() == 0 {
-        Ok((0, 0))
-    } else {
-        let (size, n) = read_varint_code(input)?;
-        Ok((size as usize, n))
+    match protocol.size() {
+        ProtocolArgSize::Fixed { bytes: 0 } => {
+            Ok((0, 0))
+        },
+        ProtocolArgSize::Fixed { bytes } => {
+            Ok((bytes, 0))
+        },
+        ProtocolArgSize::Variable => {
+            let (size, n) = read_varint_code(input)?;
+            Ok((size as usize, n))
+        },
     }
 }
 
