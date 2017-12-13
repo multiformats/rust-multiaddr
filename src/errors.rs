@@ -1,17 +1,17 @@
-use std::{net, fmt, error, io, num};
+use std::{net, fmt, error, io, num, string};
 use cid;
 use byteorder;
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 /// Error types
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(Debug)]
 pub enum Error {
-    UnkownProtocol,
-    UnkownProtocolString,
+    UnknownProtocol,
+    UnknownProtocolString,
     InvalidMultiaddr,
     MissingAddress,
-    ParsingError,
+    ParsingError(Box<error::Error + Send + Sync>),
 }
 
 impl fmt::Display for Error {
@@ -22,45 +22,56 @@ impl fmt::Display for Error {
 
 impl error::Error for Error {
     fn description(&self) -> &str {
-        use self::Error::*;
-
         match *self {
-            UnkownProtocol => "Unkown protocol",
-            UnkownProtocolString => "Unkown protocol string",
-            InvalidMultiaddr => "Invalid multiaddr",
-            MissingAddress => "protocol requires address, none given",
-            ParsingError => "failed to parse",
+            Error::UnknownProtocol => "unknown protocol",
+            Error::UnknownProtocolString => "unknown protocol string",
+            Error::InvalidMultiaddr => "invalid multiaddr",
+            Error::MissingAddress => "protocol requires address, none given",
+            Error::ParsingError(_) => "failed to parse",
+        }
+    }
+
+    #[inline]
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            Error::ParsingError(ref err) => Some(&**err),
+            _ => None
         }
     }
 }
 
 impl From<io::Error> for Error {
-    fn from(_: io::Error) -> Error {
-        Error::ParsingError
+    fn from(err: io::Error) -> Error {
+        Error::ParsingError(err.into())
     }
 }
 
 impl From<cid::Error> for Error {
-    fn from(_: cid::Error) -> Error {
-        Error::ParsingError
+    fn from(err: cid::Error) -> Error {
+        Error::ParsingError(err.into())
     }
 }
 
 impl From<net::AddrParseError> for Error {
-    fn from(_: net::AddrParseError) -> Error {
-        Error::ParsingError
+    fn from(err: net::AddrParseError) -> Error {
+        Error::ParsingError(err.into())
     }
 }
 
 impl From<byteorder::Error> for Error {
-    fn from(_: byteorder::Error) -> Error {
-        Error::ParsingError
+    fn from(err: byteorder::Error) -> Error {
+        Error::ParsingError(err.into())
     }
 }
 
-
 impl From<num::ParseIntError> for Error {
-    fn from(_: num::ParseIntError) -> Error {
-        Error::ParsingError
+    fn from(err: num::ParseIntError) -> Error {
+        Error::ParsingError(err.into())
+    }
+}
+
+impl From<string::FromUtf8Error> for Error {
+    fn from(err: string::FromUtf8Error) -> Error {
+        Error::ParsingError(err.into())
     }
 }
