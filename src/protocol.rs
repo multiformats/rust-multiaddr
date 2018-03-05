@@ -8,7 +8,7 @@ use integer_encoding::{VarInt, VarIntWriter};
 
 use {Result, Error};
 
-///! # ProtocolId
+///! # Protocol
 ///!
 ///! A type to describe the possible protocol used in a
 ///! Multiaddr.
