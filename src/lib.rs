@@ -10,7 +10,7 @@ mod protocol;
 mod errors;
 
 pub use errors::{Result, Error};
-pub use protocol::{ProtocolId, ProtocolArgSize, AddrComponent};
+pub use protocol::{Protocol, ProtocolArgSize, AddrComponent};
 
 use std::fmt;
 use std::iter::FromIterator;
@@ -69,15 +69,15 @@ impl Multiaddr {
     /// A single protocol
     ///
     /// ```
-    /// use multiaddr::{Multiaddr, ProtocolId};
+    /// use multiaddr::{Multiaddr, Protocol};
     ///
     /// let address: Multiaddr = "/ip4/127.0.0.1".parse().unwrap();
-    /// assert_eq!(address.protocol(), vec![ProtocolId::IP4]);
+    /// assert_eq!(address.protocol(), vec![Protocol::IP4]);
     /// ```
     ///
     #[inline]
     #[deprecated(note = "Use `self.iter().map(|addr| addr.protocol_id())` instead")]
-    pub fn protocol(&self) -> Vec<ProtocolId> {
+    pub fn protocol(&self) -> Vec<Protocol> {
         self.iter().map(|addr| addr.protocol_id()).collect()
     }
 
@@ -263,7 +263,7 @@ impl FromStr for Multiaddr {
         }
 
         while let Some(part) = parts.next() {
-            let protocol: ProtocolId = part.parse()?;
+            let protocol: Protocol = part.parse()?;
             let addr_component = match protocol.size() {
                 ProtocolArgSize::Fixed { bytes: 0 } => {
                     protocol.parse_data("")?     // TODO: bad design

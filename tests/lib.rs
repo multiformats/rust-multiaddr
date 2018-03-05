@@ -7,21 +7,21 @@ use std::net::{SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 
 #[test]
 fn protocol_to_code() {
-    assert_eq!(ProtocolId::IP4 as usize, 4);
+    assert_eq!(Protocol::IP4 as usize, 4);
 }
 
 #[test]
 fn protocol_to_name() {
-    assert_eq!(ProtocolId::TCP.to_string(), "tcp");
+    assert_eq!(Protocol::TCP.to_string(), "tcp");
 }
 
 
-fn assert_bytes(source: &str, target: &str, protocols: Vec<ProtocolId>) -> () {
+fn assert_bytes(source: &str, target: &str, protocols: Vec<Protocol>) -> () {
     let address = source.parse::<Multiaddr>().unwrap();
     assert_eq!(hex::encode(address.to_bytes().as_slice()), target);
     assert_eq!(address.iter().map(|addr| addr.protocol_id()).collect::<Vec<_>>(), protocols);
 }
-fn ma_valid(source: &str, target: &str, protocols: Vec<ProtocolId>) -> () {
+fn ma_valid(source: &str, target: &str, protocols: Vec<Protocol>) -> () {
     assert_bytes(source, target, protocols);
     assert_eq!(source.parse::<Multiaddr>().unwrap().to_string(), source);
 }
@@ -40,7 +40,7 @@ fn multiaddr_eq() {
 
 #[test]
 fn construct_success() {
-    use ProtocolId::*;
+    use Protocol::*;
 
     ma_valid("/ip4/1.2.3.4", "0401020304", vec![IP4]);
     ma_valid("/ip4/0.0.0.0", "0400000000", vec![IP4]);
