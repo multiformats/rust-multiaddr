@@ -16,14 +16,12 @@ fn protocol_to_name() {
 }
 
 
-fn assert_bytes(source: &str, target: &str, protocols: Vec<Protocol>) -> () {
-    let address = source.parse::<Multiaddr>().unwrap();
-    assert_eq!(hex::encode(address.to_bytes().as_slice()), target);
-    assert_eq!(address.iter().map(|addr| addr.protocol_id()).collect::<Vec<_>>(), protocols);
-}
-fn ma_valid(source: &str, target: &str, protocols: Vec<Protocol>) -> () {
-    assert_bytes(source, target, protocols);
+fn ma_valid(source: &str, target: &str, protocols: Vec<Protocol>) {
+    let parsed = source.parse::<Multiaddr>().unwrap();
+    assert_eq!(hex::encode(parsed.to_bytes().as_slice()), target);
+    assert_eq!(parsed.iter().map(|addr| addr.protocol_id()).collect::<Vec<_>>(), protocols);
     assert_eq!(source.parse::<Multiaddr>().unwrap().to_string(), source);
+    assert_eq!(Multiaddr::from_bytes(hex::decode(target.as_bytes()).unwrap()).unwrap(), parsed);
 }
 
 #[test]
@@ -168,4 +166,10 @@ fn to_multiaddr() {
                    .to_multiaddr()
                    .unwrap(),
                "/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21/tcp/1234".parse::<Multiaddr>().unwrap());
+}
+
+#[test]
+fn from_bytes_fail() {
+    let bytes = vec![1, 2, 3, 4];
+    assert!(Multiaddr::from_bytes(bytes).is_err());
 }
