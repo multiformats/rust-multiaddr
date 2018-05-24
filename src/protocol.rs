@@ -28,8 +28,7 @@ pub enum Protocol {
     UDT = 301,
     UTP = 302,
     UNIX = 400,
-    P2P = 420,
-    IPFS = 421,
+    P2P = 421,
     HTTP = 480,
     HTTPS = 443,
     ONION = 444,
@@ -69,7 +68,6 @@ impl ToString for Protocol {
             Protocol::UTP => "utp",
             Protocol::UNIX => "unix",
             Protocol::P2P => "p2p",
-            Protocol::IPFS => "ipfs",
             Protocol::HTTP => "http",
             Protocol::HTTPS => "https",
             Protocol::ONION => "onion",
@@ -101,7 +99,7 @@ impl FromStr for Protocol {
             "utp" => Ok(Protocol::UTP),
             "unix" => Ok(Protocol::UNIX),
             "p2p" => Ok(Protocol::P2P),
-            "ipfs" => Ok(Protocol::IPFS),
+            "ipfs" => Ok(Protocol::P2P),
             "http" => Ok(Protocol::HTTP),
             "https" => Ok(Protocol::HTTPS),
             "onion" => Ok(Protocol::ONION),
@@ -142,8 +140,7 @@ impl Protocol {
             301 => Ok(Protocol::UDT),
             302 => Ok(Protocol::UTP),
             400 => Ok(Protocol::UNIX),
-            420 => Ok(Protocol::P2P),
-            421 => Ok(Protocol::IPFS),
+            421 => Ok(Protocol::P2P),
             480 => Ok(Protocol::HTTP),
             443 => Ok(Protocol::HTTPS),
             444 => Ok(Protocol::ONION),
@@ -183,7 +180,6 @@ impl Protocol {
             Protocol::UTP => ProtocolArgSize::Fixed { bytes: 0 },
             Protocol::UNIX => ProtocolArgSize::Variable,
             Protocol::P2P => ProtocolArgSize::Variable,
-            Protocol::IPFS => ProtocolArgSize::Variable,
             Protocol::HTTP => ProtocolArgSize::Fixed { bytes: 0 },
             Protocol::HTTPS => ProtocolArgSize::Fixed { bytes: 0 },
             Protocol::ONION => ProtocolArgSize::Fixed { bytes: 10 },
@@ -258,10 +254,6 @@ impl Protocol {
                 let bytes = Cid::from(a)?.to_bytes();
                 Ok(AddrComponent::P2P(bytes))
             }
-            Protocol::IPFS => {
-                let bytes = Cid::from(a)?.to_bytes();
-                Ok(AddrComponent::IPFS(bytes))
-            }
             Protocol::ONION => unimplemented!(),              // TODO:
             Protocol::QUIC => Ok(AddrComponent::QUIC),
             Protocol::UTP => Ok(AddrComponent::UTP),
@@ -295,7 +287,6 @@ pub enum AddrComponent {
     UTP,
     UNIX(String),
     P2P(Vec<u8>),
-    IPFS(Vec<u8>),
     HTTP,
     HTTPS,
     ONION(Vec<u8>),
@@ -325,7 +316,6 @@ impl AddrComponent {
             AddrComponent::UTP => Protocol::UTP,
             AddrComponent::UNIX(_) => Protocol::UNIX,
             AddrComponent::P2P(_) => Protocol::P2P,
-            AddrComponent::IPFS(_) => Protocol::IPFS,
             AddrComponent::HTTP => Protocol::HTTP,
             AddrComponent::HTTPS => Protocol::HTTPS,
             AddrComponent::ONION(_) => Protocol::ONION,
@@ -412,10 +402,6 @@ impl AddrComponent {
                 let bytes = Cid::from(data)?.to_bytes();
                 AddrComponent::P2P(bytes)
             }
-            Protocol::IPFS => {
-                let bytes = Cid::from(data)?.to_bytes();
-                AddrComponent::IPFS(bytes)
-            }
             Protocol::ONION => unimplemented!(),      // TODO:
             Protocol::QUIC => AddrComponent::QUIC,
             Protocol::UTP => AddrComponent::UTP,
@@ -455,7 +441,7 @@ impl AddrComponent {
                 out.write_varint(bytes.len())?;
                 out.write_all(&bytes)?;
             }
-            AddrComponent::P2P(bytes) | AddrComponent::IPFS(bytes) => {
+            AddrComponent::P2P(bytes) => {
                 out.write_varint(bytes.len())?;
                 out.write_all(&bytes)?;
             }
@@ -497,11 +483,6 @@ impl ToString for AddrComponent {
                 // TODO: meh for cloning
                 let c = Cid::from(bytes.clone()).expect("cid is known to be valid");
                 format!("/p2p/{}", c)
-            },
-            AddrComponent::IPFS(ref bytes) => {
-                // TODO: meh for cloning
-                let c = Cid::from(bytes.clone()).expect("cid is known to be valid");
-                format!("/ipfs/{}", c)
             },
             AddrComponent::HTTP => format!("/http"),
             AddrComponent::HTTPS => format!("/https"),
