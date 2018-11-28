@@ -6,15 +6,15 @@ extern crate byteorder;
 extern crate cid;
 extern crate integer_encoding;
 
-mod protocol;
 mod errors;
+mod protocol;
 
-pub use errors::{Result, Error};
-pub use protocol::{Protocol, ProtocolArgSize, AddrComponent};
+pub use errors::{Error, Result};
+pub use protocol::{AddrComponent, Protocol, ProtocolArgSize};
 
 use std::fmt;
 use std::iter::FromIterator;
-use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::str::FromStr;
 
 /// Representation of a Multiaddr.
@@ -135,9 +135,9 @@ impl Multiaddr {
     ///
     #[inline]
     pub fn append(&mut self, component: AddrComponent) {
-        component.write_bytes(&mut self.bytes).expect(
-            "writing to a Vec never fails",
-        )
+        component
+            .write_bytes(&mut self.bytes)
+            .expect("writing to a Vec never fails")
     }
 
     /// Remove the outermost address.
@@ -191,7 +191,9 @@ impl Multiaddr {
         }
 
         if !matches {
-            return Ok(Multiaddr { bytes: self.bytes.clone() });
+            return Ok(Multiaddr {
+                bytes: self.bytes.clone(),
+            });
         }
 
         let mut bytes = self.bytes.clone();
@@ -243,9 +245,8 @@ impl Multiaddr {
 impl From<AddrComponent> for Multiaddr {
     fn from(addr: AddrComponent) -> Multiaddr {
         let mut out = Vec::new();
-        addr.write_bytes(&mut out).expect(
-            "writing to a Vec never fails",
-        );
+        addr.write_bytes(&mut out)
+            .expect("writing to a Vec never fails");
         Multiaddr { bytes: out }
     }
 }
@@ -267,9 +268,8 @@ impl FromIterator<AddrComponent> for Multiaddr {
     {
         let mut bytes = Vec::new();
         for cmp in iter {
-            cmp.write_bytes(&mut bytes).expect(
-                "writing to a Vec never fails",
-            );
+            cmp.write_bytes(&mut bytes)
+                .expect("writing to a Vec never fails");
         }
         Multiaddr { bytes: bytes }
     }
@@ -300,9 +300,9 @@ impl FromStr for Multiaddr {
                 }
             };
 
-            addr_component.write_bytes(&mut bytes).expect(
-                "writing to a Vec never fails",
-            );
+            addr_component
+                .write_bytes(&mut bytes)
+                .expect("writing to a Vec never fails");
         }
 
         Ok(Multiaddr { bytes: bytes })

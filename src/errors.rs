@@ -1,5 +1,5 @@
-use std::{net, fmt, error, io, num, string};
 use cid;
+use std::{error, fmt, io, net, num, string};
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
@@ -34,7 +34,7 @@ impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::ParsingError(ref err) => Some(&**err),
-            _ => None
+            _ => None,
         }
     }
 }
