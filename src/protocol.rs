@@ -19,7 +19,7 @@ use {Result, Error};
 pub enum Protocol {
     IP4 = 4,
     TCP = 6,
-    UDP = 17,
+    UDP = 273,
     DCCP = 33,
     IP6 = 41,
     DNS4 = 54,
@@ -133,7 +133,7 @@ impl Protocol {
         match raw {
             4 => Ok(Protocol::IP4),
             6 => Ok(Protocol::TCP),
-            17 => Ok(Protocol::UDP),
+            273 => Ok(Protocol::UDP),
             33 => Ok(Protocol::DCCP),
             41 => Ok(Protocol::IP6),
             54 => Ok(Protocol::DNS4),
