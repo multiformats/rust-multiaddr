@@ -1,6 +1,5 @@
 use std::{net, fmt, error, io, num, string};
 use cid;
-use byteorder;
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
@@ -54,12 +53,6 @@ impl From<cid::Error> for Error {
 
 impl From<net::AddrParseError> for Error {
     fn from(err: net::AddrParseError) -> Error {
-        Error::ParsingError(err.into())
-    }
-}
-
-impl From<byteorder::Error> for Error {
-    fn from(err: byteorder::Error) -> Error {
         Error::ParsingError(err.into())
     }
 }

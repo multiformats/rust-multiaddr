@@ -1,7 +1,7 @@
 extern crate multiaddr;
 extern crate data_encoding;
 
-use data_encoding::hex;
+use data_encoding::HEXUPPER;
 use multiaddr::*;
 use std::net::{SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 
@@ -18,10 +18,10 @@ fn protocol_to_name() {
 
 fn ma_valid(source: &str, target: &str, protocols: Vec<Protocol>) {
     let parsed = source.parse::<Multiaddr>().unwrap();
-    assert_eq!(hex::encode(parsed.to_bytes().as_slice()), target);
+    assert_eq!(HEXUPPER.encode(parsed.to_bytes().as_slice()), target);
     assert_eq!(parsed.iter().map(|addr| addr.protocol_id()).collect::<Vec<_>>(), protocols);
     assert_eq!(source.parse::<Multiaddr>().unwrap().to_string(), source);
-    assert_eq!(Multiaddr::from_bytes(hex::decode(target.as_bytes()).unwrap()).unwrap(), parsed);
+    assert_eq!(Multiaddr::from_bytes(HEXUPPER.decode(target.as_bytes()).unwrap()).unwrap(), parsed);
 }
 
 #[test]
