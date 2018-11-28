@@ -118,7 +118,7 @@ impl Multiaddr {
 
         bytes.extend(new.to_bytes());
 
-        Ok(Multiaddr { bytes: bytes })
+        Ok(Multiaddr { bytes })
     }
 
     /// Adds an already-parsed address component to the end of this multiaddr.
@@ -199,7 +199,7 @@ impl Multiaddr {
         let mut bytes = self.bytes.clone();
         bytes.truncate(input_pos);
 
-        Ok(Multiaddr { bytes: bytes })
+        Ok(Multiaddr { bytes })
     }
 
     /// Returns the components of this multiaddress.
@@ -271,7 +271,7 @@ impl FromIterator<AddrComponent> for Multiaddr {
             cmp.write_bytes(&mut bytes)
                 .expect("writing to a Vec never fails");
         }
-        Multiaddr { bytes: bytes }
+        Multiaddr { bytes }
     }
 }
 
@@ -305,7 +305,7 @@ impl FromStr for Multiaddr {
                 .expect("writing to a Vec never fails");
         }
 
-        Ok(Multiaddr { bytes: bytes })
+        Ok(Multiaddr { bytes })
     }
 }
 

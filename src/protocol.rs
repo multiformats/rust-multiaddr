@@ -50,7 +50,7 @@ impl From<Protocol> for u32 {
 
 impl From<Protocol> for u64 {
     fn from(proto: Protocol) -> u64 {
-        proto as u32 as u64
+        u64::from(proto as u32)
     }
 }
 
@@ -169,8 +169,8 @@ impl Protocol {
     /// assert_eq!(Protocol::TCP.size(), ProtocolArgSize::Fixed { bytes: 2 });
     /// ```
     ///
-    pub fn size(&self) -> ProtocolArgSize {
-        match *self {
+    pub fn size(self) -> ProtocolArgSize {
+        match self {
             Protocol::IP4 => ProtocolArgSize::Fixed { bytes: 4 },
             Protocol::TCP => ProtocolArgSize::Fixed { bytes: 2 },
             Protocol::UDP => ProtocolArgSize::Fixed { bytes: 2 },
