@@ -46,29 +46,29 @@ fn construct_success() {
     ma_valid("/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21",
              "29260100094F819700803ECA6566E80C21",
              vec![IP6]);
-    ma_valid("/udp/0", "110000", vec![UDP]);
+    ma_valid("/udp/0", "91020000", vec![UDP]);
     ma_valid("/tcp/0", "060000", vec![TCP]);
     ma_valid("/sctp/0", "84010000", vec![SCTP]);
-    ma_valid("/udp/1234", "1104D2", vec![UDP]);
+    ma_valid("/udp/1234", "910204D2", vec![UDP]);
     ma_valid("/tcp/1234", "0604D2", vec![TCP]);
     ma_valid("/sctp/1234", "840104D2", vec![SCTP]);
-    ma_valid("/udp/65535", "11FFFF", vec![UDP]);
+    ma_valid("/udp/65535", "9102FFFF", vec![UDP]);
     ma_valid("/tcp/65535", "06FFFF", vec![TCP]);
     ma_valid("/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
              vec![IPFS]);
-    ma_valid("/udp/1234/sctp/1234", "1104D2840104D2", vec![UDP, SCTP]);
-    ma_valid("/udp/1234/udt", "1104D2AD02", vec![UDP, UDT]);
-    ma_valid("/udp/1234/utp", "1104D2AE02", vec![UDP, UTP]);
+    ma_valid("/udp/1234/sctp/1234", "910204D2840104D2", vec![UDP, SCTP]);
+    ma_valid("/udp/1234/udt", "910204D2AD02", vec![UDP, UDT]);
+    ma_valid("/udp/1234/utp", "910204D2AE02", vec![UDP, UTP]);
     ma_valid("/tcp/1234/http", "0604D2E003", vec![TCP, HTTP]);
     ma_valid("/tcp/1234/https", "0604D2BB03", vec![TCP, HTTPS]);
     ma_valid("/ipfs/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
              "A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B0604D2",
              vec![IPFS, TCP]);
     ma_valid("/ip4/127.0.0.1/udp/1234",
-             "047F0000011104D2",
+             "047F000001910204D2",
              vec![IP4, UDP]);
-    ma_valid("/ip4/127.0.0.1/udp/0", "047F000001110000", vec![IP4, UDP]);
+    ma_valid("/ip4/127.0.0.1/udp/0", "047F00000191020000", vec![IP4, UDP]);
     ma_valid("/ip4/127.0.0.1/tcp/1234",
              "047F0000010604D2",
              vec![IP4, TCP]);
