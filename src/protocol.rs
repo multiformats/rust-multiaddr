@@ -4,6 +4,7 @@ use integer_encoding::{VarInt, VarIntWriter};
 use std::convert::From;
 use std::io::{Cursor, Result as IoResult, Write};
 use std::net::{Ipv4Addr, Ipv6Addr};
+use std::fmt;
 use std::str::FromStr;
 
 use {Error, Result};
@@ -54,9 +55,9 @@ impl From<Protocol> for u64 {
     }
 }
 
-impl ToString for Protocol {
-    fn to_string(&self) -> String {
-        match *self {
+impl fmt::Display for Protocol {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(match *self {
             Protocol::IP4 => "ip4",
             Protocol::TCP => "tcp",
             Protocol::UDP => "udp",
@@ -80,8 +81,7 @@ impl ToString for Protocol {
             Protocol::Libp2pWebrtcStar => "p2p-webrtc-star",
             Protocol::Libp2pWebrtcDirect => "p2p-webrtc-direct",
             Protocol::P2pCircuit => "p2p-circuit",
-        }
-        .to_owned()
+        })
     }
 }
 
@@ -460,40 +460,40 @@ impl AddrComponent {
     }
 }
 
-impl ToString for AddrComponent {
-    fn to_string(&self) -> String {
-        match *self {
-            AddrComponent::IP4(ref addr) => format!("/ip4/{}", addr),
-            AddrComponent::TCP(port) => format!("/tcp/{}", port),
-            AddrComponent::UDP(port) => format!("/udp/{}", port),
-            AddrComponent::DCCP(port) => format!("/dccp/{}", port),
-            AddrComponent::IP6(ref addr) => format!("/ip6/{}", addr),
-            AddrComponent::DNS4(ref s) => format!("/dns4/{}", s.clone()),
-            AddrComponent::DNS6(ref s) => format!("/dns6/{}", s.clone()),
-            AddrComponent::SCTP(port) => format!("/sctp/{}", port),
-            AddrComponent::UDT => format!("/udt"),
-            AddrComponent::UTP => format!("/utp"),
-            AddrComponent::UNIX(ref s) => format!("/unix/{}", s.clone()),
-            AddrComponent::P2P(ref bytes) => {
+impl fmt::Display for AddrComponent {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AddrComponent::IP4(addr) => write!(f, "/ip4/{}", addr),
+            AddrComponent::TCP(port) => write!(f, "/tcp/{}", port),
+            AddrComponent::UDP(port) => write!(f, "/udp/{}", port),
+            AddrComponent::DCCP(port) => write!(f, "/dccp/{}", port),
+            AddrComponent::IP6(addr) => write!(f, "/ip6/{}", addr),
+            AddrComponent::DNS4(s) => write!(f, "/dns4/{}", s.clone()),
+            AddrComponent::DNS6(s) => write!(f, "/dns6/{}", s.clone()),
+            AddrComponent::SCTP(port) => write!(f, "/sctp/{}", port),
+            AddrComponent::UDT => write!(f, "/udt"),
+            AddrComponent::UTP => write!(f, "/utp"),
+            AddrComponent::UNIX(s) => write!(f, "/unix/{}", s.clone()),
+            AddrComponent::P2P(bytes) => {
                 // TODO: meh for cloning
                 let c = Cid::from(bytes.clone()).expect("cid is known to be valid");
-                format!("/p2p/{}", c)
+                write!(f, "/p2p/{}", c)
             }
-            AddrComponent::IPFS(ref bytes) => {
+            AddrComponent::IPFS(bytes) => {
                 // TODO: meh for cloning
                 let c = Cid::from(bytes.clone()).expect("cid is known to be valid");
-                format!("/ipfs/{}", c)
+                write!(f, "/ipfs/{}", c)
             }
-            AddrComponent::HTTP => format!("/http"),
-            AddrComponent::HTTPS => format!("/https"),
+            AddrComponent::HTTP => write!(f, "/http"),
+            AddrComponent::HTTPS => write!(f, "/https"),
             AddrComponent::ONION(_) => unimplemented!(), //format!("/onion"),        // TODO:
-            AddrComponent::QUIC => format!("/quic"),
-            AddrComponent::WS => format!("/ws"),
-            AddrComponent::WSS => format!("/wss"),
-            AddrComponent::Libp2pWebsocketStar => format!("/p2p-websocket-star"),
-            AddrComponent::Libp2pWebrtcStar => format!("/p2p-webrtc-star"),
-            AddrComponent::Libp2pWebrtcDirect => format!("/p2p-webrtc-direct"),
-            AddrComponent::P2pCircuit => format!("/p2p-circuit"),
+            AddrComponent::QUIC => write!(f, "/quic"),
+            AddrComponent::WS => write!(f, "/ws"),
+            AddrComponent::WSS => write!(f, "/wss"),
+            AddrComponent::Libp2pWebsocketStar => write!(f, "/p2p-websocket-star"),
+            AddrComponent::Libp2pWebrtcStar => write!(f, "/p2p-webrtc-star"),
+            AddrComponent::Libp2pWebrtcDirect => write!(f, "/p2p-webrtc-direct"),
+            AddrComponent::P2pCircuit => write!(f, "/p2p-circuit"),
         }
     }
 }
