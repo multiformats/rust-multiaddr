@@ -6,12 +6,12 @@ keywords = ["multiaddr", "ipfs"]
 license = "MIT"
 name = "multiaddr"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [dependencies]
-byteorder = "~0.4"
-cid = "~0.2"
-integer-encoding = "~1.0.3"
+byteorder = "1.0"
+cid = "~0.3"
+integer-encoding = "1.0.3"
 
 [dev-dependencies]
-data-encoding = "~1.1.2"
+data-encoding = "2.0.0"
