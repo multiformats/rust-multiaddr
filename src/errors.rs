@@ -10,7 +10,7 @@ pub enum Error {
     UnknownProtocolString,
     InvalidMultiaddr,
     MissingAddress,
-    ParsingError(Box<error::Error + Send + Sync>),
+    ParsingError(Box<dyn error::Error + Send + Sync>),
 }
 
 impl fmt::Display for Error {
@@ -31,7 +31,7 @@ impl error::Error for Error {
     }
 
     #[inline]
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             Error::ParsingError(ref err) => Some(&**err),
             _ => None,
@@ -65,6 +65,18 @@ impl From<num::ParseIntError> for Error {
 
 impl From<string::FromUtf8Error> for Error {
     fn from(err: string::FromUtf8Error) -> Error {
+        Error::ParsingError(err.into())
+    }
+}
+
+impl From<data_encoding::DecodeError> for Error {
+    fn from(err: data_encoding::DecodeError) -> Error {
+        Error::ParsingError(err.into())
+    }
+}
+
+impl From<String> for Error {
+    fn from(err: String) -> Error {
         Error::ParsingError(err.into())
     }
 }
