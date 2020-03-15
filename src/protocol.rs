@@ -1,7 +1,7 @@
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use cid::Cid;
 use integer_encoding::{VarInt, VarIntWriter};
-use std::convert::From;
+use std::convert::{From, TryFrom};
 use std::io::{Cursor, Result as IoResult, Write};
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::fmt;
@@ -251,11 +251,11 @@ impl Protocol {
                 Ok(AddrComponent::SCTP(parsed))
             }
             Protocol::P2P => {
-                let bytes = Cid::from(a)?.to_bytes();
+                let bytes = Cid::try_from(a)?.to_bytes();
                 Ok(AddrComponent::P2P(bytes))
             }
             Protocol::IPFS => {
-                let bytes = Cid::from(a)?.to_bytes();
+                let bytes = Cid::try_from(a)?.to_bytes();
                 Ok(AddrComponent::IPFS(bytes))
             }
             Protocol::ONION => unimplemented!(), // TODO:
@@ -388,11 +388,11 @@ impl AddrComponent {
             }
             Protocol::UNIX => AddrComponent::UNIX(String::from_utf8(data.to_owned())?),
             Protocol::P2P => {
-                let bytes = Cid::from(data)?.to_bytes();
+                let bytes = Cid::try_from(data)?.to_bytes();
                 AddrComponent::P2P(bytes)
             }
             Protocol::IPFS => {
-                let bytes = Cid::from(data)?.to_bytes();
+                let bytes = Cid::try_from(data)?.to_bytes();
                 AddrComponent::IPFS(bytes)
             }
             Protocol::ONION => unimplemented!(), // TODO:
@@ -476,12 +476,12 @@ impl fmt::Display for AddrComponent {
             AddrComponent::UNIX(s) => write!(f, "/unix/{}", s.clone()),
             AddrComponent::P2P(bytes) => {
                 // TODO: meh for cloning
-                let c = Cid::from(bytes.clone()).expect("cid is known to be valid");
+                let c = Cid::try_from(bytes.clone()).expect("cid is known to be valid");
                 write!(f, "/p2p/{}", c)
             }
             AddrComponent::IPFS(bytes) => {
                 // TODO: meh for cloning
-                let c = Cid::from(bytes.clone()).expect("cid is known to be valid");
+                let c = Cid::try_from(bytes.clone()).expect("cid is known to be valid");
                 write!(f, "/ipfs/{}", c)
             }
             AddrComponent::HTTP => write!(f, "/http"),
