@@ -1,3 +1,11 @@
+# 0.12.0 [unreleased]
+
+- Merge  [multiaddr] and [parity-multiaddr] (see [PR 40]).
+
+[multiaddr]: https://github.com/multiformats/rust-multiaddr
+[parity-multiaddr]: https://github.com/libp2p/rust-libp2p/blob/master/misc/multiaddr/
+[PR 40]: https://github.com/multiformats/rust-multiaddr/pull/40
+
 # 0.11.2 [2021-03-17]
 
 - Add `Multiaddr::ends_with()`.
