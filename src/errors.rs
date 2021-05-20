@@ -32,7 +32,7 @@ impl fmt::Display for Error {
 
 impl error::Error for Error {
     #[inline]
-    fn cause(&self) -> Option<&dyn error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         if let Error::ParsingError(e) = self {
             Some(&**e)
         } else {

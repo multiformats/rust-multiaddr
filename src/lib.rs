@@ -75,7 +75,7 @@ impl Multiaddr {
     /// # Examples
     ///
     /// ```
-    /// use parity_multiaddr::{Multiaddr, Protocol};
+    /// use multiaddr::{Multiaddr, Protocol};
     ///
     /// let mut address: Multiaddr = "/ip4/127.0.0.1".parse().unwrap();
     /// address.push(Protocol::Tcp(10000));
@@ -90,7 +90,7 @@ impl Multiaddr {
 
     /// Pops the last `Protocol` of this multiaddr, or `None` if the multiaddr is empty.
     /// ```
-    /// use parity_multiaddr::{Multiaddr, Protocol};
+    /// use multiaddr::{Multiaddr, Protocol};
     ///
     /// let mut address: Multiaddr = "/ip4/127.0.0.1/udt/sctp/5678".parse().unwrap();
     ///
@@ -129,7 +129,7 @@ impl Multiaddr {
     ///
     /// ```rust
     /// use std::net::Ipv4Addr;
-    /// use parity_multiaddr::{Multiaddr, Protocol};
+    /// use multiaddr::{Multiaddr, Protocol};
     ///
     /// let address: Multiaddr = "/ip4/127.0.0.1/udt/sctp/5678".parse().unwrap();
     ///
@@ -198,7 +198,7 @@ impl fmt::Display for Multiaddr {
     /// # Example
     ///
     /// ```
-    /// use parity_multiaddr::Multiaddr;
+    /// use multiaddr::Multiaddr;
     ///
     /// let address: Multiaddr = "/ip4/127.0.0.1/udt".parse().unwrap();
     /// assert_eq!(address.to_string(), "/ip4/127.0.0.1/udt");
@@ -408,7 +408,7 @@ impl<'de> Deserialize<'de> for Multiaddr {
 /// Example:
 ///
 /// ```rust
-/// # use parity_multiaddr::multiaddr;
+/// # use multiaddr::multiaddr;
 /// let addr = multiaddr!(Ip4([127, 0, 0, 1]), Tcp(10500u16));
 /// ```
 ///

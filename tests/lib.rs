@@ -1,7 +1,6 @@
-
 use data_encoding::HEXUPPER;
 use multihash::Multihash;
-use parity_multiaddr::*;
+use multiaddr::*;
 use quickcheck::{Arbitrary, Gen, QuickCheck};
 use rand::Rng;
 use std::{
@@ -286,10 +285,9 @@ fn construct_fail() {
     ];
 
     for address in &addresses {
-        assert!(address.parse::<Multiaddr>().is_err(), address.to_string());
+        assert!(address.parse::<Multiaddr>().is_err(), "{}", address.to_string());
     }
 }
-
 
 #[test]
 fn to_multiaddr() {

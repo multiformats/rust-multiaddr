@@ -1,4 +1,3 @@
-
 use arrayref::array_ref;
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use crate::{Result, Error};

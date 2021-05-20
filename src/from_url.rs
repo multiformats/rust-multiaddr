@@ -21,7 +21,7 @@ use std::{error, fmt, iter, net::IpAddr};
 /// # Example
 ///
 /// ```
-/// let addr = parity_multiaddr::from_url("ws://127.0.0.1:8080/").unwrap();
+/// let addr = multiaddr::from_url("ws://127.0.0.1:8080/").unwrap();
 /// assert_eq!(addr, "/ip4/127.0.0.1/tcp/8080/ws".parse().unwrap());
 /// ```
 ///
@@ -41,8 +41,8 @@ pub fn from_url(url: &str) -> std::result::Result<Multiaddr, FromUrlErr> {
 ///
 /// ```
 /// let addr = "ws://user:pass@127.0.0.1:8080/";
-/// assert!(parity_multiaddr::from_url(addr).is_err());
-/// assert!(parity_multiaddr::from_url_lossy(addr).is_ok());
+/// assert!(multiaddr::from_url(addr).is_err());
+/// assert!(multiaddr::from_url_lossy(addr).is_ok());
 /// ```
 ///
 pub fn from_url_lossy(url: &str) -> std::result::Result<Multiaddr, FromUrlErr> {
