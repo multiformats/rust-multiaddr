@@ -2,6 +2,14 @@
 
 - Merge  [multiaddr] and [parity-multiaddr] (see [PR 40]).
 
+    - Functionality to go from a `u64` to a `multiadddr::Protocol` and back is
+      removed. Please open an issue on [multiaddr] in case this is still needed.
+
+    - Given that `multiaddr::Protocol` now represents both the protocol
+      identifier as well as the protocol data (e.g. protocol identifier `55`
+      (`dns6`) and protocol data `some-domain.example`) `multiaddr::Protocol` is
+      no longer `Copy`.
+
 [multiaddr]: https://github.com/multiformats/rust-multiaddr
 [parity-multiaddr]: https://github.com/libp2p/rust-libp2p/blob/master/misc/multiaddr/
 [PR 40]: https://github.com/multiformats/rust-multiaddr/pull/40
