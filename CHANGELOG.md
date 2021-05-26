@@ -1,4 +1,4 @@
-# 0.12.0 [unreleased]
+# 0.12.0 [2021-05-26]
 
 - Merge  [multiaddr] and [parity-multiaddr] (see [PR 40]).
 
