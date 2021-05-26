@@ -1,499 +1,585 @@
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use cid::Cid;
-use integer_encoding::{VarInt, VarIntWriter};
-use std::convert::From;
-use std::io::{Cursor, Result as IoResult, Write};
-use std::net::{Ipv4Addr, Ipv6Addr};
-use std::fmt;
-use std::str::FromStr;
+use arrayref::array_ref;
+use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
+use crate::{Result, Error};
+use data_encoding::BASE32;
+use multihash::Multihash;
+use std::{
+    borrow::Cow,
+    convert::From,
+    fmt,
+    io::{Cursor, Write},
+    net::{IpAddr, Ipv4Addr, Ipv6Addr},
+    str::{self, FromStr}
+};
+use unsigned_varint::{encode, decode};
+use crate::onion_addr::Onion3Addr;
 
-use {Error, Result};
+const DCCP: u32 = 33;
+const DNS: u32 = 53;
+const DNS4: u32 = 54;
+const DNS6: u32 = 55;
+const DNSADDR: u32 = 56;
+const HTTP: u32 = 480;
+const HTTPS: u32 = 443;
+const IP4: u32 = 4;
+const IP6: u32 = 41;
+const P2P_WEBRTC_DIRECT: u32 = 276;
+const P2P_WEBRTC_STAR: u32 = 275;
+const P2P_WEBSOCKET_STAR: u32 = 479;
+const MEMORY: u32 = 777;
+const ONION: u32 = 444;
+const ONION3: u32 = 445;
+const P2P: u32 = 421;
+const P2P_CIRCUIT: u32 = 290;
+const QUIC: u32 = 460;
+const SCTP: u32 = 132;
+const TCP: u32 = 6;
+const UDP: u32 = 273;
+const UDT: u32 = 301;
+const UNIX: u32 = 400;
+const UTP: u32 = 302;
+const WS: u32 = 477;
+const WS_WITH_PATH: u32 = 4770;         // Note: not standard
+const WSS: u32 = 478;
+const WSS_WITH_PATH: u32 = 4780;        // Note: not standard
 
-///! # Protocol
-///!
-///! A type to describe the possible protocol used in a
-///! Multiaddr.
+const PATH_SEGMENT_ENCODE_SET: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
+    .add(b'%')
+    .add(b'/')
+    .add(b'`')
+    .add(b'?')
+    .add(b'{')
+    .add(b'}')
+    .add(b' ')
+    .add(b'"')
+    .add(b'#')
+    .add(b'<')
+    .add(b'>');
 
-/// Protocol is the list of all possible protocols.
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[repr(u32)]
-pub enum Protocol {
-    IP4 = 4,
-    TCP = 6,
-    UDP = 273,
-    DCCP = 33,
-    IP6 = 41,
-    DNS4 = 54,
-    DNS6 = 55,
-    SCTP = 132,
-    UDT = 301,
-    UTP = 302,
-    UNIX = 400,
-    P2P = 420,
-    IPFS = 421,
-    HTTP = 480,
-    HTTPS = 443,
-    ONION = 444,
-    QUIC = 460,
-    WS = 477,
-    WSS = 478,
-    Libp2pWebsocketStar = 479,
-    Libp2pWebrtcStar = 275,
-    Libp2pWebrtcDirect = 276,
-    P2pCircuit = 290,
-}
-
-impl From<Protocol> for u32 {
-    fn from(proto: Protocol) -> u32 {
-        proto as u32
-    }
-}
-
-impl From<Protocol> for u64 {
-    fn from(proto: Protocol) -> u64 {
-        u64::from(proto as u32)
-    }
-}
-
-impl fmt::Display for Protocol {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(match *self {
-            Protocol::IP4 => "ip4",
-            Protocol::TCP => "tcp",
-            Protocol::UDP => "udp",
-            Protocol::DCCP => "dccp",
-            Protocol::IP6 => "ip6",
-            Protocol::DNS4 => "dns4",
-            Protocol::DNS6 => "dns6",
-            Protocol::SCTP => "sctp",
-            Protocol::UDT => "udt",
-            Protocol::UTP => "utp",
-            Protocol::UNIX => "unix",
-            Protocol::P2P => "p2p",
-            Protocol::IPFS => "ipfs",
-            Protocol::HTTP => "http",
-            Protocol::HTTPS => "https",
-            Protocol::ONION => "onion",
-            Protocol::QUIC => "quic",
-            Protocol::WS => "ws",
-            Protocol::WSS => "wss",
-            Protocol::Libp2pWebsocketStar => "p2p-websocket-star",
-            Protocol::Libp2pWebrtcStar => "p2p-webrtc-star",
-            Protocol::Libp2pWebrtcDirect => "p2p-webrtc-direct",
-            Protocol::P2pCircuit => "p2p-circuit",
-        })
-    }
-}
-
-impl FromStr for Protocol {
-    type Err = Error;
-
-    fn from_str(raw: &str) -> Result<Self> {
-        match raw {
-            "ip4" => Ok(Protocol::IP4),
-            "tcp" => Ok(Protocol::TCP),
-            "udp" => Ok(Protocol::UDP),
-            "dccp" => Ok(Protocol::DCCP),
-            "ip6" => Ok(Protocol::IP6),
-            "dns4" => Ok(Protocol::DNS4),
-            "dns6" => Ok(Protocol::DNS6),
-            "sctp" => Ok(Protocol::SCTP),
-            "udt" => Ok(Protocol::UDT),
-            "utp" => Ok(Protocol::UTP),
-            "unix" => Ok(Protocol::UNIX),
-            "p2p" => Ok(Protocol::P2P),
-            "ipfs" => Ok(Protocol::IPFS),
-            "http" => Ok(Protocol::HTTP),
-            "https" => Ok(Protocol::HTTPS),
-            "onion" => Ok(Protocol::ONION),
-            "quic" => Ok(Protocol::QUIC),
-            "ws" => Ok(Protocol::WS),
-            "wss" => Ok(Protocol::WSS),
-            "p2p-websocket-star" => Ok(Protocol::Libp2pWebsocketStar),
-            "p2p-webrtc-star" => Ok(Protocol::Libp2pWebrtcStar),
-            "p2p-webrtc-direct" => Ok(Protocol::Libp2pWebrtcDirect),
-            "p2p-circuit" => Ok(Protocol::P2pCircuit),
-            _ => Err(Error::UnknownProtocolString),
-        }
-    }
-}
-
-impl Protocol {
-    /// Convert a `u64` based code to a `Protocol`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use multiaddr::Protocol;
-    ///
-    /// assert_eq!(Protocol::from(6).unwrap(), Protocol::TCP);
-    /// assert!(Protocol::from(455).is_err());
-    /// ```
-    pub fn from(raw: u64) -> Result<Protocol> {
-        match raw {
-            4 => Ok(Protocol::IP4),
-            6 => Ok(Protocol::TCP),
-            273 => Ok(Protocol::UDP),
-            33 => Ok(Protocol::DCCP),
-            41 => Ok(Protocol::IP6),
-            54 => Ok(Protocol::DNS4),
-            55 => Ok(Protocol::DNS6),
-            132 => Ok(Protocol::SCTP),
-            301 => Ok(Protocol::UDT),
-            302 => Ok(Protocol::UTP),
-            400 => Ok(Protocol::UNIX),
-            420 => Ok(Protocol::P2P),
-            421 => Ok(Protocol::IPFS),
-            480 => Ok(Protocol::HTTP),
-            443 => Ok(Protocol::HTTPS),
-            444 => Ok(Protocol::ONION),
-            460 => Ok(Protocol::QUIC),
-            477 => Ok(Protocol::WS),
-            478 => Ok(Protocol::WSS),
-            479 => Ok(Protocol::Libp2pWebsocketStar),
-            275 => Ok(Protocol::Libp2pWebrtcStar),
-            276 => Ok(Protocol::Libp2pWebrtcDirect),
-            290 => Ok(Protocol::P2pCircuit),
-            _ => Err(Error::UnknownProtocol),
-        }
-    }
-
-    /// Get the size from a `Protocol`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use multiaddr::Protocol;
-    /// use multiaddr::ProtocolArgSize;
-    ///
-    /// assert_eq!(Protocol::TCP.size(), ProtocolArgSize::Fixed { bytes: 2 });
-    /// ```
-    ///
-    pub fn size(self) -> ProtocolArgSize {
-        match self {
-            Protocol::IP4 => ProtocolArgSize::Fixed { bytes: 4 },
-            Protocol::TCP => ProtocolArgSize::Fixed { bytes: 2 },
-            Protocol::UDP => ProtocolArgSize::Fixed { bytes: 2 },
-            Protocol::DCCP => ProtocolArgSize::Fixed { bytes: 2 },
-            Protocol::IP6 => ProtocolArgSize::Fixed { bytes: 16 },
-            Protocol::DNS4 => ProtocolArgSize::Variable,
-            Protocol::DNS6 => ProtocolArgSize::Variable,
-            Protocol::SCTP => ProtocolArgSize::Fixed { bytes: 2 },
-            Protocol::UDT => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::UTP => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::UNIX => ProtocolArgSize::Variable,
-            Protocol::P2P => ProtocolArgSize::Variable,
-            Protocol::IPFS => ProtocolArgSize::Variable,
-            Protocol::HTTP => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::HTTPS => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::ONION => ProtocolArgSize::Fixed { bytes: 10 },
-            Protocol::QUIC => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::WS => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::WSS => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::Libp2pWebsocketStar => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::Libp2pWebrtcStar => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::Libp2pWebrtcDirect => ProtocolArgSize::Fixed { bytes: 0 },
-            Protocol::P2pCircuit => ProtocolArgSize::Fixed { bytes: 0 },
-        }
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum ProtocolArgSize {
-    /// The size of the argument is of fixed length. The length can be 0, in which case there is no
-    /// argument.
-    Fixed { bytes: usize },
-    /// The size of the argument is of variable length.
-    Variable,
-}
-
-impl Protocol {
-    /// Convert an array slice to the string representation.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::net::Ipv4Addr;
-    /// use multiaddr::AddrComponent;
-    /// use multiaddr::Protocol;
-    ///
-    /// let proto = Protocol::IP4;
-    /// assert_eq!(proto.parse_data("127.0.0.1").unwrap(),
-    ///            AddrComponent::IP4(Ipv4Addr::new(127, 0, 0, 1)));
-    /// ```
-    ///
-    pub fn parse_data(&self, a: &str) -> Result<AddrComponent> {
-        match *self {
-            Protocol::IP4 => {
-                let addr = Ipv4Addr::from_str(a)?;
-                Ok(AddrComponent::IP4(addr))
-            }
-            Protocol::IP6 => {
-                let addr = Ipv6Addr::from_str(a)?;
-                Ok(AddrComponent::IP6(addr))
-            }
-            Protocol::DNS4 => Ok(AddrComponent::DNS4(a.to_owned())),
-            Protocol::DNS6 => Ok(AddrComponent::DNS6(a.to_owned())),
-            Protocol::TCP => {
-                let parsed: u16 = a.parse()?;
-                Ok(AddrComponent::TCP(parsed))
-            }
-            Protocol::UDP => {
-                let parsed: u16 = a.parse()?;
-                Ok(AddrComponent::UDP(parsed))
-            }
-            Protocol::DCCP => {
-                let parsed: u16 = a.parse()?;
-                Ok(AddrComponent::DCCP(parsed))
-            }
-            Protocol::SCTP => {
-                let parsed: u16 = a.parse()?;
-                Ok(AddrComponent::SCTP(parsed))
-            }
-            Protocol::P2P => {
-                let bytes = Cid::from(a)?.to_bytes();
-                Ok(AddrComponent::P2P(bytes))
-            }
-            Protocol::IPFS => {
-                let bytes = Cid::from(a)?.to_bytes();
-                Ok(AddrComponent::IPFS(bytes))
-            }
-            Protocol::ONION => unimplemented!(), // TODO:
-            Protocol::QUIC => Ok(AddrComponent::QUIC),
-            Protocol::UTP => Ok(AddrComponent::UTP),
-            Protocol::UNIX => Ok(AddrComponent::UNIX(a.to_owned())),
-            Protocol::UDT => Ok(AddrComponent::UDT),
-            Protocol::HTTP => Ok(AddrComponent::HTTP),
-            Protocol::HTTPS => Ok(AddrComponent::HTTPS),
-            Protocol::WS => Ok(AddrComponent::WS),
-            Protocol::WSS => Ok(AddrComponent::WSS),
-            Protocol::Libp2pWebsocketStar => Ok(AddrComponent::Libp2pWebsocketStar),
-            Protocol::Libp2pWebrtcStar => Ok(AddrComponent::Libp2pWebrtcStar),
-            Protocol::Libp2pWebrtcDirect => Ok(AddrComponent::Libp2pWebrtcDirect),
-            Protocol::P2pCircuit => Ok(AddrComponent::P2pCircuit),
-        }
-    }
-}
-
+/// `Protocol` describes all possible multiaddress protocols.
+///
+/// For `Unix`, `Ws` and `Wss` we use `&str` instead of `Path` to allow
+/// cross-platform usage of `Protocol` since encoding `Paths` to bytes is
+/// platform-specific. This means that the actual validation of paths needs to
+/// happen separately.
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub enum AddrComponent {
-    IP4(Ipv4Addr),
-    TCP(u16),
-    UDP(u16),
-    DCCP(u16),
-    IP6(Ipv6Addr),
-    DNS4(String),
-    DNS6(String),
-    SCTP(u16),
-    UDT,
-    UTP,
-    UNIX(String),
-    P2P(Vec<u8>),
-    IPFS(Vec<u8>),
-    HTTP,
-    HTTPS,
-    ONION(Vec<u8>),
-    QUIC,
-    WS,
-    WSS,
-    Libp2pWebsocketStar,
-    Libp2pWebrtcStar,
-    Libp2pWebrtcDirect,
+pub enum Protocol<'a> {
+    Dccp(u16),
+    Dns(Cow<'a, str>),
+    Dns4(Cow<'a, str>),
+    Dns6(Cow<'a, str>),
+    Dnsaddr(Cow<'a, str>),
+    Http,
+    Https,
+    Ip4(Ipv4Addr),
+    Ip6(Ipv6Addr),
+    P2pWebRtcDirect,
+    P2pWebRtcStar,
+    P2pWebSocketStar,
+    /// Contains the "port" to contact. Similar to TCP or UDP, 0 means "assign me a port".
+    Memory(u64),
+    Onion(Cow<'a, [u8; 10]>, u16),
+    Onion3(Onion3Addr<'a>),
+    P2p(Multihash),
     P2pCircuit,
+    Quic,
+    Sctp(u16),
+    Tcp(u16),
+    Udp(u16),
+    Udt,
+    Unix(Cow<'a, str>),
+    Utp,
+    Ws(Cow<'a, str>),
+    Wss(Cow<'a, str>),
 }
 
-impl AddrComponent {
-    /// Returns the `Protocol` corresponding to this `AddrComponent`.
-    #[inline]
-    pub fn protocol_id(&self) -> Protocol {
-        match *self {
-            AddrComponent::IP4(_) => Protocol::IP4,
-            AddrComponent::TCP(_) => Protocol::TCP,
-            AddrComponent::UDP(_) => Protocol::UDP,
-            AddrComponent::DCCP(_) => Protocol::DCCP,
-            AddrComponent::IP6(_) => Protocol::IP6,
-            AddrComponent::DNS4(_) => Protocol::DNS4,
-            AddrComponent::DNS6(_) => Protocol::DNS6,
-            AddrComponent::SCTP(_) => Protocol::SCTP,
-            AddrComponent::UDT => Protocol::UDT,
-            AddrComponent::UTP => Protocol::UTP,
-            AddrComponent::UNIX(_) => Protocol::UNIX,
-            AddrComponent::P2P(_) => Protocol::P2P,
-            AddrComponent::IPFS(_) => Protocol::IPFS,
-            AddrComponent::HTTP => Protocol::HTTP,
-            AddrComponent::HTTPS => Protocol::HTTPS,
-            AddrComponent::ONION(_) => Protocol::ONION,
-            AddrComponent::QUIC => Protocol::QUIC,
-            AddrComponent::WS => Protocol::WS,
-            AddrComponent::WSS => Protocol::WSS,
-            AddrComponent::Libp2pWebsocketStar => Protocol::Libp2pWebsocketStar,
-            AddrComponent::Libp2pWebrtcStar => Protocol::Libp2pWebrtcStar,
-            AddrComponent::Libp2pWebrtcDirect => Protocol::Libp2pWebrtcDirect,
-            AddrComponent::P2pCircuit => Protocol::P2pCircuit,
+impl<'a> Protocol<'a> {
+    /// Parse a protocol value from the given iterator of string slices.
+    ///
+    /// The parsing only consumes the minimum amount of string slices necessary to
+    /// produce a well-formed protocol. The same iterator can thus be used to parse
+    /// a sequence of protocols in succession. It is up to client code to check
+    /// that iteration has finished whenever appropriate.
+    pub fn from_str_parts<I>(mut iter: I) -> Result<Self>
+    where
+        I: Iterator<Item=&'a str>
+    {
+        match iter.next().ok_or(Error::InvalidProtocolString)? {
+            "ip4" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Ip4(Ipv4Addr::from_str(s)?))
+            }
+            "tcp" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Tcp(s.parse()?))
+            }
+            "udp" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Udp(s.parse()?))
+            }
+            "dccp" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Dccp(s.parse()?))
+            }
+            "ip6" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Ip6(Ipv6Addr::from_str(s)?))
+            }
+            "dns" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Dns(Cow::Borrowed(s)))
+            }
+            "dns4" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Dns4(Cow::Borrowed(s)))
+            }
+            "dns6" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Dns6(Cow::Borrowed(s)))
+            }
+            "dnsaddr" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Dnsaddr(Cow::Borrowed(s)))
+            }
+            "sctp" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Sctp(s.parse()?))
+            }
+            "udt" => Ok(Protocol::Udt),
+            "utp" => Ok(Protocol::Utp),
+            "unix" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Unix(Cow::Borrowed(s)))
+            }
+            "p2p" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let decoded = bs58::decode(s).into_vec()?;
+                Ok(Protocol::P2p(Multihash::from_bytes(&decoded)?))
+            }
+            "http" => Ok(Protocol::Http),
+            "https" => Ok(Protocol::Https),
+            "onion" =>
+                iter.next()
+                    .ok_or(Error::InvalidProtocolString)
+                    .and_then(|s| read_onion(&s.to_uppercase()))
+                    .map(|(a, p)| Protocol::Onion(Cow::Owned(a), p)),
+            "onion3" =>
+                iter.next()
+                    .ok_or(Error::InvalidProtocolString)
+                    .and_then(|s| read_onion3(&s.to_uppercase()))
+                    .map(|(a, p)| Protocol::Onion3((a, p).into())),
+            "quic" => Ok(Protocol::Quic),
+            "ws" => Ok(Protocol::Ws(Cow::Borrowed("/"))),
+            "wss" => Ok(Protocol::Wss(Cow::Borrowed("/"))),
+            "x-parity-ws" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let decoded = percent_encoding::percent_decode(s.as_bytes()).decode_utf8()?;
+                Ok(Protocol::Ws(decoded))
+            }
+            "x-parity-wss" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let decoded = percent_encoding::percent_decode(s.as_bytes()).decode_utf8()?;
+                Ok(Protocol::Wss(decoded))
+            }
+            "p2p-websocket-star" => Ok(Protocol::P2pWebSocketStar),
+            "p2p-webrtc-star" => Ok(Protocol::P2pWebRtcStar),
+            "p2p-webrtc-direct" => Ok(Protocol::P2pWebRtcDirect),
+            "p2p-circuit" => Ok(Protocol::P2pCircuit),
+            "memory" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                Ok(Protocol::Memory(s.parse()?))
+            }
+            unknown => Err(Error::UnknownProtocolString(unknown.to_string()))
         }
     }
 
-    /// Builds an `AddrComponent` from an array that starts with a bytes representation. On
-    /// success, also returns the rest of the slice.
-    pub fn from_bytes(input: &[u8]) -> Result<(AddrComponent, &[u8])> {
-        let (proto_num, proto_id_len) = u64::decode_var(input); // TODO: will panic if ID too large
-
-        let protocol_id = Protocol::from(proto_num)?;
-        let (data_offset, data_size) = match protocol_id.size() {
-            ProtocolArgSize::Fixed { bytes } => (0, bytes),
-            ProtocolArgSize::Variable => {
-                let (data_size, varint_len) = u64::decode_var(&input[proto_id_len..]); // TODO: will panic if ID too large
-                (varint_len, data_size as usize)
+    /// Parse a single `Protocol` value from its byte slice representation,
+    /// returning the protocol as well as the remaining byte slice.
+    pub fn from_bytes(input: &'a [u8]) -> Result<(Self, &'a [u8])> {
+        fn split_at(n: usize, input: &[u8]) -> Result<(&[u8], &[u8])> {
+            if input.len() < n {
+                return Err(Error::DataLessThanLen)
             }
-        };
-
-        let (data, rest) = input[proto_id_len..][data_offset..].split_at(data_size);
-
-        let addr_component = match protocol_id {
-            Protocol::IP4 => AddrComponent::IP4(Ipv4Addr::new(data[0], data[1], data[2], data[3])),
-            Protocol::IP6 => {
+            Ok(input.split_at(n))
+        }
+        let (id, input) = decode::u32(input)?;
+        match id {
+            DCCP => {
+                let (data, rest) = split_at(2, input)?;
                 let mut rdr = Cursor::new(data);
-                let mut seg = vec![];
+                let num = rdr.read_u16::<BigEndian>()?;
+                Ok((Protocol::Dccp(num), rest))
+            }
+            DNS => {
+                let (n, input) = decode::usize(input)?;
+                let (data, rest) = split_at(n, input)?;
+                Ok((Protocol::Dns(Cow::Borrowed(str::from_utf8(data)?)), rest))
+            }
+            DNS4 => {
+                let (n, input) = decode::usize(input)?;
+                let (data, rest) = split_at(n, input)?;
+                Ok((Protocol::Dns4(Cow::Borrowed(str::from_utf8(data)?)), rest))
+            }
+            DNS6 => {
+                let (n, input) = decode::usize(input)?;
+                let (data, rest) = split_at(n, input)?;
+                Ok((Protocol::Dns6(Cow::Borrowed(str::from_utf8(data)?)), rest))
+            }
+            DNSADDR => {
+                let (n, input) = decode::usize(input)?;
+                let (data, rest) = split_at(n, input)?;
+                Ok((Protocol::Dnsaddr(Cow::Borrowed(str::from_utf8(data)?)), rest))
+            }
+            HTTP => Ok((Protocol::Http, input)),
+            HTTPS => Ok((Protocol::Https, input)),
+            IP4 => {
+                let (data, rest) = split_at(4, input)?;
+                Ok((Protocol::Ip4(Ipv4Addr::new(data[0], data[1], data[2], data[3])), rest))
+            }
+            IP6 => {
+                let (data, rest) = split_at(16, input)?;
+                let mut rdr = Cursor::new(data);
+                let mut seg = [0_u16; 8];
 
-                for _ in 0..8 {
-                    seg.push(rdr.read_u16::<BigEndian>()?);
+                for x in seg.iter_mut() {
+                    *x = rdr.read_u16::<BigEndian>()?;
                 }
 
-                let addr = Ipv6Addr::new(
-                    seg[0], seg[1], seg[2], seg[3], seg[4], seg[5], seg[6], seg[7],
-                );
-                AddrComponent::IP6(addr)
-            }
-            Protocol::DNS4 => AddrComponent::DNS4(String::from_utf8(data.to_owned())?),
-            Protocol::DNS6 => AddrComponent::DNS6(String::from_utf8(data.to_owned())?),
-            Protocol::TCP => {
-                let mut rdr = Cursor::new(data);
-                let num = rdr.read_u16::<BigEndian>()?;
-                AddrComponent::TCP(num)
-            }
-            Protocol::UDP => {
-                let mut rdr = Cursor::new(data);
-                let num = rdr.read_u16::<BigEndian>()?;
-                AddrComponent::UDP(num)
-            }
-            Protocol::DCCP => {
-                let mut rdr = Cursor::new(data);
-                let num = rdr.read_u16::<BigEndian>()?;
-                AddrComponent::DCCP(num)
-            }
-            Protocol::SCTP => {
-                let mut rdr = Cursor::new(data);
-                let num = rdr.read_u16::<BigEndian>()?;
-                AddrComponent::SCTP(num)
-            }
-            Protocol::UNIX => AddrComponent::UNIX(String::from_utf8(data.to_owned())?),
-            Protocol::P2P => {
-                let bytes = Cid::from(data)?.to_bytes();
-                AddrComponent::P2P(bytes)
-            }
-            Protocol::IPFS => {
-                let bytes = Cid::from(data)?.to_bytes();
-                AddrComponent::IPFS(bytes)
-            }
-            Protocol::ONION => unimplemented!(), // TODO:
-            Protocol::QUIC => AddrComponent::QUIC,
-            Protocol::UTP => AddrComponent::UTP,
-            Protocol::UDT => AddrComponent::UDT,
-            Protocol::HTTP => AddrComponent::HTTP,
-            Protocol::HTTPS => AddrComponent::HTTPS,
-            Protocol::WS => AddrComponent::WS,
-            Protocol::WSS => AddrComponent::WSS,
-            Protocol::Libp2pWebsocketStar => AddrComponent::Libp2pWebsocketStar,
-            Protocol::Libp2pWebrtcStar => AddrComponent::Libp2pWebrtcStar,
-            Protocol::Libp2pWebrtcDirect => AddrComponent::Libp2pWebrtcDirect,
-            Protocol::P2pCircuit => AddrComponent::P2pCircuit,
-        };
+                let addr = Ipv6Addr::new(seg[0],
+                                         seg[1],
+                                         seg[2],
+                                         seg[3],
+                                         seg[4],
+                                         seg[5],
+                                         seg[6],
+                                         seg[7]);
 
-        Ok((addr_component, rest))
+                Ok((Protocol::Ip6(addr), rest))
+            }
+            P2P_WEBRTC_DIRECT => Ok((Protocol::P2pWebRtcDirect, input)),
+            P2P_WEBRTC_STAR => Ok((Protocol::P2pWebRtcStar, input)),
+            P2P_WEBSOCKET_STAR => Ok((Protocol::P2pWebSocketStar, input)),
+            MEMORY => {
+                let (data, rest) = split_at(8, input)?;
+                let mut rdr = Cursor::new(data);
+                let num = rdr.read_u64::<BigEndian>()?;
+                Ok((Protocol::Memory(num), rest))
+            }
+            ONION => {
+                let (data, rest) = split_at(12, input)?;
+                let port = BigEndian::read_u16(&data[10 ..]);
+                Ok((Protocol::Onion(Cow::Borrowed(array_ref!(data, 0, 10)), port), rest))
+            }
+            ONION3 => {
+                let (data, rest) = split_at(37, input)?;
+                let port = BigEndian::read_u16(&data[35 ..]);
+                Ok((Protocol::Onion3((array_ref!(data, 0, 35), port).into()), rest))
+            }
+            P2P => {
+                let (n, input) = decode::usize(input)?;
+                let (data, rest) = split_at(n, input)?;
+                Ok((Protocol::P2p(Multihash::from_bytes(data)?), rest))
+            }
+            P2P_CIRCUIT => Ok((Protocol::P2pCircuit, input)),
+            QUIC => Ok((Protocol::Quic, input)),
+            SCTP => {
+                let (data, rest) = split_at(2, input)?;
+                let mut rdr = Cursor::new(data);
+                let num = rdr.read_u16::<BigEndian>()?;
+                Ok((Protocol::Sctp(num), rest))
+            }
+            TCP => {
+                let (data, rest) = split_at(2, input)?;
+                let mut rdr = Cursor::new(data);
+                let num = rdr.read_u16::<BigEndian>()?;
+                Ok((Protocol::Tcp(num), rest))
+            }
+            UDP => {
+                let (data, rest) = split_at(2, input)?;
+                let mut rdr = Cursor::new(data);
+                let num = rdr.read_u16::<BigEndian>()?;
+                Ok((Protocol::Udp(num), rest))
+            }
+            UDT => Ok((Protocol::Udt, input)),
+            UNIX => {
+                let (n, input) = decode::usize(input)?;
+                let (data, rest) = split_at(n, input)?;
+                Ok((Protocol::Unix(Cow::Borrowed(str::from_utf8(data)?)), rest))
+            }
+            UTP => Ok((Protocol::Utp, input)),
+            WS => Ok((Protocol::Ws(Cow::Borrowed("/")), input)),
+            WS_WITH_PATH => {
+                let (n, input) = decode::usize(input)?;
+                let (data, rest) = split_at(n, input)?;
+                Ok((Protocol::Ws(Cow::Borrowed(str::from_utf8(data)?)), rest))
+            }
+            WSS => Ok((Protocol::Wss(Cow::Borrowed("/")), input)),
+            WSS_WITH_PATH => {
+                let (n, input) = decode::usize(input)?;
+                let (data, rest) = split_at(n, input)?;
+                Ok((Protocol::Wss(Cow::Borrowed(str::from_utf8(data)?)), rest))
+            }
+            _ => Err(Error::UnknownProtocolId(id))
+        }
     }
 
-    /// Turns this address component into bytes by writing it to a `Write`.
-    pub fn write_bytes<W: Write>(self, out: &mut W) -> IoResult<()> {
-        out.write_varint(Into::<u64>::into(self.protocol_id()))?;
-
+    /// Encode this protocol by writing its binary representation into
+    /// the given `Write` impl.
+    pub fn write_bytes<W: Write>(&self, w: &mut W) -> Result<()> {
+        let mut buf = encode::u32_buffer();
         match self {
-            AddrComponent::IP4(addr) => {
-                out.write_all(&addr.octets())?;
+            Protocol::Ip4(addr) => {
+                w.write_all(encode::u32(IP4, &mut buf))?;
+                w.write_all(&addr.octets())?
             }
-            AddrComponent::IP6(addr) => {
+            Protocol::Ip6(addr) => {
+                w.write_all(encode::u32(IP6, &mut buf))?;
                 for &segment in &addr.segments() {
-                    out.write_u16::<BigEndian>(segment)?;
+                    w.write_u16::<BigEndian>(segment)?
                 }
             }
-            AddrComponent::TCP(port)
-            | AddrComponent::UDP(port)
-            | AddrComponent::DCCP(port)
-            | AddrComponent::SCTP(port) => {
-                out.write_u16::<BigEndian>(port)?;
+            Protocol::Tcp(port) => {
+                w.write_all(encode::u32(TCP, &mut buf))?;
+                w.write_u16::<BigEndian>(*port)?
             }
-            AddrComponent::DNS4(s) | AddrComponent::DNS6(s) | AddrComponent::UNIX(s) => {
+            Protocol::Udp(port) => {
+                w.write_all(encode::u32(UDP, &mut buf))?;
+                w.write_u16::<BigEndian>(*port)?
+            }
+            Protocol::Dccp(port) => {
+                w.write_all(encode::u32(DCCP, &mut buf))?;
+                w.write_u16::<BigEndian>(*port)?
+            }
+            Protocol::Sctp(port) => {
+                w.write_all(encode::u32(SCTP, &mut buf))?;
+                w.write_u16::<BigEndian>(*port)?
+            }
+            Protocol::Dns(s) => {
+                w.write_all(encode::u32(DNS, &mut buf))?;
                 let bytes = s.as_bytes();
-                out.write_varint(bytes.len())?;
-                out.write_all(&bytes)?;
+                w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
+                w.write_all(&bytes)?
             }
-            AddrComponent::P2P(bytes) | AddrComponent::IPFS(bytes) => {
-                out.write_varint(bytes.len())?;
-                out.write_all(&bytes)?;
+            Protocol::Dns4(s) => {
+                w.write_all(encode::u32(DNS4, &mut buf))?;
+                let bytes = s.as_bytes();
+                w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
+                w.write_all(&bytes)?
             }
-            AddrComponent::ONION(_) => {
-                unimplemented!() // TODO:
+            Protocol::Dns6(s) => {
+                w.write_all(encode::u32(DNS6, &mut buf))?;
+                let bytes = s.as_bytes();
+                w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
+                w.write_all(&bytes)?
             }
-            AddrComponent::QUIC
-            | AddrComponent::UTP
-            | AddrComponent::UDT
-            | AddrComponent::HTTP
-            | AddrComponent::HTTPS
-            | AddrComponent::WS
-            | AddrComponent::WSS
-            | AddrComponent::Libp2pWebsocketStar
-            | AddrComponent::Libp2pWebrtcStar
-            | AddrComponent::Libp2pWebrtcDirect
-            | AddrComponent::P2pCircuit => {}
-        };
-
+            Protocol::Dnsaddr(s) => {
+                w.write_all(encode::u32(DNSADDR, &mut buf))?;
+                let bytes = s.as_bytes();
+                w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
+                w.write_all(&bytes)?
+            }
+            Protocol::Unix(s) => {
+                w.write_all(encode::u32(UNIX, &mut buf))?;
+                let bytes = s.as_bytes();
+                w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
+                w.write_all(&bytes)?
+            }
+            Protocol::P2p(multihash) => {
+                w.write_all(encode::u32(P2P, &mut buf))?;
+                let bytes = multihash.to_bytes();
+                w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
+                w.write_all(&bytes)?
+            }
+            Protocol::Onion(addr, port) => {
+                w.write_all(encode::u32(ONION, &mut buf))?;
+                w.write_all(addr.as_ref())?;
+                w.write_u16::<BigEndian>(*port)?
+            }
+            Protocol::Onion3(addr) => {
+                w.write_all(encode::u32(ONION3, &mut buf))?;
+                w.write_all(addr.hash().as_ref())?;
+                w.write_u16::<BigEndian>(addr.port())?
+            }
+            Protocol::Quic => w.write_all(encode::u32(QUIC, &mut buf))?,
+            Protocol::Utp => w.write_all(encode::u32(UTP, &mut buf))?,
+            Protocol::Udt => w.write_all(encode::u32(UDT, &mut buf))?,
+            Protocol::Http => w.write_all(encode::u32(HTTP, &mut buf))?,
+            Protocol::Https => w.write_all(encode::u32(HTTPS, &mut buf))?,
+            Protocol::Ws(ref s) if s == "/" => w.write_all(encode::u32(WS, &mut buf))?,
+            Protocol::Ws(s) => {
+                w.write_all(encode::u32(WS_WITH_PATH, &mut buf))?;
+                let bytes = s.as_bytes();
+                w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
+                w.write_all(&bytes)?
+            },
+            Protocol::Wss(ref s) if s == "/" => w.write_all(encode::u32(WSS, &mut buf))?,
+            Protocol::Wss(s) => {
+                w.write_all(encode::u32(WSS_WITH_PATH, &mut buf))?;
+                let bytes = s.as_bytes();
+                w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
+                w.write_all(&bytes)?
+            },
+            Protocol::P2pWebSocketStar => w.write_all(encode::u32(P2P_WEBSOCKET_STAR, &mut buf))?,
+            Protocol::P2pWebRtcStar => w.write_all(encode::u32(P2P_WEBRTC_STAR, &mut buf))?,
+            Protocol::P2pWebRtcDirect => w.write_all(encode::u32(P2P_WEBRTC_DIRECT, &mut buf))?,
+            Protocol::P2pCircuit => w.write_all(encode::u32(P2P_CIRCUIT, &mut buf))?,
+            Protocol::Memory(port) => {
+                w.write_all(encode::u32(MEMORY, &mut buf))?;
+                w.write_u64::<BigEndian>(*port)?
+            }
+        }
         Ok(())
     }
-}
 
-impl fmt::Display for AddrComponent {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    /// Turn this `Protocol` into one that owns its data, thus being valid for any lifetime.
+    pub fn acquire<'b>(self) -> Protocol<'b> {
+        use self::Protocol::*;
         match self {
-            AddrComponent::IP4(addr) => write!(f, "/ip4/{}", addr),
-            AddrComponent::TCP(port) => write!(f, "/tcp/{}", port),
-            AddrComponent::UDP(port) => write!(f, "/udp/{}", port),
-            AddrComponent::DCCP(port) => write!(f, "/dccp/{}", port),
-            AddrComponent::IP6(addr) => write!(f, "/ip6/{}", addr),
-            AddrComponent::DNS4(s) => write!(f, "/dns4/{}", s.clone()),
-            AddrComponent::DNS6(s) => write!(f, "/dns6/{}", s.clone()),
-            AddrComponent::SCTP(port) => write!(f, "/sctp/{}", port),
-            AddrComponent::UDT => write!(f, "/udt"),
-            AddrComponent::UTP => write!(f, "/utp"),
-            AddrComponent::UNIX(s) => write!(f, "/unix/{}", s.clone()),
-            AddrComponent::P2P(bytes) => {
-                // TODO: meh for cloning
-                let c = Cid::from(bytes.clone()).expect("cid is known to be valid");
-                write!(f, "/p2p/{}", c)
-            }
-            AddrComponent::IPFS(bytes) => {
-                // TODO: meh for cloning
-                let c = Cid::from(bytes.clone()).expect("cid is known to be valid");
-                write!(f, "/ipfs/{}", c)
-            }
-            AddrComponent::HTTP => write!(f, "/http"),
-            AddrComponent::HTTPS => write!(f, "/https"),
-            AddrComponent::ONION(_) => unimplemented!(), //format!("/onion"),        // TODO:
-            AddrComponent::QUIC => write!(f, "/quic"),
-            AddrComponent::WS => write!(f, "/ws"),
-            AddrComponent::WSS => write!(f, "/wss"),
-            AddrComponent::Libp2pWebsocketStar => write!(f, "/p2p-websocket-star"),
-            AddrComponent::Libp2pWebrtcStar => write!(f, "/p2p-webrtc-star"),
-            AddrComponent::Libp2pWebrtcDirect => write!(f, "/p2p-webrtc-direct"),
-            AddrComponent::P2pCircuit => write!(f, "/p2p-circuit"),
+            Dccp(a) => Dccp(a),
+            Dns(cow) => Dns(Cow::Owned(cow.into_owned())),
+            Dns4(cow) => Dns4(Cow::Owned(cow.into_owned())),
+            Dns6(cow) => Dns6(Cow::Owned(cow.into_owned())),
+            Dnsaddr(cow) => Dnsaddr(Cow::Owned(cow.into_owned())),
+            Http => Http,
+            Https => Https,
+            Ip4(a) => Ip4(a),
+            Ip6(a) => Ip6(a),
+            P2pWebRtcDirect => P2pWebRtcDirect,
+            P2pWebRtcStar => P2pWebRtcStar,
+            P2pWebSocketStar => P2pWebSocketStar,
+            Memory(a) => Memory(a),
+            Onion(addr, port) => Onion(Cow::Owned(addr.into_owned()), port),
+            Onion3(addr) => Onion3(addr.acquire()),
+            P2p(a) => P2p(a),
+            P2pCircuit => P2pCircuit,
+            Quic => Quic,
+            Sctp(a) => Sctp(a),
+            Tcp(a) => Tcp(a),
+            Udp(a) => Udp(a),
+            Udt => Udt,
+            Unix(cow) => Unix(Cow::Owned(cow.into_owned())),
+            Utp => Utp,
+            Ws(cow) => Ws(Cow::Owned(cow.into_owned())),
+            Wss(cow) => Wss(Cow::Owned(cow.into_owned())),
         }
     }
 }
+
+impl<'a> fmt::Display for Protocol<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use self::Protocol::*;
+        match self {
+            Dccp(port) => write!(f, "/dccp/{}", port),
+            Dns(s) => write!(f, "/dns/{}", s),
+            Dns4(s) => write!(f, "/dns4/{}", s),
+            Dns6(s) => write!(f, "/dns6/{}", s),
+            Dnsaddr(s) => write!(f, "/dnsaddr/{}", s),
+            Http => f.write_str("/http"),
+            Https => f.write_str("/https"),
+            Ip4(addr) => write!(f, "/ip4/{}", addr),
+            Ip6(addr) => write!(f, "/ip6/{}", addr),
+            P2pWebRtcDirect => f.write_str("/p2p-webrtc-direct"),
+            P2pWebRtcStar => f.write_str("/p2p-webrtc-star"),
+            P2pWebSocketStar => f.write_str("/p2p-websocket-star"),
+            Memory(port) => write!(f, "/memory/{}", port),
+            Onion(addr, port) => {
+                let s = BASE32.encode(addr.as_ref());
+                write!(f, "/onion/{}:{}", s.to_lowercase(), port)
+            }
+            Onion3(addr ) => {
+                let s = BASE32.encode(addr.hash());
+                write!(f, "/onion3/{}:{}", s.to_lowercase(), addr.port())
+            }
+            P2p(c) => write!(f, "/p2p/{}", bs58::encode(c.to_bytes()).into_string()),
+            P2pCircuit => f.write_str("/p2p-circuit"),
+            Quic => f.write_str("/quic"),
+            Sctp(port) => write!(f, "/sctp/{}", port),
+            Tcp(port) => write!(f, "/tcp/{}", port),
+            Udp(port) => write!(f, "/udp/{}", port),
+            Udt => f.write_str("/udt"),
+            Unix(s) => write!(f, "/unix/{}", s),
+            Utp => f.write_str("/utp"),
+            Ws(ref s) if s == "/" => f.write_str("/ws"),
+            Ws(s) => {
+                let encoded = percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
+                write!(f, "/x-parity-ws/{}", encoded)
+            },
+            Wss(ref s) if s == "/" => f.write_str("/wss"),
+            Wss(s) => {
+                let encoded = percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
+                write!(f, "/x-parity-wss/{}", encoded)
+            },
+        }
+    }
+}
+
+impl<'a> From<IpAddr> for Protocol<'a> {
+    #[inline]
+    fn from(addr: IpAddr) -> Self {
+        match addr {
+            IpAddr::V4(addr) => Protocol::Ip4(addr),
+            IpAddr::V6(addr) => Protocol::Ip6(addr),
+        }
+    }
+}
+
+impl<'a> From<Ipv4Addr> for Protocol<'a> {
+    #[inline]
+    fn from(addr: Ipv4Addr) -> Self {
+        Protocol::Ip4(addr)
+    }
+}
+
+impl<'a> From<Ipv6Addr> for Protocol<'a> {
+    #[inline]
+    fn from(addr: Ipv6Addr) -> Self {
+        Protocol::Ip6(addr)
+    }
+}
+
+macro_rules! read_onion_impl {
+    ($name:ident, $len:expr, $encoded_len:expr) => {
+        fn $name(s: &str) -> Result<([u8; $len], u16)> {
+            let mut parts = s.split(':');
+
+            // address part (without ".onion")
+            let b32 = parts.next().ok_or(Error::InvalidMultiaddr)?;
+            if b32.len() != $encoded_len {
+                return Err(Error::InvalidMultiaddr)
+            }
+
+            // port number
+            let port = parts.next()
+                .ok_or(Error::InvalidMultiaddr)
+                .and_then(|p| str::parse(p).map_err(From::from))?;
+
+            // port == 0 is not valid for onion
+            if port == 0 {
+                return Err(Error::InvalidMultiaddr);
+            }
+
+            // nothing else expected
+            if parts.next().is_some() {
+                return Err(Error::InvalidMultiaddr)
+            }
+
+            if $len != BASE32.decode_len(b32.len()).map_err(|_| Error::InvalidMultiaddr)? {
+                return Err(Error::InvalidMultiaddr)
+            }
+
+            let mut buf = [0u8; $len];
+            BASE32.decode_mut(b32.as_bytes(), &mut buf).map_err(|_| Error::InvalidMultiaddr)?;
+
+            Ok((buf, port))
+        }
+    }
+}
+
+// Parse a version 2 onion address and return its binary representation.
+//
+// Format: <base-32 address> ":" <port number>
+read_onion_impl!(read_onion, 10, 16);
+// Parse a version 3 onion address and return its binary representation.
+//
+// Format: <base-32 address> ":" <port number>
+read_onion_impl!(read_onion3, 35, 56);
