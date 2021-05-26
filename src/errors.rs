@@ -1,40 +1,42 @@
-use cid;
-use std::{error, fmt, io, net, num, string};
+use std::{net, fmt, error, io, num, str, string};
+use unsigned_varint::decode;
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 /// Error types
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
-    UnknownProtocol,
-    UnknownProtocolString,
+    DataLessThanLen,
     InvalidMultiaddr,
-    MissingAddress,
-    ParsingError(Box<error::Error + Send + Sync>),
+    InvalidProtocolString,
+    InvalidUvar(decode::Error),
+    ParsingError(Box<dyn error::Error + Send + Sync>),
+    UnknownProtocolId(u32),
+    UnknownProtocolString(String),
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(error::Error::description(self))
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::DataLessThanLen => f.write_str("we have less data than indicated by length"),
+            Error::InvalidMultiaddr => f.write_str("invalid multiaddr"),
+            Error::InvalidProtocolString => f.write_str("invalid protocol string"),
+            Error::InvalidUvar(e) => write!(f, "failed to decode unsigned varint: {}", e),
+            Error::ParsingError(e) => write!(f, "failed to parse: {}", e),
+            Error::UnknownProtocolId(id) => write!(f, "unknown protocol id: {}", id),
+            Error::UnknownProtocolString(string) => write!(f, "unknown protocol string: {}", string),
+        }
     }
 }
 
 impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::UnknownProtocol => "unknown protocol",
-            Error::UnknownProtocolString => "unknown protocol string",
-            Error::InvalidMultiaddr => "invalid multiaddr",
-            Error::MissingAddress => "protocol requires address, none given",
-            Error::ParsingError(_) => "failed to parse",
-        }
-    }
-
     #[inline]
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            Error::ParsingError(ref err) => Some(&**err),
-            _ => None,
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        if let Error::ParsingError(e) = self {
+            Some(&**e)
+        } else {
+            None
         }
     }
 }
@@ -45,8 +47,14 @@ impl From<io::Error> for Error {
     }
 }
 
-impl From<cid::Error> for Error {
-    fn from(err: cid::Error) -> Error {
+impl From<multihash::Error> for Error {
+    fn from(err: multihash::Error) -> Error {
+        Error::ParsingError(err.into())
+    }
+}
+
+impl From<bs58::decode::Error> for Error {
+    fn from(err: bs58::decode::Error) -> Error {
         Error::ParsingError(err.into())
     }
 }
@@ -66,5 +74,17 @@ impl From<num::ParseIntError> for Error {
 impl From<string::FromUtf8Error> for Error {
     fn from(err: string::FromUtf8Error) -> Error {
         Error::ParsingError(err.into())
+    }
+}
+
+impl From<str::Utf8Error> for Error {
+    fn from(err: str::Utf8Error) -> Error {
+        Error::ParsingError(err.into())
+    }
+}
+
+impl From<decode::Error> for Error {
+    fn from(e: decode::Error) -> Error {
+        Error::InvalidUvar(e)
     }
 }
