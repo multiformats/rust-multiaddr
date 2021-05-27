@@ -1,3 +1,9 @@
+# 0.13.0 [unreleased]
+
+- Update to multihash v0.14.0 (see [PR 44]).
+
+[PR 44]: https://github.com/multiformats/rust-multiaddr/pull/44
+
 # 0.12.0 [2021-05-26]
 
 - Merge  [multiaddr] and [parity-multiaddr] (see [PR 40]).
