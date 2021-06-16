@@ -2,7 +2,10 @@
 
 - Update to multihash v0.14.0 (see [PR 44]).
 
+- Update to rand v0.8.4 (see [PR 45]).
+
 [PR 44]: https://github.com/multiformats/rust-multiaddr/pull/44
+[PR 45]: https://github.com/multiformats/rust-multiaddr/pull/45
 
 # 0.12.0 [2021-05-26]
 
