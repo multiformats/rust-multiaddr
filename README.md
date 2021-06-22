@@ -39,7 +39,7 @@ extern crate multiaddr;
 use multiaddr::{Multiaddr, multiaddr};
 
 let address = "/ip4/127.0.0.1/tcp/1234".parse::<Multiaddr>().unwrap();
-// or with a macros
+// or with a macro
 let other = multiaddr!(Ip4([127, 0, 0, 1]), Udp(10500u16), Quic);
 
 assert_eq!(address.to_string(), "/ip4/127.0.0.1/tcp/1234");
