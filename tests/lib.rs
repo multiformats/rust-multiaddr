@@ -149,7 +149,11 @@ impl Arbitrary for SubString {
 
 
 fn ma_valid(source: &str, target: &str, protocols: Vec<Protocol<'_>>) {
+    dbg!(&source);
+    dbg!(&target);
+    dbg!(&protocols);
     let parsed = source.parse::<Multiaddr>().unwrap();
+    dbg!(&parsed);
     assert_eq!(HEXUPPER.encode(&parsed.to_vec()[..]), target);
     assert_eq!(parsed.iter().collect::<Vec<_>>(), protocols);
     assert_eq!(source.parse::<Multiaddr>().unwrap().to_string(), source);
@@ -200,6 +204,7 @@ fn construct_success() {
     ma_valid("/udp/1234/udt", "910204D2AD02", vec![Udp(1234), Udt]);
     ma_valid("/udp/1234/utp", "910204D2AE02", vec![Udp(1234), Utp]);
     ma_valid("/tcp/1234/http", "0604D2E003", vec![Tcp(1234), Http]);
+    ma_valid("/tcp/1234/tls/http", "0604D2C003E003", vec![Tcp(1234), Tls, Http]);
     ma_valid("/tcp/1234/https", "0604D2BB03", vec![Tcp(1234), Https]);
     ma_valid("/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
              "A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B0604D2",
