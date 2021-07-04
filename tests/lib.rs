@@ -149,11 +149,7 @@ impl Arbitrary for SubString {
 
 
 fn ma_valid(source: &str, target: &str, protocols: Vec<Protocol<'_>>) {
-    dbg!(&source);
-    dbg!(&target);
-    dbg!(&protocols);
     let parsed = source.parse::<Multiaddr>().unwrap();
-    dbg!(&parsed);
     assert_eq!(HEXUPPER.encode(&parsed.to_vec()[..]), target);
     assert_eq!(parsed.iter().collect::<Vec<_>>(), protocols);
     assert_eq!(source.parse::<Multiaddr>().unwrap().to_string(), source);
@@ -325,9 +321,9 @@ fn from_bytes_fail() {
 
 #[test]
 fn ser_and_deser_json() {
-    let addr : Multiaddr = "/ip4/0.0.0.0/tcp/0".parse::<Multiaddr>().unwrap();
+    let addr : Multiaddr = "/ip4/0.0.0.0/tcp/0/tls".parse::<Multiaddr>().unwrap();
     let serialized = serde_json::to_string(&addr).unwrap();
-    assert_eq!(serialized, "\"/ip4/0.0.0.0/tcp/0\"");
+    assert_eq!(serialized, "\"/ip4/0.0.0.0/tcp/0/tls\"");
     let deserialized: Multiaddr = serde_json::from_str(&serialized).unwrap();
     assert_eq!(addr, deserialized);
 }
@@ -335,10 +331,10 @@ fn ser_and_deser_json() {
 
 #[test]
 fn ser_and_deser_bincode() {
-    let addr : Multiaddr = "/ip4/0.0.0.0/tcp/0".parse::<Multiaddr>().unwrap();
+    let addr : Multiaddr = "/ip4/0.0.0.0/tcp/0/tls".parse::<Multiaddr>().unwrap();
     let serialized = bincode::serialize(&addr).unwrap();
     // compact addressing
-    assert_eq!(serialized, vec![8, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 6, 0, 0]);
+    assert_eq!(serialized, vec![10, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 6, 0, 0, 192, 3]);
     let deserialized: Multiaddr = bincode::deserialize(&serialized).unwrap();
     assert_eq!(addr, deserialized);
 }
