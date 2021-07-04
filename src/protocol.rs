@@ -14,6 +14,8 @@ use std::{
 use unsigned_varint::{encode, decode};
 use crate::onion_addr::Onion3Addr;
 
+// All these values are obtained by converting hexadecimal protocol codes to u32.
+// The protocol codes are present in multiformats/multicodec repository.
 const DCCP: u32 = 33;
 const DNS: u32 = 53;
 const DNS4: u32 = 54;
@@ -34,6 +36,7 @@ const P2P_CIRCUIT: u32 = 290;
 const QUIC: u32 = 460;
 const SCTP: u32 = 132;
 const TCP: u32 = 6;
+const TLS: u32 = 448;
 const UDP: u32 = 273;
 const UDT: u32 = 301;
 const UNIX: u32 = 400;
@@ -85,6 +88,7 @@ pub enum Protocol<'a> {
     Quic,
     Sctp(u16),
     Tcp(u16),
+    Tls,
     Udp(u16),
     Udt,
     Unix(Cow<'a, str>),
@@ -113,6 +117,7 @@ impl<'a> Protocol<'a> {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 Ok(Protocol::Tcp(s.parse()?))
             }
+            "tls" => Ok(Protocol::Tls),
             "udp" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 Ok(Protocol::Udp(s.parse()?))
@@ -294,6 +299,7 @@ impl<'a> Protocol<'a> {
                 let num = rdr.read_u16::<BigEndian>()?;
                 Ok((Protocol::Tcp(num), rest))
             }
+            TLS => Ok((Protocol::Tls, input)),
             UDP => {
                 let (data, rest) = split_at(2, input)?;
                 let mut rdr = Cursor::new(data);
@@ -342,6 +348,7 @@ impl<'a> Protocol<'a> {
                 w.write_all(encode::u32(TCP, &mut buf))?;
                 w.write_u16::<BigEndian>(*port)?
             }
+            Protocol::Tls => w.write_all(encode::u32(TLS, &mut buf))?,
             Protocol::Udp(port) => {
                 w.write_all(encode::u32(UDP, &mut buf))?;
                 w.write_u16::<BigEndian>(*port)?
@@ -455,6 +462,7 @@ impl<'a> Protocol<'a> {
             Quic => Quic,
             Sctp(a) => Sctp(a),
             Tcp(a) => Tcp(a),
+            Tls => Tls,
             Udp(a) => Udp(a),
             Udt => Udt,
             Unix(cow) => Unix(Cow::Owned(cow.into_owned())),
@@ -495,6 +503,7 @@ impl<'a> fmt::Display for Protocol<'a> {
             Quic => f.write_str("/quic"),
             Sctp(port) => write!(f, "/sctp/{}", port),
             Tcp(port) => write!(f, "/tcp/{}", port),
+            Tls => write!(f, "/tls"),
             Udp(port) => write!(f, "/udp/{}", port),
             Udt => f.write_str("/udt"),
             Unix(s) => write!(f, "/unix/{}", s),
