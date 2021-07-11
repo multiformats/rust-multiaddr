@@ -254,9 +254,6 @@ fn construct_success() {
         "3819736A632D312E626F6F7473747261702E6C69627032702E696F0604D2A50322122006B3608AA000274049EB28AD8E793A26FF6FAB281A7D3BD77CD18EB745DFAABB",
         vec![Dnsaddr(Cow::Borrowed("sjc-1.bootstrap.libp2p.io")), Tcp(1234), P2p(multihash("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"))]
     );
-    // "/ip4/127.0.0.1/tcp/127/ws",
-    // "/ip4/127.0.0.1/tcp/127/tls",
-    // "/ip4/127.0.0.1/tcp/127/tls/ws",
     ma_valid("/ip4/127.0.0.1/tcp/127/ws", "047F00000106007FDD03", vec![Ip4(local.clone()),Tcp(127),Ws("/".into())] );
     ma_valid("/ip4/127.0.0.1/tcp/127/tls", "047F00000106007FC003", vec![Ip4(local.clone()),Tcp(127),Tls] );
     ma_valid("/ip4/127.0.0.1/tcp/127/tls/ws", "047F00000106007FC003DD03", vec![Ip4(local.clone()),Tcp(127),Tls,Ws("/".into())] );
