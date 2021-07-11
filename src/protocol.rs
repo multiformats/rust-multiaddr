@@ -14,8 +14,9 @@ use std::{
 use unsigned_varint::{encode, decode};
 use crate::onion_addr::Onion3Addr;
 
-// All these values are obtained by converting hexadecimal protocol codes to u32.
-// The protocol codes are present in multiformats/multicodec repository.
+// All the values are obtained by converting hexadecimal protocol codes to u32.
+// Protocols as well as their corresponding codes are defined in
+// https://github.com/multiformats/multiaddr/blob/master/protocols.csv .
 const DCCP: u32 = 33;
 const DNS: u32 = 53;
 const DNS4: u32 = 54;
