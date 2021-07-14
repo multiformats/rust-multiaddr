@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 0.14.0 [unreleased]
 
 - Add support for TLS protocol (see [PR 48]).
