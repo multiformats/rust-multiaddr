@@ -86,7 +86,7 @@ struct Proto(Protocol<'static>);
 impl Arbitrary for Proto {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         use Protocol::*;
-        match u8::arbitrary(g) % 25  { // TODO: Add Protocol::Quic
+        match u8::arbitrary(g) % 26  { // TODO: Add Protocol::Quic
              0 => Proto(Dccp(Arbitrary::arbitrary(g))),
              1 => Proto(Dns(Cow::Owned(SubString::arbitrary(g).0))),
              2 => Proto(Dns4(Cow::Owned(SubString::arbitrary(g).0))),
@@ -128,6 +128,7 @@ impl Arbitrary for Proto {
                     .unwrap();
                 Proto(Onion3((a, std::cmp::max(1, u16::arbitrary(g))).into()))
             },
+            25 => Proto(Tls),
              _ => panic!("outside range")
         }
     }
@@ -200,6 +201,7 @@ fn construct_success() {
     ma_valid("/udp/1234/udt", "910204D2AD02", vec![Udp(1234), Udt]);
     ma_valid("/udp/1234/utp", "910204D2AE02", vec![Udp(1234), Utp]);
     ma_valid("/tcp/1234/http", "0604D2E003", vec![Tcp(1234), Http]);
+    ma_valid("/tcp/1234/tls/http", "0604D2C003E003", vec![Tcp(1234), Tls, Http]);
     ma_valid("/tcp/1234/https", "0604D2BB03", vec![Tcp(1234), Https]);
     ma_valid("/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
              "A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B0604D2",
@@ -252,6 +254,9 @@ fn construct_success() {
         "3819736A632D312E626F6F7473747261702E6C69627032702E696F0604D2A50322122006B3608AA000274049EB28AD8E793A26FF6FAB281A7D3BD77CD18EB745DFAABB",
         vec![Dnsaddr(Cow::Borrowed("sjc-1.bootstrap.libp2p.io")), Tcp(1234), P2p(multihash("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"))]
     );
+    ma_valid("/ip4/127.0.0.1/tcp/127/ws", "047F00000106007FDD03", vec![Ip4(local.clone()),Tcp(127),Ws("/".into())] );
+    ma_valid("/ip4/127.0.0.1/tcp/127/tls", "047F00000106007FC003", vec![Ip4(local.clone()),Tcp(127),Tls] );
+    ma_valid("/ip4/127.0.0.1/tcp/127/tls/ws", "047F00000106007FC003DD03", vec![Ip4(local.clone()),Tcp(127),Tls,Ws("/".into())] );
 }
 
 #[test]
@@ -320,9 +325,9 @@ fn from_bytes_fail() {
 
 #[test]
 fn ser_and_deser_json() {
-    let addr : Multiaddr = "/ip4/0.0.0.0/tcp/0".parse::<Multiaddr>().unwrap();
+    let addr : Multiaddr = "/ip4/0.0.0.0/tcp/0/tls".parse::<Multiaddr>().unwrap();
     let serialized = serde_json::to_string(&addr).unwrap();
-    assert_eq!(serialized, "\"/ip4/0.0.0.0/tcp/0\"");
+    assert_eq!(serialized, "\"/ip4/0.0.0.0/tcp/0/tls\"");
     let deserialized: Multiaddr = serde_json::from_str(&serialized).unwrap();
     assert_eq!(addr, deserialized);
 }
@@ -330,10 +335,10 @@ fn ser_and_deser_json() {
 
 #[test]
 fn ser_and_deser_bincode() {
-    let addr : Multiaddr = "/ip4/0.0.0.0/tcp/0".parse::<Multiaddr>().unwrap();
+    let addr : Multiaddr = "/ip4/0.0.0.0/tcp/0/tls".parse::<Multiaddr>().unwrap();
     let serialized = bincode::serialize(&addr).unwrap();
     // compact addressing
-    assert_eq!(serialized, vec![8, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 6, 0, 0]);
+    assert_eq!(serialized, vec![10, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 6, 0, 0, 192, 3]);
     let deserialized: Multiaddr = bincode::deserialize(&serialized).unwrap();
     assert_eq!(addr, deserialized);
 }
