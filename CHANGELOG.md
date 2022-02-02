@@ -1,4 +1,4 @@
-# 0.14.0 [unreleased]
+# 0.14.0 [2022-02-02]
 
 - Add support for TLS protocol (see [PR 48]).
 
@@ -9,7 +9,6 @@
 [PR 48]: https://github.com/multiformats/rust-multiaddr/pull/48
 [PR 50]: https://github.com/multiformats/rust-multiaddr/pull/50
 [PR 50]: https://github.com/multiformats/rust-multiaddr/pull/51
-
 
 # 0.13.0 [2021-07-08]
 
