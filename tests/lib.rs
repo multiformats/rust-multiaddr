@@ -243,47 +243,47 @@ fn construct_success() {
     ma_valid(
         "/ip4/127.0.0.1/udp/1234",
         "047F000001910204D2",
-        vec![Ip4(local.clone()), Udp(1234)],
+        vec![Ip4(local), Udp(1234)],
     );
     ma_valid(
         "/ip4/127.0.0.1/udp/0",
         "047F00000191020000",
-        vec![Ip4(local.clone()), Udp(0)],
+        vec![Ip4(local), Udp(0)],
     );
     ma_valid(
         "/ip4/127.0.0.1/tcp/1234",
         "047F0000010604D2",
-        vec![Ip4(local.clone()), Tcp(1234)],
+        vec![Ip4(local), Tcp(1234)],
     );
     ma_valid(
         "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
         "047F000001A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
         vec![
-            Ip4(local.clone()),
+            Ip4(local),
             P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
         ],
     );
     ma_valid("/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
              "047F000001A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B0604D2",
-             vec![Ip4(local.clone()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")), Tcp(1234)]);
+             vec![Ip4(local), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")), Tcp(1234)]);
     // /unix/a/b/c/d/e,
     // /unix/stdio,
     // /ip4/1.2.3.4/tcp/80/unix/a/b/c/d/e/f,
     // /ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234/unix/stdio
     ma_valid("/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "29200108A07AC542013AC986FFFE317095061F40DD03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip6(addr6.clone()), Tcp(8000), Ws("/".into()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
+             vec![Ip6(addr6), Tcp(8000), Ws("/".into()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
              ]);
     ma_valid("/p2p-webrtc-star/ip4/127.0.0.1/tcp/9090/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "9302047F000001062382DD03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![P2pWebRtcStar, Ip4(local.clone()), Tcp(9090), Ws("/".into()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
+             vec![P2pWebRtcStar, Ip4(local), Tcp(9090), Ws("/".into()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
              ]);
     ma_valid("/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/wss/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "29200108A07AC542013AC986FFFE317095061F40DE03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip6(addr6.clone()), Tcp(8000), Wss("/".into()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
+             vec![Ip6(addr6), Tcp(8000), Wss("/".into()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
     ma_valid("/ip4/127.0.0.1/tcp/9090/p2p-circuit/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "047F000001062382A202A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip4(local.clone()), Tcp(9090), P2pCircuit, P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
+             vec![Ip4(local), Tcp(9090), P2pCircuit, P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
 
     ma_valid(
         "/onion/aaimaq4ygg2iegci:80",
@@ -320,23 +320,23 @@ fn construct_success() {
     ma_valid(
         "/ip4/127.0.0.1/tcp/127/ws",
         "047F00000106007FDD03",
-        vec![Ip4(local.clone()), Tcp(127), Ws("/".into())],
+        vec![Ip4(local), Tcp(127), Ws("/".into())],
     );
     ma_valid(
         "/ip4/127.0.0.1/tcp/127/tls",
         "047F00000106007FC003",
-        vec![Ip4(local.clone()), Tcp(127), Tls],
+        vec![Ip4(local), Tcp(127), Tls],
     );
     ma_valid(
         "/ip4/127.0.0.1/tcp/127/tls/ws",
         "047F00000106007FC003DD03",
-        vec![Ip4(local.clone()), Tcp(127), Tls, Ws("/".into())],
+        vec![Ip4(local), Tcp(127), Tls, Ws("/".into())],
     );
 
     ma_valid(
         "/ip4/127.0.0.1/tcp/127/noise",
         "047F00000106007FC603",
-        vec![Ip4(local.clone()), Tcp(127), Noise],
+        vec![Ip4(local), Tcp(127), Noise],
     );
 }
 
@@ -497,12 +497,12 @@ fn replace_ip4_with_ip6() {
 #[test]
 fn unknown_protocol_string() {
     match "/unknown/1.2.3.4".parse::<Multiaddr>() {
-        Ok(_) => assert!(false, "The UnknownProtocolString error should be caused"),
+        Ok(_) => panic!("The UnknownProtocolString error should be caused"),
         Err(e) => match e {
             crate::Error::UnknownProtocolString(protocol) => {
                 assert_eq!(protocol, "unknown")
             }
-            _ => assert!(false, "The UnknownProtocolString error should be caused"),
+            _ => panic!("The UnknownProtocolString error should be caused"),
         },
     }
 }
