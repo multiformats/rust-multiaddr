@@ -162,7 +162,7 @@ impl<'a> Protocol<'a> {
             }
             "p2p" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
-                let decoded = bs58::decode(s).into_vec()?;
+                let decoded = multibase::Base::Base58Btc.decode(s)?;
                 Ok(Protocol::P2p(Multihash::from_bytes(&decoded)?))
             }
             "http" => Ok(Protocol::Http),
@@ -512,7 +512,11 @@ impl<'a> fmt::Display for Protocol<'a> {
                 let s = BASE32.encode(addr.hash());
                 write!(f, "/onion3/{}:{}", s.to_lowercase(), addr.port())
             }
-            P2p(c) => write!(f, "/p2p/{}", bs58::encode(c.to_bytes()).into_string()),
+            P2p(c) => write!(
+                f,
+                "/p2p/{}",
+                multibase::Base::Base58Btc.encode(c.to_bytes())
+            ),
             P2pCircuit => f.write_str("/p2p-circuit"),
             Quic => f.write_str("/quic"),
             Sctp(port) => write!(f, "/sctp/{}", port),
