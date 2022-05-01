@@ -332,6 +332,12 @@ fn construct_success() {
         "047F00000106007FC003DD03",
         vec![Ip4(local.clone()), Tcp(127), Tls, Ws("/".into())],
     );
+
+    ma_valid(
+        "/ip4/127.0.0.1/tcp/127/noise",
+        "047F00000106007FC603",
+        vec![Ip4(local.clone()), Tcp(127), Noise],
+    );
 }
 
 #[test]

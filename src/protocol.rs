@@ -38,6 +38,7 @@ const QUIC: u32 = 460;
 const SCTP: u32 = 132;
 const TCP: u32 = 6;
 const TLS: u32 = 448;
+const NOISE: u32 = 454;
 const UDP: u32 = 273;
 const UDT: u32 = 301;
 const UNIX: u32 = 400;
@@ -90,6 +91,7 @@ pub enum Protocol<'a> {
     Sctp(u16),
     Tcp(u16),
     Tls,
+    Noise,
     Udp(u16),
     Udt,
     Unix(Cow<'a, str>),
@@ -119,6 +121,7 @@ impl<'a> Protocol<'a> {
                 Ok(Protocol::Tcp(s.parse()?))
             }
             "tls" => Ok(Protocol::Tls),
+            "noise" => Ok(Protocol::Noise),
             "udp" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 Ok(Protocol::Udp(s.parse()?))
@@ -308,6 +311,7 @@ impl<'a> Protocol<'a> {
                 Ok((Protocol::Tcp(num), rest))
             }
             TLS => Ok((Protocol::Tls, input)),
+            NOISE => Ok((Protocol::Noise, input)),
             UDP => {
                 let (data, rest) = split_at(2, input)?;
                 let mut rdr = Cursor::new(data);
@@ -357,6 +361,7 @@ impl<'a> Protocol<'a> {
                 w.write_u16::<BigEndian>(*port)?
             }
             Protocol::Tls => w.write_all(encode::u32(TLS, &mut buf))?,
+            Protocol::Noise => w.write_all(encode::u32(NOISE, &mut buf))?,
             Protocol::Udp(port) => {
                 w.write_all(encode::u32(UDP, &mut buf))?;
                 w.write_u16::<BigEndian>(*port)?
@@ -471,6 +476,7 @@ impl<'a> Protocol<'a> {
             Sctp(a) => Sctp(a),
             Tcp(a) => Tcp(a),
             Tls => Tls,
+            Noise => Noise,
             Udp(a) => Udp(a),
             Udt => Udt,
             Unix(cow) => Unix(Cow::Owned(cow.into_owned())),
@@ -512,6 +518,7 @@ impl<'a> fmt::Display for Protocol<'a> {
             Sctp(port) => write!(f, "/sctp/{}", port),
             Tcp(port) => write!(f, "/tcp/{}", port),
             Tls => write!(f, "/tls"),
+            Noise => write!(f, "/noise"),
             Udp(port) => write!(f, "/udp/{}", port),
             Udt => f.write_str("/udt"),
             Unix(s) => write!(f, "/unix/{}", s),
