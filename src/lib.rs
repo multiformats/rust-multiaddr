@@ -1,37 +1,32 @@
-///! Implementation of [multiaddr](https://github.com/jbenet/multiaddr) in Rust.
-
+///! Implementation of [multiaddr](https://github.com/multiformats/multiaddr) in Rust.
 pub use multihash;
 
-mod protocol;
-mod onion_addr;
 mod errors;
+mod onion_addr;
+mod protocol;
 
 #[cfg(feature = "url")]
 mod from_url;
 
+pub use self::errors::{Error, Result};
+pub use self::onion_addr::Onion3Addr;
+pub use self::protocol::Protocol;
 use serde::{
-    Deserialize,
-    Deserializer,
-    Serialize,
-    Serializer,
-    de::{self, Error as DeserializerError}
+    de::{self, Error as DeserializerError},
+    Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::{
     convert::TryFrom,
-    fmt,
-    io,
+    fmt, io,
     iter::FromIterator,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     result::Result as StdResult,
     str::FromStr,
-    sync::Arc
+    sync::Arc,
 };
-pub use self::errors::{Result, Error};
-pub use self::protocol::Protocol;
-pub use self::onion_addr::Onion3Addr;
 
 #[cfg(feature = "url")]
-pub use self::from_url::{FromUrlErr, from_url, from_url_lossy};
+pub use self::from_url::{from_url, from_url_lossy, FromUrlErr};
 
 static_assertions::const_assert! {
     // This check is most certainly overkill right now, but done here
@@ -42,17 +37,23 @@ static_assertions::const_assert! {
 /// Representation of a Multiaddr.
 #[allow(clippy::rc_buffer)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
-pub struct Multiaddr { bytes: Arc<Vec<u8>> }
+pub struct Multiaddr {
+    bytes: Arc<Vec<u8>>,
+}
 
 impl Multiaddr {
     /// Create a new, empty multiaddress.
     pub fn empty() -> Self {
-        Self { bytes: Arc::new(Vec::new()) }
+        Self {
+            bytes: Arc::new(Vec::new()),
+        }
     }
 
     /// Create a new, empty multiaddress with the given capacity.
     pub fn with_capacity(n: usize) -> Self {
-        Self { bytes: Arc::new(Vec::with_capacity(n)) }
+        Self {
+            bytes: Arc::new(Vec::with_capacity(n)),
+        }
     }
 
     /// Return the length in bytes of this multiaddress.
@@ -85,7 +86,8 @@ impl Multiaddr {
     pub fn push(&mut self, p: Protocol<'_>) {
         let mut w = io::Cursor::<&mut Vec<u8>>::new(Arc::make_mut(&mut self.bytes));
         w.set_position(w.get_ref().len() as u64);
-        p.write_bytes(&mut w).expect("Writing to a `io::Cursor<&mut Vec<u8>>` never fails.")
+        p.write_bytes(&mut w)
+            .expect("Writing to a `io::Cursor<&mut Vec<u8>>` never fails.")
     }
 
     /// Pops the last `Protocol` of this multiaddr, or `None` if the multiaddr is empty.
@@ -101,12 +103,12 @@ impl Multiaddr {
     pub fn pop<'a>(&mut self) -> Option<Protocol<'a>> {
         let mut slice = &self.bytes[..]; // the remaining multiaddr slice
         if slice.is_empty() {
-            return None
+            return None;
         }
         let protocol = loop {
             let (p, s) = Protocol::from_bytes(slice).expect("`slice` is a valid `Protocol`.");
             if s.is_empty() {
-                break p.acquire()
+                break p.acquire();
             }
             slice = s
         };
@@ -119,7 +121,8 @@ impl Multiaddr {
     pub fn with(mut self, p: Protocol<'_>) -> Self {
         let mut w = io::Cursor::<&mut Vec<u8>>::new(Arc::make_mut(&mut self.bytes));
         w.set_position(w.get_ref().len() as u64);
-        p.write_bytes(&mut w).expect("Writing to a `io::Cursor<&mut Vec<u8>>` never fails.");
+        p.write_bytes(&mut w)
+            .expect("Writing to a `io::Cursor<&mut Vec<u8>>` never fails.");
         self
     }
 
@@ -153,7 +156,7 @@ impl Multiaddr {
     /// updated `Protocol` at position `at` will be returned.
     pub fn replace<'a, F>(&self, at: usize, by: F) -> Option<Multiaddr>
     where
-        F: FnOnce(&Protocol<'_>) -> Option<Protocol<'a>>
+        F: FnOnce(&Protocol<'_>) -> Option<Protocol<'a>>,
     {
         let mut address = Multiaddr::with_capacity(self.len());
         let mut fun = Some(by);
@@ -165,14 +168,18 @@ impl Multiaddr {
                 if let Some(q) = f(&p) {
                     address = address.with(q);
                     replaced = true;
-                    continue
+                    continue;
                 }
-                return None
+                return None;
             }
             address = address.with(p)
         }
 
-        if replaced { Some(address) } else { None }
+        if replaced {
+            Some(address)
+        } else {
+            None
+        }
     }
 
     /// Checks whether the given `Multiaddr` is a suffix of this `Multiaddr`.
@@ -180,9 +187,9 @@ impl Multiaddr {
         let n = self.bytes.len();
         let m = other.bytes.len();
         if n < m {
-            return false
+            return false;
         }
-        self.bytes[(n - m) ..] == other.bytes[..]
+        self.bytes[(n - m)..] == other.bytes[..]
     }
 }
 
@@ -234,9 +241,12 @@ impl<'a> FromIterator<Protocol<'a>> for Multiaddr {
     {
         let mut writer = Vec::new();
         for cmp in iter {
-            cmp.write_bytes(&mut writer).expect("Writing to a `Vec` never fails.");
+            cmp.write_bytes(&mut writer)
+                .expect("Writing to a `Vec` never fails.");
         }
-        Multiaddr { bytes: Arc::new(writer) }
+        Multiaddr {
+            bytes: Arc::new(writer),
+        }
     }
 }
 
@@ -249,15 +259,18 @@ impl FromStr for Multiaddr {
 
         if Some("") != parts.next() {
             // A multiaddr must start with `/`
-            return Err(Error::InvalidMultiaddr)
+            return Err(Error::InvalidMultiaddr);
         }
 
         while parts.peek().is_some() {
             let p = Protocol::from_str_parts(&mut parts)?;
-            p.write_bytes(&mut writer).expect("Writing to a `Vec` never fails.");
+            p.write_bytes(&mut writer)
+                .expect("Writing to a `Vec` never fails.");
         }
 
-        Ok(Multiaddr { bytes: Arc::new(writer) })
+        Ok(Multiaddr {
+            bytes: Arc::new(writer),
+        })
     }
 }
 
@@ -283,7 +296,8 @@ impl<'a> Iterator for Iter<'a> {
 impl<'a> From<Protocol<'a>> for Multiaddr {
     fn from(p: Protocol<'a>) -> Multiaddr {
         let mut w = Vec::new();
-        p.write_bytes(&mut w).expect("Writing to a `Vec` never fails.");
+        p.write_bytes(&mut w)
+            .expect("Writing to a `Vec` never fails.");
         Multiaddr { bytes: Arc::new(w) }
     }
 }
@@ -292,7 +306,7 @@ impl From<IpAddr> for Multiaddr {
     fn from(v: IpAddr) -> Multiaddr {
         match v {
             IpAddr::V4(a) => a.into(),
-            IpAddr::V6(a) => a.into()
+            IpAddr::V6(a) => a.into(),
         }
     }
 }
@@ -357,7 +371,9 @@ impl<'de> Deserialize<'de> for Multiaddr {
     where
         D: Deserializer<'de>,
     {
-        struct Visitor { is_human_readable: bool }
+        struct Visitor {
+            is_human_readable: bool,
+        }
 
         impl<'de> de::Visitor<'de> for Visitor {
             type Value = Multiaddr;
@@ -365,9 +381,15 @@ impl<'de> Deserialize<'de> for Multiaddr {
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("multiaddress")
             }
-            fn visit_seq<A: de::SeqAccess<'de>>(self, mut seq: A) -> StdResult<Self::Value, A::Error> {
-                let mut buf: Vec<u8> = Vec::with_capacity(std::cmp::min(seq.size_hint().unwrap_or(0), 4096));
-                while let Some(e) = seq.next_element()? { buf.push(e); }
+            fn visit_seq<A: de::SeqAccess<'de>>(
+                self,
+                mut seq: A,
+            ) -> StdResult<Self::Value, A::Error> {
+                let mut buf: Vec<u8> =
+                    Vec::with_capacity(std::cmp::min(seq.size_hint().unwrap_or(0), 4096));
+                while let Some(e) = seq.next_element()? {
+                    buf.push(e);
+                }
                 if self.is_human_readable {
                     let s = String::from_utf8(buf).map_err(DeserializerError::custom)?;
                     s.parse().map_err(DeserializerError::custom)
@@ -396,9 +418,13 @@ impl<'de> Deserialize<'de> for Multiaddr {
         }
 
         if deserializer.is_human_readable() {
-            deserializer.deserialize_str(Visitor { is_human_readable: true })
+            deserializer.deserialize_str(Visitor {
+                is_human_readable: true,
+            })
         } else {
-            deserializer.deserialize_bytes(Visitor { is_human_readable: false })
+            deserializer.deserialize_bytes(Visitor {
+                is_human_readable: false,
+            })
         }
     }
 }
