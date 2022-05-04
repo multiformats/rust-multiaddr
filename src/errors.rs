@@ -1,4 +1,4 @@
-use std::{net, fmt, error, io, num, str, string};
+use std::{error, fmt, io, net, num, str, string};
 use unsigned_varint::decode;
 
 pub type Result<T> = ::std::result::Result<T, Error>;
@@ -25,7 +25,9 @@ impl fmt::Display for Error {
             Error::InvalidUvar(e) => write!(f, "failed to decode unsigned varint: {}", e),
             Error::ParsingError(e) => write!(f, "failed to parse: {}", e),
             Error::UnknownProtocolId(id) => write!(f, "unknown protocol id: {}", id),
-            Error::UnknownProtocolString(string) => write!(f, "unknown protocol string: {}", string),
+            Error::UnknownProtocolString(string) => {
+                write!(f, "unknown protocol string: {}", string)
+            }
         }
     }
 }
@@ -53,8 +55,8 @@ impl From<multihash::Error> for Error {
     }
 }
 
-impl From<bs58::decode::Error> for Error {
-    fn from(err: bs58::decode::Error) -> Error {
+impl From<multibase::Error> for Error {
+    fn from(err: multibase::Error) -> Error {
         Error::ParsingError(err.into())
     }
 }
