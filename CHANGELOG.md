@@ -1,3 +1,12 @@
+# 0.15.0 [unreleased]
+
+- Add support for Noise protocol. See [PR 53].
+
+- Use `multibase` instead of `bs58` for base58 encoding. See [PR 56].
+
+[PR 53]: https://github.com/multiformats/rust-multiaddr/pull/53
+[PR 56]: https://github.com/multiformats/rust-multiaddr/pull/56
+
 # 0.14.0 [2022-02-02]
 
 - Add support for TLS protocol (see [PR 48]).
