@@ -1,5 +1,8 @@
 # 0.15.0 [unreleased]
 
+- Add `WebRTC` instance for `Multiaddr`. See [PR ?]
+- Add `Certhash` instance for `Multiaddr`. See [PR ?]
+
 - Add support for Noise protocol. See [PR 53].
 
 - Use `multibase` instead of `bs58` for base58 encoding. See [PR 56].
