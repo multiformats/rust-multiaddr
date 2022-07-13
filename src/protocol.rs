@@ -460,7 +460,7 @@ impl<'a> Protocol<'a> {
             Protocol::WebRTC => w.write_all(encode::u32(WEBRTC, &mut buf))?,
             Protocol::Certhash(hash) => {
                 w.write_all(encode::u32(CERTHASH, &mut buf))?;
-                let bytes = multihash.to_bytes();
+                let bytes = hash.to_bytes();
                 w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
                 w.write_all(&bytes)?
             }
