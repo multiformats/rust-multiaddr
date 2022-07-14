@@ -530,7 +530,7 @@ impl<'a> fmt::Display for Protocol<'a> {
             WebRTC => f.write_str("/webrtc"),
             Certhash(hash) => write!(
                 f,
-                "/certhash/{}",
+                "/certhash/u{}",
                 multibase::Base::Base64Url.encode(hash.to_bytes())
             ),
             P2pWebSocketStar => f.write_str("/p2p-websocket-star"),
