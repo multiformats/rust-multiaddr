@@ -29,7 +29,7 @@ const IP6: u32 = 41;
 const P2P_WEBRTC_DIRECT: u32 = 276;
 const P2P_WEBRTC_STAR: u32 = 275;
 const WEBRTC: u32 = 280;
-const CERTHASH: u32 = 281;
+const CERTHASH: u32 = 466;
 const P2P_WEBSOCKET_STAR: u32 = 479;
 const MEMORY: u32 = 777;
 const ONION: u32 = 444;
@@ -199,7 +199,7 @@ impl<'a> Protocol<'a> {
             "webrtc" => Ok(Protocol::WebRTC),
             "certhash" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
-                let decoded = multibase::Base::Base58Btc.decode(s)?;
+                let (_base, decoded) = multibase::decode(s)?;
                 Ok(Protocol::Certhash(Multihash::from_bytes(&decoded)?))
             }
             "p2p-webrtc-direct" => Ok(Protocol::P2pWebRtcDirect),
@@ -531,7 +531,7 @@ impl<'a> fmt::Display for Protocol<'a> {
             Certhash(hash) => write!(
                 f,
                 "/certhash/{}",
-                multibase::Base::Base58Btc.encode(hash.to_bytes())
+                multibase::Base::Base64Url.encode(hash.to_bytes())
             ),
             P2pWebSocketStar => f.write_str("/p2p-websocket-star"),
             Memory(port) => write!(f, "/memory/{}", port),
