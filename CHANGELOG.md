@@ -1,7 +1,7 @@
 # 0.15.0 [unreleased]
 
-- Add `WebRTC` instance for `Multiaddr`. See [PR 59]
-- Add `Certhash` instance for `Multiaddr`. See [PR 59
+- Add `WebRTC` instance for `Multiaddr`. See [PR 59].
+- Add `Certhash` instance for `Multiaddr`. See [PR 59].
 
 - Add support for Noise protocol. See [PR 53].
 
