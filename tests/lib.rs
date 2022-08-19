@@ -338,6 +338,25 @@ fn construct_success() {
         "047F00000106007FC603",
         vec![Ip4(local), Tcp(127), Noise],
     );
+
+    ma_valid(
+        "/ip4/127.0.0.1/udp/1234/webrtc",
+        "047F000001910204D29802",
+        vec![Ip4(local), Udp(1234), WebRTC],
+    );
+
+    let (_base, decoded) =
+        multibase::decode("uEiDDq4_xNyDorZBH3TlGazyJdOWSwvo4PUo5YHFMrvDE8g").unwrap();
+    ma_valid(
+        "/ip4/127.0.0.1/udp/1234/webrtc/certhash/uEiDDq4_xNyDorZBH3TlGazyJdOWSwvo4PUo5YHFMrvDE8g",
+        "047F000001910204D29802D203221220C3AB8FF13720E8AD9047DD39466B3C8974E592C2FA383D4A3960714CAEF0C4F2",
+        vec![
+            Ip4(local),
+            Udp(1234),
+            WebRTC,
+            Certhash(Multihash::from_bytes(&decoded).unwrap()),
+        ],
+    );
 }
 
 #[test]
@@ -374,6 +393,8 @@ fn construct_fail() {
         "/ip4/127.0.0.1/p2p",
         "/ip4/127.0.0.1/p2p/tcp",
         "/p2p-circuit/50",
+        "/ip4/127.0.0.1/udp/1234/webrtc/certhash",
+        "/ip4/127.0.0.1/udp/1234/webrtc/certhash/b2uaraocy6yrdblb4sfptaddgimjmmp", // 1 character missing from certhash
     ];
 
     for address in &addresses {

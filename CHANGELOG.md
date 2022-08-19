@@ -1,11 +1,15 @@
 # 0.15.0 [unreleased]
 
+- Add `WebRTC` instance for `Multiaddr`. See [PR 59].
+- Add `Certhash` instance for `Multiaddr`. See [PR 59].
+
 - Add support for Noise protocol. See [PR 53].
 
 - Use `multibase` instead of `bs58` for base58 encoding. See [PR 56].
 
 [PR 53]: https://github.com/multiformats/rust-multiaddr/pull/53
 [PR 56]: https://github.com/multiformats/rust-multiaddr/pull/56
+[PR 59]: https://github.com/multiformats/rust-multiaddr/pull/59
 
 # 0.14.0 [2022-02-02]
 
