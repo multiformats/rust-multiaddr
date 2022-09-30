@@ -510,6 +510,44 @@ impl<'a> Protocol<'a> {
             Wss(cow) => Wss(Cow::Owned(cow.into_owned())),
         }
     }
+
+    pub fn tag(&self) -> &'static str {
+        use self::Protocol::*;
+        match self {
+            Dccp(_) => "dccp",
+            Dns(_) => "dns",
+            Dns4(_) => "dns4",
+            Dns6(_) => "dns6",
+            Dnsaddr(_) => "dnsaddr",
+            Http => "http",
+            Https => "https",
+            Ip4(_) => "ip4",
+            Ip6(_) => "ip6",
+            P2pWebRtcDirect => "p2p-webrtc-direct",
+            P2pWebRtcStar => "p2p-webrtc-star",
+            WebRTC => "webrtc",
+            Certhash(_) => "certhash",
+            P2pWebSocketStar => "p2p-websocket-star",
+            Memory(_) => "memory",
+            Onion(_, _) => "onion",
+            Onion3(_) => "onion3",
+            P2p(_) =>"p2p",
+            P2pCircuit => "p2p-circuit",
+            Quic => "quic",
+            Sctp(_) => "sctp",
+            Tcp(_) => "tcp",
+            Tls => "tls",
+            Noise => "noise",
+            Udp(_) => "udp",
+            Udt => "udt",
+            Unix(_) => "unix",
+            Utp => "utp",
+            Ws(ref s)  if s == "/" =>  "ws",
+            Ws(_) => "x-parity-ws",
+            Wss(ref s)  if s == "/" =>  "wss",
+            Wss(_) => "x-parity-wss",
+        }
+    }
 }
 
 impl<'a> fmt::Display for Protocol<'a> {

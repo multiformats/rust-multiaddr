@@ -1,3 +1,5 @@
+extern crate core;
+
 use data_encoding::HEXUPPER;
 use multiaddr::*;
 use multihash::Multihash;
@@ -525,5 +527,81 @@ fn unknown_protocol_string() {
             }
             _ => panic!("The UnknownProtocolString error should be caused"),
         },
+    }
+}
+
+#[test]
+fn protocol_stack() {
+    let addresses = [
+        "/ip4/0.0.0.0",
+        "/ip6/::1",
+        "/ip6/2601:9:4f81:9700:803e:ca65:66e8:c21",
+        "/udp/0",
+        "/tcp/0",
+        "/sctp/0",
+        "/udp/1234",
+        "/tcp/1234",
+        "/sctp/1234",
+        "/udp/65535",
+        "/tcp/65535",
+        "/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "/udp/1234/sctp/1234",
+        "/udp/1234/udt",
+        "/udp/1234/utp",
+        "/tcp/1234/http",
+        "/tcp/1234/tls/http",
+        "/tcp/1234/https",
+        "/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
+        "/ip4/127.0.0.1/udp/1234",
+        "/ip4/127.0.0.1/udp/0",
+        "/ip4/127.0.0.1/tcp/1234",
+        "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
+        "/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "/p2p-webrtc-star/ip4/127.0.0.1/tcp/9090/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/wss/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "/ip4/127.0.0.1/tcp/9090/p2p-circuit/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "/onion/aaimaq4ygg2iegci:80",
+        "/dnsaddr/sjc-1.bootstrap.libp2p.io",
+        "/dnsaddr/sjc-1.bootstrap.libp2p.io/tcp/1234/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+        "/ip4/127.0.0.1/tcp/127/ws",
+        "/ip4/127.0.0.1/tcp/127/tls",
+        "/ip4/127.0.0.1/tcp/127/tls/ws",
+        "/ip4/127.0.0.1/tcp/127/noise",
+        "/ip4/127.0.0.1/udp/1234/webrtc",
+    ];
+    let argless = std::collections::HashSet::from([
+        "http",
+        "https",
+        "noise",
+        "p2p-circuit",
+        "p2p-webrtc-direct",
+        "p2p-webrtc-star",
+        "p2p-websocket-star",
+        "quic",
+        "tls",
+        "udt",
+        "utp",
+        "webrtc",
+        "ws",
+        "wss",
+    ]);
+    for addr_str in addresses {
+        let ma = Multiaddr::from_str(addr_str).expect("These are supposed to be valid multiaddrs");
+        let ps: Vec<&str> = ma.protocol_stack().collect();
+        let mut toks: Vec<&str> = addr_str.split("/").collect();
+        assert_eq!("", toks[0]);
+        toks.remove(0);
+        let mut i = 0;
+        while i < toks.len() {
+            let proto_tag = toks[i];
+            i += 1;
+            if argless.contains(proto_tag) {
+                //skip
+            } else {
+                toks.remove(i);
+            }
+        }
+        assert_eq!(ps, toks);
     }
 }

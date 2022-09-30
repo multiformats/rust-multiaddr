@@ -191,6 +191,10 @@ impl Multiaddr {
         }
         self.bytes[(n - m)..] == other.bytes[..]
     }
+
+    pub fn protocol_stack(&self) -> ProtoStackIter {
+        ProtoStackIter{ parts: self.iter() }
+    }
 }
 
 impl fmt::Debug for Multiaddr {
@@ -290,6 +294,17 @@ impl<'a> Iterator for Iter<'a> {
 
         self.0 = next_data;
         Some(p)
+    }
+}
+
+pub struct ProtoStackIter<'a>{
+    parts: Iter<'a>
+}
+
+impl<'a> Iterator for ProtoStackIter<'a> {
+    type Item =  &'static str;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.parts.next().map(|p|p.tag())
     }
 }
 
