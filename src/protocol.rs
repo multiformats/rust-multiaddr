@@ -531,7 +531,7 @@ impl<'a> Protocol<'a> {
             Memory(_) => "memory",
             Onion(_, _) => "onion",
             Onion3(_) => "onion3",
-            P2p(_) =>"p2p",
+            P2p(_) => "p2p",
             P2pCircuit => "p2p-circuit",
             Quic => "quic",
             Sctp(_) => "sctp",
@@ -542,9 +542,9 @@ impl<'a> Protocol<'a> {
             Udt => "udt",
             Unix(_) => "unix",
             Utp => "utp",
-            Ws(ref s)  if s == "/" =>  "ws",
+            Ws(ref s) if s == "/" => "ws",
             Ws(_) => "x-parity-ws",
-            Wss(ref s)  if s == "/" =>  "wss",
+            Wss(ref s) if s == "/" => "wss",
             Wss(_) => "x-parity-wss",
         }
     }
@@ -553,61 +553,45 @@ impl<'a> Protocol<'a> {
 impl<'a> fmt::Display for Protocol<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use self::Protocol::*;
+        write!(f, "/{}", self.tag())?;
         match self {
-            Dccp(port) => write!(f, "/dccp/{}", port),
-            Dns(s) => write!(f, "/dns/{}", s),
-            Dns4(s) => write!(f, "/dns4/{}", s),
-            Dns6(s) => write!(f, "/dns6/{}", s),
-            Dnsaddr(s) => write!(f, "/dnsaddr/{}", s),
-            Http => f.write_str("/http"),
-            Https => f.write_str("/https"),
-            Ip4(addr) => write!(f, "/ip4/{}", addr),
-            Ip6(addr) => write!(f, "/ip6/{}", addr),
-            P2pWebRtcDirect => f.write_str("/p2p-webrtc-direct"),
-            P2pWebRtcStar => f.write_str("/p2p-webrtc-star"),
-            WebRTC => f.write_str("/webrtc"),
+            Dccp(port) => write!(f, "/{}", port),
+            Dns(s) => write!(f, "/{}", s),
+            Dns4(s) => write!(f, "/{}", s),
+            Dns6(s) => write!(f, "/{}", s),
+            Dnsaddr(s) => write!(f, "/{}", s),
+            Ip4(addr) => write!(f, "/{}", addr),
+            Ip6(addr) => write!(f, "/{}", addr),
             Certhash(hash) => write!(
                 f,
-                "/certhash/{}",
+                "{}",
                 multibase::encode(multibase::Base::Base64Url, hash.to_bytes())
             ),
-            P2pWebSocketStar => f.write_str("/p2p-websocket-star"),
-            Memory(port) => write!(f, "/memory/{}", port),
+            Memory(port) => write!(f, "/{}", port),
             Onion(addr, port) => {
                 let s = BASE32.encode(addr.as_ref());
-                write!(f, "/onion/{}:{}", s.to_lowercase(), port)
+                write!(f, "/{}:{}", s.to_lowercase(), port)
             }
             Onion3(addr) => {
                 let s = BASE32.encode(addr.hash());
-                write!(f, "/onion3/{}:{}", s.to_lowercase(), addr.port())
+                write!(f, "/{}:{}", s.to_lowercase(), addr.port())
             }
-            P2p(c) => write!(
-                f,
-                "/p2p/{}",
-                multibase::Base::Base58Btc.encode(c.to_bytes())
-            ),
-            P2pCircuit => f.write_str("/p2p-circuit"),
-            Quic => f.write_str("/quic"),
-            Sctp(port) => write!(f, "/sctp/{}", port),
-            Tcp(port) => write!(f, "/tcp/{}", port),
-            Tls => write!(f, "/tls"),
-            Noise => write!(f, "/noise"),
-            Udp(port) => write!(f, "/udp/{}", port),
-            Udt => f.write_str("/udt"),
-            Unix(s) => write!(f, "/unix/{}", s),
-            Utp => f.write_str("/utp"),
-            Ws(ref s) if s == "/" => f.write_str("/ws"),
-            Ws(s) => {
+            P2p(c) => write!(f, "/{}", multibase::Base::Base58Btc.encode(c.to_bytes())),
+            Sctp(port) => write!(f, "/{}", port),
+            Tcp(port) => write!(f, "/{}", port),
+            Udp(port) => write!(f, "/{}", port),
+            Unix(s) => write!(f, "/{}", s),
+            Ws(s) if s != "/" => {
                 let encoded =
                     percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
-                write!(f, "/x-parity-ws/{}", encoded)
+                write!(f, "/{}", encoded)
             }
-            Wss(ref s) if s == "/" => f.write_str("/wss"),
-            Wss(s) => {
+            Wss(s) if s != "/" => {
                 let encoded =
                     percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
-                write!(f, "/x-parity-wss/{}", encoded)
+                write!(f, "/{}", encoded)
             }
+            _ => Ok(()),
         }
     }
 }
