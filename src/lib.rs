@@ -308,7 +308,7 @@ pub struct ProtoStackIter<'a> {
 impl<'a> Iterator for ProtoStackIter<'a> {
     type Item = &'static str;
     fn next(&mut self) -> Option<Self::Item> {
-        self.parts.next().map(|p| p.tag())
+        self.parts.next().as_ref().map(Protocol::tag)
     }
 }
 
