@@ -192,7 +192,7 @@ impl Multiaddr {
         self.bytes[(n - m)..] == other.bytes[..]
     }
 
-    /// Returns a &str identifiers for the protocols themselves, in order
+    /// Returns &str identifiers for the protocol names themselves.
     /// This omits specific info like addresses, ports, peer IDs, and the like.
     /// Example: `"/ip4/127.0.0.1/tcp/5001"` would return `["ip4", "tcp"]`  
     pub fn protocol_stack(&self) -> ProtoStackIter {
