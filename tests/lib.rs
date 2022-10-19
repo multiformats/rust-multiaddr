@@ -589,7 +589,7 @@ fn protocol_stack() {
     for addr_str in addresses {
         let ma = Multiaddr::from_str(addr_str).expect("These are supposed to be valid multiaddrs");
         let ps: Vec<&str> = ma.protocol_stack().collect();
-        let mut toks: Vec<&str> = addr_str.split("/").collect();
+        let mut toks: Vec<&str> = addr_str.split('/').collect();
         assert_eq!("", toks[0]);
         toks.remove(0);
         let mut i = 0;
