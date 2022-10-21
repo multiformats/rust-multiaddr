@@ -1,4 +1,4 @@
-# 0.15.0 [unreleased]
+# 0.15.0 [2022-10-20]
 
 - Add `WebRTC` instance for `Multiaddr`. See [PR 59].
 - Add `Certhash` instance for `Multiaddr`. See [PR 59].
