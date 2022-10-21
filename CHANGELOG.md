@@ -1,3 +1,7 @@
+# 0.16.0 [unreleased]
+
+- Create `protocol_stack` for Multiaddr. See [PR 60]
+
 # 0.15.0 [2022-10-20]
 
 - Add `WebRTC` instance for `Multiaddr`. See [PR 59].
@@ -6,8 +10,6 @@
 - Add support for Noise protocol. See [PR 53].
 
 - Use `multibase` instead of `bs58` for base58 encoding. See [PR 56].
-
-- Create `protocol_stack` for Multiaddr. See [PR 60] 
 
 [PR 53]: https://github.com/multiformats/rust-multiaddr/pull/53
 [PR 56]: https://github.com/multiformats/rust-multiaddr/pull/56
