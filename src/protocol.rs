@@ -564,7 +564,7 @@ impl<'a> fmt::Display for Protocol<'a> {
             Ip6(addr) => write!(f, "/{}", addr),
             Certhash(hash) => write!(
                 f,
-                "{}",
+                "/{}",
                 multibase::encode(multibase::Base::Base64Url, hash.to_bytes())
             ),
             Memory(port) => write!(f, "/{}", port),
