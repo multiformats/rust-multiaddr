@@ -191,6 +191,13 @@ impl Multiaddr {
         }
         self.bytes[(n - m)..] == other.bytes[..]
     }
+
+    /// Returns &str identifiers for the protocol names themselves.
+    /// This omits specific info like addresses, ports, peer IDs, and the like.
+    /// Example: `"/ip4/127.0.0.1/tcp/5001"` would return `["ip4", "tcp"]`  
+    pub fn protocol_stack(&self) -> ProtoStackIter {
+        ProtoStackIter { parts: self.iter() }
+    }
 }
 
 impl fmt::Debug for Multiaddr {
@@ -290,6 +297,18 @@ impl<'a> Iterator for Iter<'a> {
 
         self.0 = next_data;
         Some(p)
+    }
+}
+
+/// Iterator over the string idtenfiers of the protocols (not addrs) in a multiaddr
+pub struct ProtoStackIter<'a> {
+    parts: Iter<'a>,
+}
+
+impl<'a> Iterator for ProtoStackIter<'a> {
+    type Item = &'static str;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.parts.next().as_ref().map(Protocol::tag)
     }
 }
 
