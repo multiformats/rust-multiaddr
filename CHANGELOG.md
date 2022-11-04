@@ -1,6 +1,8 @@
-# 0.16.0 [unreleased]
+# 0.16.0 [2022-11-04]
 
-- Create `protocol_stack` for Multiaddr. See [PR 60]
+- Create `protocol_stack` for Multiaddr. See [PR 60].
+
+[PR 60]: https://github.com/multiformats/rust-multiaddr/pull/60
 
 # 0.15.0 [2022-10-20]
 
