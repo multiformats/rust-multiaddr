@@ -37,6 +37,7 @@ const ONION3: u32 = 445;
 const P2P: u32 = 421;
 const P2P_CIRCUIT: u32 = 290;
 const QUIC: u32 = 460;
+const QUIC_V1: u32 = 461;
 const SCTP: u32 = 132;
 const TCP: u32 = 6;
 const TLS: u32 = 448;
@@ -92,6 +93,7 @@ pub enum Protocol<'a> {
     P2p(Multihash),
     P2pCircuit,
     Quic,
+    QuicV1,
     Sctp(u16),
     Tcp(u16),
     Tls,
@@ -182,6 +184,7 @@ impl<'a> Protocol<'a> {
                 .and_then(|s| read_onion3(&s.to_uppercase()))
                 .map(|(a, p)| Protocol::Onion3((a, p).into())),
             "quic" => Ok(Protocol::Quic),
+            "quic-v1" => Ok(Protocol::QuicV1),
             "ws" => Ok(Protocol::Ws(Cow::Borrowed("/"))),
             "wss" => Ok(Protocol::Wss(Cow::Borrowed("/"))),
             "x-parity-ws" => {
@@ -314,6 +317,7 @@ impl<'a> Protocol<'a> {
             }
             P2P_CIRCUIT => Ok((Protocol::P2pCircuit, input)),
             QUIC => Ok((Protocol::Quic, input)),
+            QUIC_V1 => Ok((Protocol::QuicV1, input)),
             SCTP => {
                 let (data, rest) = split_at(2, input)?;
                 let mut rdr = Cursor::new(data);
@@ -437,6 +441,7 @@ impl<'a> Protocol<'a> {
                 w.write_u16::<BigEndian>(addr.port())?
             }
             Protocol::Quic => w.write_all(encode::u32(QUIC, &mut buf))?,
+            Protocol::QuicV1 => w.write_all(encode::u32(QUIC_V1, &mut buf))?,
             Protocol::Utp => w.write_all(encode::u32(UTP, &mut buf))?,
             Protocol::Udt => w.write_all(encode::u32(UDT, &mut buf))?,
             Protocol::Http => w.write_all(encode::u32(HTTP, &mut buf))?,
@@ -498,6 +503,7 @@ impl<'a> Protocol<'a> {
             P2p(a) => P2p(a),
             P2pCircuit => P2pCircuit,
             Quic => Quic,
+            QuicV1 => QuicV1,
             Sctp(a) => Sctp(a),
             Tcp(a) => Tcp(a),
             Tls => Tls,
@@ -534,6 +540,7 @@ impl<'a> Protocol<'a> {
             P2p(_) => "p2p",
             P2pCircuit => "p2p-circuit",
             Quic => "quic",
+            QuicV1 => "quic-v1",
             Sctp(_) => "sctp",
             Tcp(_) => "tcp",
             Tls => "tls",
