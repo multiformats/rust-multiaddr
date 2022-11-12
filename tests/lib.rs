@@ -89,7 +89,6 @@ impl Arbitrary for Proto {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         use Protocol::*;
         match u8::arbitrary(g) % 27 {
-            // TODO: Add Protocol::Quic
             0 => Proto(Dccp(Arbitrary::arbitrary(g))),
             1 => Proto(Dns(Cow::Owned(SubString::arbitrary(g).0))),
             2 => Proto(Dns4(Cow::Owned(SubString::arbitrary(g).0))),
