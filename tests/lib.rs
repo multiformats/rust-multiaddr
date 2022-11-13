@@ -88,8 +88,7 @@ struct Proto(Protocol<'static>);
 impl Arbitrary for Proto {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         use Protocol::*;
-        match u8::arbitrary(g) % 26 {
-            // TODO: Add Protocol::Quic
+        match u8::arbitrary(g) % 27 {
             0 => Proto(Dccp(Arbitrary::arbitrary(g))),
             1 => Proto(Dns(Cow::Owned(SubString::arbitrary(g).0))),
             2 => Proto(Dns4(Cow::Owned(SubString::arbitrary(g).0))),
@@ -133,6 +132,7 @@ impl Arbitrary for Proto {
                 Proto(Onion3((a, std::cmp::max(1, u16::arbitrary(g))).into()))
             }
             25 => Proto(Tls),
+            26 => Proto(QuicV1),
             _ => panic!("outside range"),
         }
     }
@@ -579,6 +579,7 @@ fn protocol_stack() {
         "p2p-webrtc-star",
         "p2p-websocket-star",
         "quic",
+        "quic-v1",
         "tls",
         "udt",
         "utp",
