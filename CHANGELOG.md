@@ -1,6 +1,11 @@
-# 0.16.0 [unreleased]
+# 0.16.0 [2022-11-04]
 
-- Create `protocol_stack` for Multiaddr. See [PR 60]
+- Create `protocol_stack` for Multiaddr. See [PR 60].
+
+- Add `QuicV1` instance for `Multiaddr`. See [PR 64].
+
+[PR 60]: https://github.com/multiformats/rust-multiaddr/pull/60
+[PR 64]: https://github.com/multiformats/rust-multiaddr/pull/64
 
 # 0.15.0 [2022-10-20]
 
