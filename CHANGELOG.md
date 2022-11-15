@@ -1,3 +1,9 @@
+# 0.17.0 [unreleased]
+
+- Update to multihash `v0.17`. See [PR 63].
+
+[PR 63]: https://github.com/multiformats/rust-multiaddr/pull/63
+
 # 0.16.0 [2022-11-04]
 
 - Create `protocol_stack` for Multiaddr. See [PR 60].
