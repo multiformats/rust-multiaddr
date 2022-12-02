@@ -13,7 +13,6 @@ version = "0.17.0"
 default = ["url"]
 
 [dependencies]
-arrayref = "0.3"
 byteorder = "1.3.1"
 data-encoding = "2.1"
 multibase = "0.9.1"
