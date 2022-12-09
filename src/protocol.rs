@@ -46,6 +46,7 @@ const UDP: u32 = 273;
 const UDT: u32 = 301;
 const UNIX: u32 = 400;
 const UTP: u32 = 302;
+const WEBTRANSPORT: u32 = 465;
 const WS: u32 = 477;
 const WS_WITH_PATH: u32 = 4770; // Note: not standard
 const WSS: u32 = 478;
@@ -102,6 +103,7 @@ pub enum Protocol<'a> {
     Udt,
     Unix(Cow<'a, str>),
     Utp,
+    WebTransport,
     Ws(Cow<'a, str>),
     Wss(Cow<'a, str>),
 }
@@ -185,6 +187,7 @@ impl<'a> Protocol<'a> {
                 .map(|(a, p)| Protocol::Onion3((a, p).into())),
             "quic" => Ok(Protocol::Quic),
             "quic-v1" => Ok(Protocol::QuicV1),
+            "webtransport" => Ok(Protocol::WebTransport),
             "ws" => Ok(Protocol::Ws(Cow::Borrowed("/"))),
             "wss" => Ok(Protocol::Wss(Cow::Borrowed("/"))),
             "x-parity-ws" => {
@@ -345,6 +348,7 @@ impl<'a> Protocol<'a> {
                 Ok((Protocol::Unix(Cow::Borrowed(str::from_utf8(data)?)), rest))
             }
             UTP => Ok((Protocol::Utp, input)),
+            WEBTRANSPORT => Ok((Protocol::WebTransport, input)),
             WS => Ok((Protocol::Ws(Cow::Borrowed("/")), input)),
             WS_WITH_PATH => {
                 let (n, input) = decode::usize(input)?;
@@ -446,6 +450,7 @@ impl<'a> Protocol<'a> {
             Protocol::Udt => w.write_all(encode::u32(UDT, &mut buf))?,
             Protocol::Http => w.write_all(encode::u32(HTTP, &mut buf))?,
             Protocol::Https => w.write_all(encode::u32(HTTPS, &mut buf))?,
+            Protocol::WebTransport => w.write_all(encode::u32(WEBTRANSPORT, &mut buf))?,
             Protocol::Ws(ref s) if s == "/" => w.write_all(encode::u32(WS, &mut buf))?,
             Protocol::Ws(s) => {
                 w.write_all(encode::u32(WS_WITH_PATH, &mut buf))?;
@@ -512,6 +517,7 @@ impl<'a> Protocol<'a> {
             Udt => Udt,
             Unix(cow) => Unix(Cow::Owned(cow.into_owned())),
             Utp => Utp,
+            WebTransport => WebTransport,
             Ws(cow) => Ws(Cow::Owned(cow.into_owned())),
             Wss(cow) => Wss(Cow::Owned(cow.into_owned())),
         }
@@ -549,6 +555,7 @@ impl<'a> Protocol<'a> {
             Udt => "udt",
             Unix(_) => "unix",
             Utp => "utp",
+            WebTransport => "webtransport",
             Ws(ref s) if s == "/" => "ws",
             Ws(_) => "x-parity-ws",
             Wss(ref s) if s == "/" => "wss",
