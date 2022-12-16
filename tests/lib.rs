@@ -88,7 +88,7 @@ struct Proto(Protocol<'static>);
 impl Arbitrary for Proto {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         use Protocol::*;
-        match u8::arbitrary(g) % 27 {
+        match u8::arbitrary(g) % 28 {
             0 => Proto(Dccp(Arbitrary::arbitrary(g))),
             1 => Proto(Dns(Cow::Owned(SubString::arbitrary(g).0))),
             2 => Proto(Dns4(Cow::Owned(SubString::arbitrary(g).0))),
@@ -133,6 +133,7 @@ impl Arbitrary for Proto {
             }
             25 => Proto(Tls),
             26 => Proto(QuicV1),
+            27 => Proto(WebTransport),
             _ => panic!("outside range"),
         }
     }
@@ -356,6 +357,25 @@ fn construct_success() {
             Ip4(local),
             Udp(1234),
             WebRTC,
+            Certhash(Multihash::from_bytes(&decoded).unwrap()),
+        ],
+    );
+
+    ma_valid(
+        "/ip4/127.0.0.1/udp/1234/quic/webtransport",
+        "047F000001910204D2CC03D103",
+        vec![Ip4(local), Udp(1234), Quic, WebTransport],
+    );
+
+    let (_base, decoded) =
+        multibase::decode("uEiDDq4_xNyDorZBH3TlGazyJdOWSwvo4PUo5YHFMrvDE8g").unwrap();
+    ma_valid(
+        "/ip4/127.0.0.1/udp/1234/webtransport/certhash/uEiDDq4_xNyDorZBH3TlGazyJdOWSwvo4PUo5YHFMrvDE8g",
+        "047F000001910204D2D103D203221220C3AB8FF13720E8AD9047DD39466B3C8974E592C2FA383D4A3960714CAEF0C4F2",
+        vec![
+            Ip4(local),
+            Udp(1234),
+            WebTransport,
             Certhash(Multihash::from_bytes(&decoded).unwrap()),
         ],
     );

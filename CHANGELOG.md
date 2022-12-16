@@ -1,3 +1,9 @@
+# 0.18.0 [unreleased]
+
+- Add `WebTransport` instance for `Multiaddr`. See [PR 70].
+
+[PR 70]: https://github.com/multiformats/rust-multiaddr/pull/70
+
 # 0.17.0
 
 - Update to multihash `v0.17`. See [PR 63].
