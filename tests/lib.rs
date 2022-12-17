@@ -2,7 +2,7 @@ extern crate core;
 
 use data_encoding::HEXUPPER;
 use multiaddr::*;
-use multihash::Multihash;
+use multihash::{Code, Multihash};
 use quickcheck::{Arbitrary, Gen, QuickCheck};
 use std::{
     borrow::Cow,
@@ -76,8 +76,8 @@ fn ends_with() {
 struct Ma(Multiaddr);
 
 impl Arbitrary for Ma {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        let iter = (0..g.next_u32() % 128).map(|_| Proto::arbitrary(g).0);
+    fn arbitrary(g: &mut Gen) -> Self {
+        let iter = (0..u8::arbitrary(g) % 128).map(|_| Proto::arbitrary(g).0);
         Ma(Multiaddr::from_iter(iter))
     }
 }
@@ -86,7 +86,7 @@ impl Arbitrary for Ma {
 struct Proto(Protocol<'static>);
 
 impl Arbitrary for Proto {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut Gen) -> Self {
         use Protocol::*;
         match u8::arbitrary(g) % 32 {
             0 => Proto(Dccp(Arbitrary::arbitrary(g))),
@@ -101,9 +101,7 @@ impl Arbitrary for Proto {
             9 => Proto(P2pWebRtcDirect),
             10 => Proto(P2pWebRtcStar),
             11 => Proto(WebRTC),
-            12 => Proto(Certhash(multihash(
-                "QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
-            ))),
+            12 => Proto(Certhash(Mh::arbitrary(g).0)),
             13 => Proto(P2pWebSocketStar),
             14 => Proto(Memory(Arbitrary::arbitrary(g))),
             15 => {
@@ -122,10 +120,7 @@ impl Arbitrary for Proto {
                     .unwrap();
                 Proto(Onion3((a, std::cmp::max(1, u16::arbitrary(g))).into()))
             }
-            // TODO: impl Arbitrary for Multihash:
-            17 => Proto(P2p(multihash(
-                "QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
-            ))),
+            17 => Proto(P2p(Mh::arbitrary(g).0)),
             18 => Proto(P2pCircuit),
             19 => Proto(Quic),
             20 => Proto(QuicV1),
@@ -145,11 +140,23 @@ impl Arbitrary for Proto {
     }
 }
 
+#[derive(Clone, Debug)]
+struct Mh(Multihash);
+
+impl Arbitrary for Mh {
+    fn arbitrary(g: &mut Gen) -> Self {
+        let mut hash: [u8; 32] = [0; 32];
+        hash.fill_with(|| u8::arbitrary(g));
+        Mh(Multihash::wrap(Code::Identity.into(), &hash)
+            .expect("The digest size is never too large"))
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug)]
 struct SubString(String); // ASCII string without '/'
 
 impl Arbitrary for SubString {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut Gen) -> Self {
         let mut s = String::arbitrary(g);
         s.retain(|c| c.is_ascii() && c != '/');
         SubString(s)
