@@ -9,7 +9,6 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest]
-        toolchain: [stable]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -22,13 +21,19 @@ jobs:
           path: ~/.cargo
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install Rust Toolchain
+      - name: Install Rust Stable Toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: stable
           override: true
           components: rustfmt, clippy
+
+      - name: Install Rust Nightly Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
 
       - name: Check Code Format
         uses: actions-rs/cargo@v1
@@ -53,6 +58,16 @@ jobs:
         with:
           command: test
           args: --all-features --workspace
+
+      - name: Nightly Test
+        uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: '--cfg nightly -Zcrate-attr=feature(variant_count)'
+        with:
+          toolchain: nightly
+          command: test
+          args: nightly
+
 
   coverage:
     name: Code Coverage
