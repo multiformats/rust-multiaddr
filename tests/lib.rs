@@ -12,8 +12,6 @@ use std::{
     str::FromStr,
 };
 
-const IMPL_VARIANT_COUNT: u8 = 32;
-
 // Property tests
 
 #[test]
@@ -87,10 +85,14 @@ impl Arbitrary for Ma {
 #[derive(PartialEq, Eq, Clone, Debug)]
 struct Proto(Protocol<'static>);
 
+impl Proto {
+    const IMPL_VARIANT_COUNT: u8 = 32;
+}
+
 impl Arbitrary for Proto {
     fn arbitrary(g: &mut Gen) -> Self {
         use Protocol::*;
-        match u8::arbitrary(g) % IMPL_VARIANT_COUNT {
+        match u8::arbitrary(g) % Proto::IMPL_VARIANT_COUNT {
             0 => Proto(Dccp(Arbitrary::arbitrary(g))),
             1 => Proto(Dns(Cow::Owned(SubString::arbitrary(g).0))),
             2 => Proto(Dns4(Cow::Owned(SubString::arbitrary(g).0))),
@@ -648,5 +650,5 @@ fn protocol_stack() {
 #[test]
 fn nightly_arbitrary_impl_for_all_proto_variants() {
     let variants = core::mem::variant_count::<Protocol>() as u8;
-    assert_eq!(variants, IMPL_VARIANT_COUNT);
+    assert_eq!(variants, Proto::IMPL_VARIANT_COUNT);
 }
