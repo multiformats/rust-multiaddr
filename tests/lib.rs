@@ -2,7 +2,7 @@ extern crate core;
 
 use data_encoding::HEXUPPER;
 use multiaddr::*;
-use multihash::Multihash;
+use multihash::{Code, Multihash};
 use quickcheck::{Arbitrary, Gen, QuickCheck};
 use std::{
     borrow::Cow,
@@ -88,34 +88,23 @@ struct Proto(Protocol<'static>);
 impl Arbitrary for Proto {
     fn arbitrary(g: &mut Gen) -> Self {
         use Protocol::*;
-        match u8::arbitrary(g) % 28 {
+        match u8::arbitrary(g) % 32 {
             0 => Proto(Dccp(Arbitrary::arbitrary(g))),
             1 => Proto(Dns(Cow::Owned(SubString::arbitrary(g).0))),
             2 => Proto(Dns4(Cow::Owned(SubString::arbitrary(g).0))),
             3 => Proto(Dns6(Cow::Owned(SubString::arbitrary(g).0))),
-            4 => Proto(Http),
-            5 => Proto(Https),
-            6 => Proto(Ip4(Ipv4Addr::arbitrary(g))),
-            7 => Proto(Ip6(Ipv6Addr::arbitrary(g))),
-            8 => Proto(P2pWebRtcDirect),
-            9 => Proto(P2pWebRtcStar),
-            10 => Proto(P2pWebSocketStar),
-            11 => Proto(Memory(Arbitrary::arbitrary(g))),
-            // TODO: impl Arbitrary for Multihash:
-            12 => Proto(P2p(multihash(
-                "QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
-            ))),
-            13 => Proto(P2pCircuit),
-            14 => Proto(Quic),
-            15 => Proto(Sctp(Arbitrary::arbitrary(g))),
-            16 => Proto(Tcp(Arbitrary::arbitrary(g))),
-            17 => Proto(Udp(Arbitrary::arbitrary(g))),
-            18 => Proto(Udt),
-            19 => Proto(Unix(Cow::Owned(SubString::arbitrary(g).0))),
-            20 => Proto(Utp),
-            21 => Proto(Ws("/".into())),
-            22 => Proto(Wss("/".into())),
-            23 => {
+            4 => Proto(Dnsaddr(Cow::Owned(SubString::arbitrary(g).0))),
+            5 => Proto(Http),
+            6 => Proto(Https),
+            7 => Proto(Ip4(Ipv4Addr::arbitrary(g))),
+            8 => Proto(Ip6(Ipv6Addr::arbitrary(g))),
+            9 => Proto(P2pWebRtcDirect),
+            10 => Proto(P2pWebRtcStar),
+            11 => Proto(WebRTC),
+            12 => Proto(Certhash(Mh::arbitrary(g).0)),
+            13 => Proto(P2pWebSocketStar),
+            14 => Proto(Memory(Arbitrary::arbitrary(g))),
+            15 => {
                 let a = iter::repeat_with(|| u8::arbitrary(g))
                     .take(10)
                     .collect::<Vec<_>>()
@@ -123,7 +112,7 @@ impl Arbitrary for Proto {
                     .unwrap();
                 Proto(Onion(Cow::Owned(a), std::cmp::max(1, u16::arbitrary(g))))
             }
-            24 => {
+            16 => {
                 let a: [u8; 35] = iter::repeat_with(|| u8::arbitrary(g))
                     .take(35)
                     .collect::<Vec<_>>()
@@ -131,11 +120,35 @@ impl Arbitrary for Proto {
                     .unwrap();
                 Proto(Onion3((a, std::cmp::max(1, u16::arbitrary(g))).into()))
             }
-            25 => Proto(Tls),
-            26 => Proto(QuicV1),
-            27 => Proto(WebTransport),
+            17 => Proto(P2p(Mh::arbitrary(g).0)),
+            18 => Proto(P2pCircuit),
+            19 => Proto(Quic),
+            20 => Proto(QuicV1),
+            21 => Proto(Sctp(Arbitrary::arbitrary(g))),
+            22 => Proto(Tcp(Arbitrary::arbitrary(g))),
+            23 => Proto(Tls),
+            24 => Proto(Noise),
+            25 => Proto(Udp(Arbitrary::arbitrary(g))),
+            26 => Proto(Udt),
+            27 => Proto(Unix(Cow::Owned(SubString::arbitrary(g).0))),
+            28 => Proto(Utp),
+            29 => Proto(WebTransport),
+            30 => Proto(Ws("/".into())),
+            31 => Proto(Wss("/".into())),
             _ => panic!("outside range"),
         }
+    }
+}
+
+#[derive(Clone, Debug)]
+struct Mh(Multihash);
+
+impl Arbitrary for Mh {
+    fn arbitrary(g: &mut Gen) -> Self {
+        let mut hash: [u8; 32] = [0; 32];
+        hash.fill_with(|| u8::arbitrary(g));
+        Mh(Multihash::wrap(Code::Identity.into(), &hash)
+            .expect("The digest size is never too large"))
     }
 }
 
