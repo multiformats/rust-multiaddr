@@ -22,11 +22,11 @@ impl fmt::Display for Error {
             Error::DataLessThanLen => f.write_str("we have less data than indicated by length"),
             Error::InvalidMultiaddr => f.write_str("invalid multiaddr"),
             Error::InvalidProtocolString => f.write_str("invalid protocol string"),
-            Error::InvalidUvar(e) => write!(f, "failed to decode unsigned varint: {}", e),
-            Error::ParsingError(e) => write!(f, "failed to parse: {}", e),
-            Error::UnknownProtocolId(id) => write!(f, "unknown protocol id: {}", id),
+            Error::InvalidUvar(e) => write!(f, "failed to decode unsigned varint: {e}"),
+            Error::ParsingError(e) => write!(f, "failed to parse: {e}"),
+            Error::UnknownProtocolId(id) => write!(f, "unknown protocol id: {id}"),
             Error::UnknownProtocolString(string) => {
-                write!(f, "unknown protocol string: {}", string)
+                write!(f, "unknown protocol string: {string}")
             }
         }
     }
