@@ -76,8 +76,8 @@ fn ends_with() {
 struct Ma(Multiaddr);
 
 impl Arbitrary for Ma {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        let iter = (0..g.next_u32() % 128).map(|_| Proto::arbitrary(g).0);
+    fn arbitrary(g: &mut Gen) -> Self {
+        let iter = (0..u8::arbitrary(g) % 128).map(|_| Proto::arbitrary(g).0);
         Ma(Multiaddr::from_iter(iter))
     }
 }
@@ -86,7 +86,7 @@ impl Arbitrary for Ma {
 struct Proto(Protocol<'static>);
 
 impl Arbitrary for Proto {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut Gen) -> Self {
         use Protocol::*;
         match u8::arbitrary(g) % 28 {
             0 => Proto(Dccp(Arbitrary::arbitrary(g))),
@@ -143,7 +143,7 @@ impl Arbitrary for Proto {
 struct SubString(String); // ASCII string without '/'
 
 impl Arbitrary for SubString {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut Gen) -> Self {
         let mut s = String::arbitrary(g);
         s.retain(|c| c.is_ascii() && c != '/');
         SubString(s)
