@@ -66,8 +66,6 @@ jobs:
         with:
           toolchain: nightly
           command: test
-          args: nightly
-
 
   coverage:
     name: Code Coverage

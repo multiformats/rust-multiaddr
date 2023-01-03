@@ -648,7 +648,7 @@ fn protocol_stack() {
 // in its `Arbitrary` impl.
 #[cfg(nightly)]
 #[test]
-fn nightly_arbitrary_impl_for_all_proto_variants() {
+fn arbitrary_impl_for_all_proto_variants() {
     let variants = core::mem::variant_count::<Protocol>() as u8;
     assert_eq!(variants, Proto::IMPL_VARIANT_COUNT);
 }
