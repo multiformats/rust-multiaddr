@@ -569,19 +569,19 @@ impl<'a> fmt::Display for Protocol<'a> {
         use self::Protocol::*;
         write!(f, "/{}", self.tag())?;
         match self {
-            Dccp(port) => write!(f, "/{}", port),
-            Dns(s) => write!(f, "/{}", s),
-            Dns4(s) => write!(f, "/{}", s),
-            Dns6(s) => write!(f, "/{}", s),
-            Dnsaddr(s) => write!(f, "/{}", s),
-            Ip4(addr) => write!(f, "/{}", addr),
-            Ip6(addr) => write!(f, "/{}", addr),
+            Dccp(port) => write!(f, "/{port}"),
+            Dns(s) => write!(f, "/{s}"),
+            Dns4(s) => write!(f, "/{s}"),
+            Dns6(s) => write!(f, "/{s}"),
+            Dnsaddr(s) => write!(f, "/{s}"),
+            Ip4(addr) => write!(f, "/{addr}"),
+            Ip6(addr) => write!(f, "/{addr}"),
             Certhash(hash) => write!(
                 f,
                 "/{}",
                 multibase::encode(multibase::Base::Base64Url, hash.to_bytes())
             ),
-            Memory(port) => write!(f, "/{}", port),
+            Memory(port) => write!(f, "/{port}"),
             Onion(addr, port) => {
                 let s = BASE32.encode(addr.as_ref());
                 write!(f, "/{}:{}", s.to_lowercase(), port)
@@ -591,19 +591,19 @@ impl<'a> fmt::Display for Protocol<'a> {
                 write!(f, "/{}:{}", s.to_lowercase(), addr.port())
             }
             P2p(c) => write!(f, "/{}", multibase::Base::Base58Btc.encode(c.to_bytes())),
-            Sctp(port) => write!(f, "/{}", port),
-            Tcp(port) => write!(f, "/{}", port),
-            Udp(port) => write!(f, "/{}", port),
-            Unix(s) => write!(f, "/{}", s),
+            Sctp(port) => write!(f, "/{port}"),
+            Tcp(port) => write!(f, "/{port}"),
+            Udp(port) => write!(f, "/{port}"),
+            Unix(s) => write!(f, "/{s}"),
             Ws(s) if s != "/" => {
                 let encoded =
                     percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
-                write!(f, "/{}", encoded)
+                write!(f, "/{encoded}")
             }
             Wss(s) if s != "/" => {
                 let encoded =
                     percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
-                write!(f, "/{}", encoded)
+                write!(f, "/{encoded}")
             }
             _ => Ok(()),
         }
