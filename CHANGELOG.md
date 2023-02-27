@@ -1,10 +1,10 @@
 # 0.18.0 [unreleased]
 
 - Add `WebTransport` instance for `Multiaddr`. See [PR 70].
-- Disable all features of `multihash`. See [PR XX].
+- Disable all features of `multihash`. See [PR 77].
 
 [PR 70]: https://github.com/multiformats/rust-multiaddr/pull/70
-[PR XX]: https://github.com/multiformats/rust-multiaddr/pull/XX
+[PR 77]: https://github.com/multiformats/rust-multiaddr/pull/77
 
 # 0.17.0
 
