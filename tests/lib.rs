@@ -86,7 +86,7 @@ impl Arbitrary for Ma {
 struct Proto(Protocol<'static>);
 
 impl Proto {
-    const IMPL_VARIANT_COUNT: u8 = 32;
+    const IMPL_VARIANT_COUNT: u8 = 33;
 }
 
 impl Arbitrary for Proto {
@@ -105,10 +105,11 @@ impl Arbitrary for Proto {
             9 => Proto(P2pWebRtcDirect),
             10 => Proto(P2pWebRtcStar),
             11 => Proto(WebRTCDirect),
-            12 => Proto(Certhash(Mh::arbitrary(g).0)),
-            13 => Proto(P2pWebSocketStar),
-            14 => Proto(Memory(Arbitrary::arbitrary(g))),
-            15 => {
+            12 => Proto(WebRTC),
+            13 => Proto(Certhash(Mh::arbitrary(g).0)),
+            14 => Proto(P2pWebSocketStar),
+            15 => Proto(Memory(Arbitrary::arbitrary(g))),
+            16 => {
                 let a = iter::repeat_with(|| u8::arbitrary(g))
                     .take(10)
                     .collect::<Vec<_>>()
@@ -116,7 +117,7 @@ impl Arbitrary for Proto {
                     .unwrap();
                 Proto(Onion(Cow::Owned(a), std::cmp::max(1, u16::arbitrary(g))))
             }
-            16 => {
+            17 => {
                 let a: [u8; 35] = iter::repeat_with(|| u8::arbitrary(g))
                     .take(35)
                     .collect::<Vec<_>>()
@@ -124,21 +125,21 @@ impl Arbitrary for Proto {
                     .unwrap();
                 Proto(Onion3((a, std::cmp::max(1, u16::arbitrary(g))).into()))
             }
-            17 => Proto(P2p(Mh::arbitrary(g).0)),
-            18 => Proto(P2pCircuit),
-            19 => Proto(Quic),
-            20 => Proto(QuicV1),
-            21 => Proto(Sctp(Arbitrary::arbitrary(g))),
-            22 => Proto(Tcp(Arbitrary::arbitrary(g))),
-            23 => Proto(Tls),
-            24 => Proto(Noise),
-            25 => Proto(Udp(Arbitrary::arbitrary(g))),
-            26 => Proto(Udt),
-            27 => Proto(Unix(Cow::Owned(SubString::arbitrary(g).0))),
-            28 => Proto(Utp),
-            29 => Proto(WebTransport),
-            30 => Proto(Ws("/".into())),
-            31 => Proto(Wss("/".into())),
+            18 => Proto(P2p(Mh::arbitrary(g).0)),
+            19 => Proto(P2pCircuit),
+            20 => Proto(Quic),
+            21 => Proto(QuicV1),
+            22 => Proto(Sctp(Arbitrary::arbitrary(g))),
+            23 => Proto(Tcp(Arbitrary::arbitrary(g))),
+            24 => Proto(Tls),
+            25 => Proto(Noise),
+            26 => Proto(Udp(Arbitrary::arbitrary(g))),
+            27 => Proto(Udt),
+            28 => Proto(Unix(Cow::Owned(SubString::arbitrary(g).0))),
+            29 => Proto(Utp),
+            30 => Proto(WebTransport),
+            31 => Proto(Ws("/".into())),
+            32 => Proto(Wss("/".into())),
             _ => panic!("outside range"),
         }
     }
@@ -379,6 +380,12 @@ fn construct_success() {
     );
 
     ma_valid(
+        "/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/4001/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN/p2p-circuit/webrtc/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "29200108A07AC542013AC986FFFE317095060FA1DE03A50322122006B3608AA000274049EB28AD8E793A26FF6FAB281A7D3BD77CD18EB745DFAABBA2029902A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
+        vec![Ip6(addr6),Tcp(4001), Wss("/".into()), P2p(multihash("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN")), P2pCircuit, WebRTC, P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))],
+    );
+
+    ma_valid(
         "/ip4/127.0.0.1/udp/1234/quic/webtransport",
         "047F000001910204D2CC03D103",
         vec![Ip4(local), Udp(1234), Quic, WebTransport],
@@ -606,6 +613,7 @@ fn protocol_stack() {
         "/ip4/127.0.0.1/tcp/127/tls/ws",
         "/ip4/127.0.0.1/tcp/127/noise",
         "/ip4/127.0.0.1/udp/1234/webrtc-direct",
+        "/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/4001/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN/p2p-circuit/webrtc/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
     ];
     let argless = std::collections::HashSet::from([
         "http",
@@ -621,6 +629,7 @@ fn protocol_stack() {
         "udt",
         "utp",
         "webrtc-direct",
+        "webrtc",
         "ws",
         "wss",
     ]);

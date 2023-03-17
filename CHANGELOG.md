@@ -4,6 +4,8 @@
 
 - Rename `/webrtc` to `/webrt-direct`. See [multiformats/multiaddr discussion] for context. **Note that this is a breaking change.**
 
+- Add `WebRTC` (browser-to-browser) instance for `Multiaddr`.
+
 [multiformats/multiaddr discussion]: https://github.com/multiformats/multiaddr/pull/150#issuecomment-1468791586
 [PR 70]: https://github.com/multiformats/rust-multiaddr/pull/70
 

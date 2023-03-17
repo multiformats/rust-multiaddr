@@ -29,6 +29,7 @@ const IP6: u32 = 41;
 const P2P_WEBRTC_DIRECT: u32 = 276;
 const P2P_WEBRTC_STAR: u32 = 275;
 const WEBRTC_DIRECT: u32 = 280;
+const WEBRTC: u32 = 281;
 const CERTHASH: u32 = 466;
 const P2P_WEBSOCKET_STAR: u32 = 479;
 const MEMORY: u32 = 777;
@@ -85,6 +86,7 @@ pub enum Protocol<'a> {
     P2pWebRtcDirect,
     P2pWebRtcStar,
     WebRTCDirect,
+    WebRTC,
     Certhash(Multihash),
     P2pWebSocketStar,
     /// Contains the "port" to contact. Similar to TCP or UDP, 0 means "assign me a port".
@@ -203,6 +205,7 @@ impl<'a> Protocol<'a> {
             "p2p-websocket-star" => Ok(Protocol::P2pWebSocketStar),
             "p2p-webrtc-star" => Ok(Protocol::P2pWebRtcStar),
             "webrtc-direct" => Ok(Protocol::WebRTCDirect),
+            "webrtc" => Ok(Protocol::WebRTC),
             "certhash" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 let (_base, decoded) = multibase::decode(s)?;
@@ -285,6 +288,7 @@ impl<'a> Protocol<'a> {
             P2P_WEBRTC_DIRECT => Ok((Protocol::P2pWebRtcDirect, input)),
             P2P_WEBRTC_STAR => Ok((Protocol::P2pWebRtcStar, input)),
             WEBRTC_DIRECT => Ok((Protocol::WebRTCDirect, input)),
+            WEBRTC => Ok((Protocol::WebRTC, input)),
             CERTHASH => {
                 let (n, input) = decode::usize(input)?;
                 let (data, rest) = split_at(n, input)?;
@@ -468,6 +472,7 @@ impl<'a> Protocol<'a> {
             Protocol::P2pWebSocketStar => w.write_all(encode::u32(P2P_WEBSOCKET_STAR, &mut buf))?,
             Protocol::P2pWebRtcStar => w.write_all(encode::u32(P2P_WEBRTC_STAR, &mut buf))?,
             Protocol::WebRTCDirect => w.write_all(encode::u32(WEBRTC_DIRECT, &mut buf))?,
+            Protocol::WebRTC => w.write_all(encode::u32(WEBRTC, &mut buf))?,
             Protocol::Certhash(hash) => {
                 w.write_all(encode::u32(CERTHASH, &mut buf))?;
                 let bytes = hash.to_bytes();
@@ -500,6 +505,7 @@ impl<'a> Protocol<'a> {
             P2pWebRtcDirect => P2pWebRtcDirect,
             P2pWebRtcStar => P2pWebRtcStar,
             WebRTCDirect => WebRTCDirect,
+            WebRTC => WebRTC,
             Certhash(hash) => Certhash(hash),
             P2pWebSocketStar => P2pWebSocketStar,
             Memory(a) => Memory(a),
@@ -538,6 +544,7 @@ impl<'a> Protocol<'a> {
             P2pWebRtcDirect => "p2p-webrtc-direct",
             P2pWebRtcStar => "p2p-webrtc-star",
             WebRTCDirect => "webrtc-direct",
+            WebRTC => "webrtc",
             Certhash(_) => "certhash",
             P2pWebSocketStar => "p2p-websocket-star",
             Memory(_) => "memory",
