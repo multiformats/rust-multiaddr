@@ -1,3 +1,27 @@
+# 0.17.1
+
+- Rename string representation of `WebRTC` protocol from `/webrtc` to `/webrt-direct`.
+  For backwards compatibility `/webrtc` will still be decoded to `Protocol::WebRTC`, but `Protocol::WebRTC` will from now on always be encoded as `/webrtc-direct`.
+  See [multiformats/multiaddr discussion] for context.
+  ``` rust
+  assert_eq!(
+      Multiaddr::empty().with(Protocol::WebRTC),
+      "/webrtc".parse().unwrap(),
+  );
+  assert_eq!(
+      Multiaddr::empty().with(Protocol::WebRTC),
+      "/webrtc-direct".parse().unwrap(),
+  );
+  assert_eq!(
+      "/webrtc-direct",
+      Multiaddr::empty().with(Protocol::WebRTC).to_string(),
+  );
+  assert_ne!(
+      "/webrtc",
+      Multiaddr::empty().with(Protocol::WebRTC).to_string(),
+  );
+  ```
+
 # 0.17.0
 
 - Update to multihash `v0.17`. See [PR 63].
