@@ -1,7 +1,10 @@
-# 0.18.0 [unreleased]
+# 0.18.0 - unreleased
 
 - Add `WebTransport` instance for `Multiaddr`. See [PR 70].
 
+- Rename `/webrtc` to `/webrt-direct`. See [multiformats/multiaddr discussion] for context. **Note that this is a breaking change.**
+
+[multiformats/multiaddr discussion]: https://github.com/multiformats/multiaddr/pull/150#issuecomment-1468791586
 [PR 70]: https://github.com/multiformats/rust-multiaddr/pull/70
 
 # 0.17.0
