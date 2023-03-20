@@ -1,5 +1,3 @@
-extern crate core;
-
 use data_encoding::HEXUPPER;
 use multiaddr::*;
 use multihash::MultihashGeneric;
