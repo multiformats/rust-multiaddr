@@ -2,7 +2,7 @@ extern crate core;
 
 use data_encoding::HEXUPPER;
 use multiaddr::*;
-use multihash::{Code, Multihash};
+use multihash::MultihashGeneric;
 use quickcheck::{Arbitrary, Gen, QuickCheck};
 use std::{
     borrow::Cow,
@@ -145,14 +145,13 @@ impl Arbitrary for Proto {
 }
 
 #[derive(Clone, Debug)]
-struct Mh(Multihash);
+struct Mh(MultihashGeneric<64>);
 
 impl Arbitrary for Mh {
     fn arbitrary(g: &mut Gen) -> Self {
         let mut hash: [u8; 32] = [0; 32];
         hash.fill_with(|| u8::arbitrary(g));
-        Mh(Multihash::wrap(Code::Identity.into(), &hash)
-            .expect("The digest size is never too large"))
+        Mh(MultihashGeneric::wrap(0x0, &hash).expect("The digest size is never too large"))
     }
 }
 
@@ -180,8 +179,8 @@ fn ma_valid(source: &str, target: &str, protocols: Vec<Protocol<'_>>) {
     );
 }
 
-fn multihash(s: &str) -> Multihash {
-    Multihash::from_bytes(&multibase::Base::Base58Btc.decode(s).unwrap()).unwrap()
+fn multihash(s: &str) -> MultihashGeneric<64> {
+    MultihashGeneric::from_bytes(&multibase::Base::Base58Btc.decode(s).unwrap()).unwrap()
 }
 
 #[test]
@@ -374,7 +373,7 @@ fn construct_success() {
             Ip4(local),
             Udp(1234),
             WebRTC,
-            Certhash(Multihash::from_bytes(&decoded).unwrap()),
+            Certhash(MultihashGeneric::from_bytes(&decoded).unwrap()),
         ],
     );
 
@@ -393,7 +392,7 @@ fn construct_success() {
             Ip4(local),
             Udp(1234),
             WebTransport,
-            Certhash(Multihash::from_bytes(&decoded).unwrap()),
+            Certhash(MultihashGeneric::from_bytes(&decoded).unwrap()),
         ],
     );
 }
