@@ -3,7 +3,7 @@ use crate::{Error, Result};
 use arrayref::array_ref;
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use data_encoding::BASE32;
-use multihash::Multihash;
+use multihash::MultihashGeneric;
 use std::{
     borrow::Cow,
     convert::From,
@@ -51,6 +51,13 @@ const WS: u32 = 477;
 const WS_WITH_PATH: u32 = 4770; // Note: not standard
 const WSS: u32 = 478;
 const WSS_WITH_PATH: u32 = 4780; // Note: not standard
+
+/// Type-alias for how multi-addresses use `Multihash`.
+///
+/// The `64` defines the allocation size for the digest within the `Multihash`.
+/// This allows us to use hashes such as SHA512.
+/// In case protocols like `/certhash` ever support hashes larger than that, we will need to update this size here (which will be a breaking change!).
+type Multihash = MultihashGeneric<64>;
 
 const PATH_SEGMENT_ENCODE_SET: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
     .add(b'%')
