@@ -1,5 +1,5 @@
 use crate::onion_addr::Onion3Addr;
-use crate::{Error, Result};
+use crate::Error;
 use arrayref::array_ref;
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use data_encoding::BASE32;
@@ -122,61 +122,61 @@ impl<'a> Protocol<'a> {
     /// produce a well-formed protocol. The same iterator can thus be used to parse
     /// a sequence of protocols in succession. It is up to client code to check
     /// that iteration has finished whenever appropriate.
-    pub fn from_str_parts<I>(mut iter: I) -> Result<Self>
+    pub fn from_str_parts<I>(mut iter: I) -> Result<Self, Error>
     where
         I: Iterator<Item = &'a str>,
     {
-        match iter.next().ok_or(Error::InvalidProtocolString)? {
+        match iter.next().ok_or(Error::invalid_protocol_string())? {
             "ip4" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Ip4(Ipv4Addr::from_str(s)?))
             }
             "tcp" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Tcp(s.parse()?))
             }
             "tls" => Ok(Protocol::Tls),
             "noise" => Ok(Protocol::Noise),
             "udp" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Udp(s.parse()?))
             }
             "dccp" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Dccp(s.parse()?))
             }
             "ip6" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Ip6(Ipv6Addr::from_str(s)?))
             }
             "dns" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Dns(Cow::Borrowed(s)))
             }
             "dns4" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Dns4(Cow::Borrowed(s)))
             }
             "dns6" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Dns6(Cow::Borrowed(s)))
             }
             "dnsaddr" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Dnsaddr(Cow::Borrowed(s)))
             }
             "sctp" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Sctp(s.parse()?))
             }
             "udt" => Ok(Protocol::Udt),
             "utp" => Ok(Protocol::Utp),
             "unix" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Unix(Cow::Borrowed(s)))
             }
             "p2p" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 let decoded = multibase::Base::Base58Btc.decode(s)?;
                 Ok(Protocol::P2p(Multihash::from_bytes(&decoded)?))
             }
@@ -184,12 +184,12 @@ impl<'a> Protocol<'a> {
             "https" => Ok(Protocol::Https),
             "onion" => iter
                 .next()
-                .ok_or(Error::InvalidProtocolString)
+                .ok_or(Error::invalid_protocol_string())
                 .and_then(|s| read_onion(&s.to_uppercase()))
                 .map(|(a, p)| Protocol::Onion(Cow::Owned(a), p)),
             "onion3" => iter
                 .next()
-                .ok_or(Error::InvalidProtocolString)
+                .ok_or(Error::invalid_protocol_string())
                 .and_then(|s| read_onion3(&s.to_uppercase()))
                 .map(|(a, p)| Protocol::Onion3((a, p).into())),
             "quic" => Ok(Protocol::Quic),
@@ -198,12 +198,12 @@ impl<'a> Protocol<'a> {
             "ws" => Ok(Protocol::Ws(Cow::Borrowed("/"))),
             "wss" => Ok(Protocol::Wss(Cow::Borrowed("/"))),
             "x-parity-ws" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 let decoded = percent_encoding::percent_decode(s.as_bytes()).decode_utf8()?;
                 Ok(Protocol::Ws(decoded))
             }
             "x-parity-wss" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 let decoded = percent_encoding::percent_decode(s.as_bytes()).decode_utf8()?;
                 Ok(Protocol::Wss(decoded))
             }
@@ -211,26 +211,26 @@ impl<'a> Protocol<'a> {
             "p2p-webrtc-star" => Ok(Protocol::P2pWebRtcStar),
             "webrtc" => Ok(Protocol::WebRTC),
             "certhash" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 let (_base, decoded) = multibase::decode(s)?;
                 Ok(Protocol::Certhash(Multihash::from_bytes(&decoded)?))
             }
             "p2p-webrtc-direct" => Ok(Protocol::P2pWebRtcDirect),
             "p2p-circuit" => Ok(Protocol::P2pCircuit),
             "memory" => {
-                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let s = iter.next().ok_or(Error::invalid_protocol_string())?;
                 Ok(Protocol::Memory(s.parse()?))
             }
-            unknown => Err(Error::UnknownProtocolString(unknown.to_string())),
+            unknown => Err(Error::unknown_protocol_string(unknown.to_string())),
         }
     }
 
     /// Parse a single `Protocol` value from its byte slice representation,
     /// returning the protocol as well as the remaining byte slice.
-    pub fn from_bytes(input: &'a [u8]) -> Result<(Self, &'a [u8])> {
-        fn split_at(n: usize, input: &[u8]) -> Result<(&[u8], &[u8])> {
+    pub fn from_bytes(input: &'a [u8]) -> Result<(Self, &'a [u8]), Error> {
+        fn split_at(n: usize, input: &[u8]) -> Result<(&[u8], &[u8]), Error> {
             if input.len() < n {
-                return Err(Error::DataLessThanLen);
+                return Err(Error::data_less_than_len());
             }
             Ok(input.split_at(n))
         }
@@ -368,13 +368,13 @@ impl<'a> Protocol<'a> {
                 let (data, rest) = split_at(n, input)?;
                 Ok((Protocol::Wss(Cow::Borrowed(str::from_utf8(data)?)), rest))
             }
-            _ => Err(Error::UnknownProtocolId(id)),
+            _ => Err(Error::unknown_protocol_id(id)),
         }
     }
 
     /// Encode this protocol by writing its binary representation into
     /// the given `Write` impl.
-    pub fn write_bytes<W: Write>(&self, w: &mut W) -> Result<()> {
+    pub fn write_bytes<W: Write>(&self, w: &mut W) -> Result<(), Error> {
         let mut buf = encode::u32_buffer();
         match self {
             Protocol::Ip4(addr) => {
@@ -643,43 +643,43 @@ impl<'a> From<Ipv6Addr> for Protocol<'a> {
 
 macro_rules! read_onion_impl {
     ($name:ident, $len:expr, $encoded_len:expr) => {
-        fn $name(s: &str) -> Result<([u8; $len], u16)> {
+        fn $name(s: &str) -> Result<([u8; $len], u16), Error> {
             let mut parts = s.split(':');
 
             // address part (without ".onion")
-            let b32 = parts.next().ok_or(Error::InvalidMultiaddr)?;
+            let b32 = parts.next().ok_or(Error::invalid_multiaddr())?;
             if b32.len() != $encoded_len {
-                return Err(Error::InvalidMultiaddr);
+                return Err(Error::invalid_multiaddr());
             }
 
             // port number
             let port = parts
                 .next()
-                .ok_or(Error::InvalidMultiaddr)
+                .ok_or(Error::invalid_multiaddr())
                 .and_then(|p| str::parse(p).map_err(From::from))?;
 
             // port == 0 is not valid for onion
             if port == 0 {
-                return Err(Error::InvalidMultiaddr);
+                return Err(Error::invalid_multiaddr());
             }
 
             // nothing else expected
             if parts.next().is_some() {
-                return Err(Error::InvalidMultiaddr);
+                return Err(Error::invalid_multiaddr());
             }
 
             if $len
                 != BASE32
                     .decode_len(b32.len())
-                    .map_err(|_| Error::InvalidMultiaddr)?
+                    .map_err(|_| Error::invalid_multiaddr())?
             {
-                return Err(Error::InvalidMultiaddr);
+                return Err(Error::invalid_multiaddr());
             }
 
             let mut buf = [0u8; $len];
             BASE32
                 .decode_mut(b32.as_bytes(), &mut buf)
-                .map_err(|_| Error::InvalidMultiaddr)?;
+                .map_err(|_| Error::invalid_multiaddr())?;
 
             Ok((buf, port))
         }

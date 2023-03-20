@@ -555,12 +555,9 @@ fn replace_ip4_with_ip6() {
 fn unknown_protocol_string() {
     match "/unknown/1.2.3.4".parse::<Multiaddr>() {
         Ok(_) => panic!("The UnknownProtocolString error should be caused"),
-        Err(e) => match e {
-            crate::Error::UnknownProtocolString(protocol) => {
-                assert_eq!(protocol, "unknown")
-            }
-            _ => panic!("The UnknownProtocolString error should be caused"),
-        },
+        Err(e) => {
+            assert!(e.is_unknown_protocol())
+        }
     }
 }
 
