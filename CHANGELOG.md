@@ -2,9 +2,11 @@
 
 - Add `WebTransport` instance for `Multiaddr`. See [PR 70].
 - Disable all features of `multihash`. See [PR 77].
+- Make `Error` an opaque struct. See [PR 81].
 
 [PR 70]: https://github.com/multiformats/rust-multiaddr/pull/70
 [PR 77]: https://github.com/multiformats/rust-multiaddr/pull/77
+[PR 81]: https://github.com/multiformats/rust-multiaddr/pull/81
 
 # 0.17.0
 

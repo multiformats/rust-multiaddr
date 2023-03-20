@@ -8,6 +8,7 @@ mod protocol;
 #[cfg(feature = "url")]
 mod from_url;
 
+#[allow(deprecated)]
 pub use self::errors::{Error, Result};
 pub use self::onion_addr::Onion3Addr;
 pub use self::protocol::Protocol;
@@ -260,13 +261,13 @@ impl<'a> FromIterator<Protocol<'a>> for Multiaddr {
 impl FromStr for Multiaddr {
     type Err = Error;
 
-    fn from_str(input: &str) -> Result<Self> {
+    fn from_str(input: &str) -> std::result::Result<Self, Error> {
         let mut writer = Vec::new();
         let mut parts = input.split('/').peekable();
 
         if Some("") != parts.next() {
             // A multiaddr must start with `/`
-            return Err(Error::InvalidMultiaddr);
+            return Err(Error::invalid_multiaddr());
         }
 
         while parts.peek().is_some() {
@@ -345,7 +346,7 @@ impl From<Ipv6Addr> for Multiaddr {
 impl TryFrom<Vec<u8>> for Multiaddr {
     type Error = Error;
 
-    fn try_from(v: Vec<u8>) -> Result<Self> {
+    fn try_from(v: Vec<u8>) -> std::result::Result<Self, Error> {
         // Check if the argument is a valid `Multiaddr` by reading its protocols.
         let mut slice = &v[..];
         while !slice.is_empty() {
@@ -359,7 +360,7 @@ impl TryFrom<Vec<u8>> for Multiaddr {
 impl TryFrom<String> for Multiaddr {
     type Error = Error;
 
-    fn try_from(s: String) -> Result<Multiaddr> {
+    fn try_from(s: String) -> std::result::Result<Multiaddr, Error> {
         s.parse()
     }
 }
@@ -367,7 +368,7 @@ impl TryFrom<String> for Multiaddr {
 impl<'a> TryFrom<&'a str> for Multiaddr {
     type Error = Error;
 
-    fn try_from(s: &'a str) -> Result<Multiaddr> {
+    fn try_from(s: &'a str) -> std::result::Result<Multiaddr, Error> {
         s.parse()
     }
 }
