@@ -1,6 +1,7 @@
 use std::{error, fmt, io, net, num, str, string};
 use unsigned_varint::decode;
 
+#[deprecated(note = "Use `Result<T, multiaddr::Error>` instead.")]
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 /// Error types
