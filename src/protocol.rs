@@ -79,6 +79,7 @@ const PATH_SEGMENT_ENCODE_SET: &percent_encoding::AsciiSet = &percent_encoding::
 /// platform-specific. This means that the actual validation of paths needs to
 /// happen separately.
 #[derive(PartialEq, Eq, Clone, Debug)]
+#[non_exhaustive]
 pub enum Protocol<'a> {
     Dccp(u16),
     Dns(Cow<'a, str>),
