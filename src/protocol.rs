@@ -3,6 +3,7 @@ use crate::{Error, Result};
 use arrayref::array_ref;
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use data_encoding::BASE32;
+use libp2p_identity::PeerId;
 use multihash::MultihashGeneric;
 use std::{
     borrow::Cow,
@@ -98,7 +99,7 @@ pub enum Protocol<'a> {
     Memory(u64),
     Onion(Cow<'a, [u8; 10]>, u16),
     Onion3(Onion3Addr<'a>),
-    P2p(Multihash),
+    P2p(PeerId),
     P2pCircuit,
     Quic,
     QuicV1,
@@ -178,7 +179,9 @@ impl<'a> Protocol<'a> {
             "p2p" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 let decoded = multibase::Base::Base58Btc.decode(s)?;
-                Ok(Protocol::P2p(Multihash::from_bytes(&decoded)?))
+                Ok(Protocol::P2p(
+                    PeerId::from_bytes(&decoded).map_err(|e| Error::ParsingError(Box::new(e)))?,
+                ))
             }
             "http" => Ok(Protocol::Http),
             "https" => Ok(Protocol::Https),
@@ -323,7 +326,12 @@ impl<'a> Protocol<'a> {
             P2P => {
                 let (n, input) = decode::usize(input)?;
                 let (data, rest) = split_at(n, input)?;
-                Ok((Protocol::P2p(Multihash::from_bytes(data)?), rest))
+                Ok((
+                    Protocol::P2p(
+                        PeerId::from_bytes(data).map_err(|e| Error::ParsingError(Box::new(e)))?,
+                    ),
+                    rest,
+                ))
             }
             P2P_CIRCUIT => Ok((Protocol::P2pCircuit, input)),
             QUIC => Ok((Protocol::Quic, input)),
