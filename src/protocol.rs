@@ -179,9 +179,9 @@ impl<'a> Protocol<'a> {
             "p2p" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 let decoded = multibase::Base::Base58Btc.decode(s)?;
-                Ok(Protocol::P2p(
-                    PeerId::from_bytes(&decoded).map_err(|e| Error::ParsingError(Box::new(e)))?,
-                ))
+                let peer_id =
+                    PeerId::from_bytes(&decoded).map_err(|e| Error::ParsingError(Box::new(e)))?;
+                Ok(Protocol::P2p(peer_id))
             }
             "http" => Ok(Protocol::Http),
             "https" => Ok(Protocol::Https),
@@ -443,9 +443,9 @@ impl<'a> Protocol<'a> {
                 w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
                 w.write_all(bytes)?
             }
-            Protocol::P2p(multihash) => {
+            Protocol::P2p(peer_id) => {
                 w.write_all(encode::u32(P2P, &mut buf))?;
-                let bytes = multihash.to_bytes();
+                let bytes = peer_id.to_bytes();
                 w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
                 w.write_all(&bytes)?
             }

@@ -161,7 +161,7 @@ impl Arbitrary for PId {
     fn arbitrary(g: &mut Gen) -> Self {
         let mh = Mh::arbitrary(g);
 
-        PId(PeerId::from_bytes(&mh.0.to_bytes()).expect("from_bytes <> to_bytes never fails"))
+        PId(PeerId::from_multihash(mh.0).expect("identity multihash works if digest size < 64"))
     }
 }
 
