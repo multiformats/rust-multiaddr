@@ -199,7 +199,10 @@ impl<'a> Protocol<'a> {
             }
             "p2p-websocket-star" => Ok(Protocol::P2pWebSocketStar),
             "p2p-webrtc-star" => Ok(Protocol::P2pWebRtcStar),
-            "webrtc" => Ok(Protocol::WebRTC),
+            "webrtc" => {
+                log::warn!("Parsed deprecated /webrtc. Use /webrtc-direct instead.");
+                Ok(Protocol::WebRTC)
+            }
             "webrtc-direct" => Ok(Protocol::WebRTC),
             "certhash" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
