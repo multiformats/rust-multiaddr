@@ -2,7 +2,7 @@
 
 - Rename string representation of `WebRTC` protocol from `/webrtc` to `/webrt-direct`.
   For backwards compatibility `/webrtc` will still be decoded to `Protocol::WebRTC`, but `Protocol::WebRTC` will from now on always be encoded as `/webrtc-direct`.
-  See [multiformats/multiaddr discussion] for context.
+  See [multiformats/multiaddr discussion] and [PR 84] for context.
   ``` rust
   assert_eq!(
       Multiaddr::empty().with(Protocol::WebRTC),
@@ -21,6 +21,8 @@
       Multiaddr::empty().with(Protocol::WebRTC).to_string(),
   );
   ```
+
+[PR 84]: https://github.com/multiformats/rust-multiaddr/pull/84
 
 # 0.17.0
 
