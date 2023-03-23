@@ -199,7 +199,11 @@ impl<'a> Protocol<'a> {
             }
             "p2p-websocket-star" => Ok(Protocol::P2pWebSocketStar),
             "p2p-webrtc-star" => Ok(Protocol::P2pWebRtcStar),
-            "webrtc" => Ok(Protocol::WebRTC),
+            "webrtc" => {
+                log::warn!("Parsed deprecated /webrtc. Use /webrtc-direct instead.");
+                Ok(Protocol::WebRTC)
+            }
+            "webrtc-direct" => Ok(Protocol::WebRTC),
             "certhash" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 let (_base, decoded) = multibase::decode(s)?;
@@ -531,7 +535,7 @@ impl<'a> Protocol<'a> {
             Ip6(_) => "ip6",
             P2pWebRtcDirect => "p2p-webrtc-direct",
             P2pWebRtcStar => "p2p-webrtc-star",
-            WebRTC => "webrtc",
+            WebRTC => "webrtc-direct",
             Certhash(_) => "certhash",
             P2pWebSocketStar => "p2p-websocket-star",
             Memory(_) => "memory",
