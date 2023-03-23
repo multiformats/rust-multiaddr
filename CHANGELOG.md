@@ -1,11 +1,44 @@
 # 0.18.0 - unreleased
 
 - Add `WebTransport` instance for `Multiaddr`. See [PR 70].
+- Disable all features of `multihash`. See [PR 77].
+- Mark `Protocol` as `#[non_exhaustive]`. See [PR 82].
 
-- Rename `/webrtc` to `/webrt-direct`. See [multiformats/multiaddr discussion] for context. **Note that this is a breaking change.**
+- Rename `Protocol::WebRTC` to `Protocol::WebRTC`.
+  See [multiformats/multiaddr discussion] for context.
+  Remove deprecated support for `/webrtc` in favor of the existing `/webrtc-direct` string representation.
+  **Note that this is a breaking change.**
 
 [multiformats/multiaddr discussion]: https://github.com/multiformats/multiaddr/pull/150#issuecomment-1468791586
 [PR 70]: https://github.com/multiformats/rust-multiaddr/pull/70
+[PR 77]: https://github.com/multiformats/rust-multiaddr/pull/77
+[PR 82]: https://github.com/multiformats/rust-multiaddr/pull/82
+
+# 0.17.1
+
+- Rename string representation of `WebRTC` protocol from `/webrtc` to `/webrt-direct`.
+  For backwards compatibility `/webrtc` will still be decoded to `Protocol::WebRTC`, but `Protocol::WebRTC` will from now on always be encoded as `/webrtc-direct`.
+  See [multiformats/multiaddr discussion] and [PR 84] for context.
+  ``` rust
+  assert_eq!(
+      Multiaddr::empty().with(Protocol::WebRTC),
+      "/webrtc".parse().unwrap(),
+  );
+  assert_eq!(
+      Multiaddr::empty().with(Protocol::WebRTC),
+      "/webrtc-direct".parse().unwrap(),
+  );
+  assert_eq!(
+      "/webrtc-direct",
+      Multiaddr::empty().with(Protocol::WebRTC).to_string(),
+  );
+  assert_ne!(
+      "/webrtc",
+      Multiaddr::empty().with(Protocol::WebRTC).to_string(),
+  );
+  ```
+
+[PR 84]: https://github.com/multiformats/rust-multiaddr/pull/84
 
 # 0.17.0
 
