@@ -4,7 +4,7 @@
 - Disable all features of `multihash`. See [PR 77].
 - Mark `Protocol` as `#[non_exhaustive]`. See [PR 82].
 
-- Rename `Protocol::WebRTC` to `Protocol::WebRTC`.
+- Rename `Protocol::WebRTC` to `Protocol::WebRTCDirect`.
   See [multiformats/multiaddr discussion] for context.
   Remove deprecated support for `/webrtc` in favor of the existing `/webrtc-direct` string representation.
   **Note that this is a breaking change.**
