@@ -1,9 +1,15 @@
-# 0.18.0 [unreleased]
+# 0.18.0 - unreleased
 
 - Add `WebTransport` instance for `Multiaddr`. See [PR 70].
 - Disable all features of `multihash`. See [PR 77].
 - Mark `Protocol` as `#[non_exhaustive]`. See [PR 82].
 
+- Rename `Protocol::WebRTC` to `Protocol::WebRTCDirect`.
+  See [multiformats/multiaddr discussion] for context.
+  Remove deprecated support for `/webrtc` in favor of the existing `/webrtc-direct` string representation.
+  **Note that this is a breaking change.**
+
+[multiformats/multiaddr discussion]: https://github.com/multiformats/multiaddr/pull/150#issuecomment-1468791586
 [PR 70]: https://github.com/multiformats/rust-multiaddr/pull/70
 [PR 77]: https://github.com/multiformats/rust-multiaddr/pull/77
 [PR 82]: https://github.com/multiformats/rust-multiaddr/pull/82

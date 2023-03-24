@@ -102,7 +102,7 @@ impl Arbitrary for Proto {
             8 => Proto(Ip6(Ipv6Addr::arbitrary(g))),
             9 => Proto(P2pWebRtcDirect),
             10 => Proto(P2pWebRtcStar),
-            11 => Proto(WebRTC),
+            11 => Proto(WebRTCDirect),
             12 => Proto(Certhash(Mh::arbitrary(g).0)),
             13 => Proto(P2pWebSocketStar),
             14 => Proto(Memory(Arbitrary::arbitrary(g))),
@@ -359,7 +359,7 @@ fn construct_success() {
     ma_valid(
         "/ip4/127.0.0.1/udp/1234/webrtc-direct",
         "047F000001910204D29802",
-        vec![Ip4(local), Udp(1234), WebRTC],
+        vec![Ip4(local), Udp(1234), WebRTCDirect],
     );
 
     let (_base, decoded) =
@@ -370,7 +370,7 @@ fn construct_success() {
         vec![
             Ip4(local),
             Udp(1234),
-            WebRTC,
+            WebRTCDirect,
             Certhash(MultihashGeneric::from_bytes(&decoded).unwrap()),
         ],
     );
@@ -648,24 +648,4 @@ fn protocol_stack() {
 fn arbitrary_impl_for_all_proto_variants() {
     let variants = core::mem::variant_count::<Protocol>() as u8;
     assert_eq!(variants, Proto::IMPL_VARIANT_COUNT);
-}
-
-#[test]
-fn webrtc_webrtc_direct_rename() {
-    assert_eq!(
-        Multiaddr::empty().with(Protocol::WebRTC),
-        "/webrtc".parse().unwrap(),
-    );
-    assert_eq!(
-        Multiaddr::empty().with(Protocol::WebRTC),
-        "/webrtc-direct".parse().unwrap(),
-    );
-    assert_eq!(
-        "/webrtc-direct",
-        Multiaddr::empty().with(Protocol::WebRTC).to_string(),
-    );
-    assert_ne!(
-        "/webrtc",
-        Multiaddr::empty().with(Protocol::WebRTC).to_string(),
-    );
 }
