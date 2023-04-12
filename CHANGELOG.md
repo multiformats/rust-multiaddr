@@ -1,3 +1,10 @@
+# 0.19.0 - unreleased
+
+- Add `Protocol::WebRTC` (browser-to-browser) instance, `/webrtc` in string representation.
+  See [PR 79].
+
+[PR 79]: https://github.com/multiformats/rust-multiaddr/pull/79/
+
 # 0.18.0 - unreleased
 
 - Add `WebTransport` instance for `Multiaddr`. See [PR 70].
