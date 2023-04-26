@@ -1,3 +1,4 @@
+use ecow::EcoVec;
 ///! Implementation of [multiaddr](https://github.com/multiformats/multiaddr) in Rust.
 pub use multihash;
 
@@ -15,6 +16,7 @@ use serde::{
     de::{self, Error as DeserializerError},
     Deserialize, Deserializer, Serialize, Serializer,
 };
+use std::ops::{Deref, DerefMut};
 use std::{
     convert::TryFrom,
     fmt, io,
@@ -22,7 +24,6 @@ use std::{
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     result::Result as StdResult,
     str::FromStr,
-    sync::Arc,
 };
 
 #[cfg(feature = "url")]
@@ -38,21 +39,53 @@ static_assertions::const_assert! {
 #[allow(clippy::rc_buffer)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 pub struct Multiaddr {
-    bytes: Arc<Vec<u8>>,
+    bytes: EcoWriter,
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
+struct EcoWriter(EcoVec<u8>);
+
+impl std::io::Write for EcoWriter {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0.extend_from_slice(buf);
+        Ok(buf.len())
+    }
+
+    #[inline]
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+impl Deref for EcoWriter {
+    type Target = EcoVec<u8>;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for EcoWriter {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 impl Multiaddr {
     /// Create a new, empty multiaddress.
     pub fn empty() -> Self {
         Self {
-            bytes: Arc::new(Vec::new()),
+            bytes: EcoWriter(EcoVec::new()),
         }
     }
 
     /// Create a new, empty multiaddress with the given capacity.
     pub fn with_capacity(n: usize) -> Self {
         Self {
-            bytes: Arc::new(Vec::with_capacity(n)),
+            bytes: EcoWriter(EcoVec::with_capacity(n)),
         }
     }
 
@@ -84,10 +117,8 @@ impl Multiaddr {
     /// ```
     ///
     pub fn push(&mut self, p: Protocol<'_>) {
-        let mut w = io::Cursor::<&mut Vec<u8>>::new(Arc::make_mut(&mut self.bytes));
-        w.set_position(w.get_ref().len() as u64);
-        p.write_bytes(&mut w)
-            .expect("Writing to a `io::Cursor<&mut Vec<u8>>` never fails.")
+        p.write_bytes(&mut self.bytes)
+            .expect("Writing to an `EcoVec` never fails.")
     }
 
     /// Pops the last `Protocol` of this multiaddr, or `None` if the multiaddr is empty.
@@ -113,16 +144,14 @@ impl Multiaddr {
             slice = s
         };
         let remaining_len = self.bytes.len() - slice.len();
-        Arc::make_mut(&mut self.bytes).truncate(remaining_len);
+        self.bytes.truncate(remaining_len);
         Some(protocol)
     }
 
     /// Like [`Multiaddr::push`] but consumes `self`.
     pub fn with(mut self, p: Protocol<'_>) -> Self {
-        let mut w = io::Cursor::<&mut Vec<u8>>::new(Arc::make_mut(&mut self.bytes));
-        w.set_position(w.get_ref().len() as u64);
-        p.write_bytes(&mut w)
-            .expect("Writing to a `io::Cursor<&mut Vec<u8>>` never fails.");
+        p.write_bytes(&mut self.bytes)
+            .expect("Writing to a `EcoVec` never fails.");
         self
     }
 
@@ -246,14 +275,12 @@ impl<'a> FromIterator<Protocol<'a>> for Multiaddr {
     where
         T: IntoIterator<Item = Protocol<'a>>,
     {
-        let mut writer = Vec::new();
+        let mut writer = EcoWriter(EcoVec::new());
         for cmp in iter {
             cmp.write_bytes(&mut writer)
-                .expect("Writing to a `Vec` never fails.");
+                .expect("Writing to an `EcoVec` never fails.");
         }
-        Multiaddr {
-            bytes: Arc::new(writer),
-        }
+        Multiaddr { bytes: writer }
     }
 }
 
@@ -261,7 +288,7 @@ impl FromStr for Multiaddr {
     type Err = Error;
 
     fn from_str(input: &str) -> Result<Self> {
-        let mut writer = Vec::new();
+        let mut writer = EcoWriter(EcoVec::new());
         let mut parts = input.split('/').peekable();
 
         if Some("") != parts.next() {
@@ -272,12 +299,10 @@ impl FromStr for Multiaddr {
         while parts.peek().is_some() {
             let p = Protocol::from_str_parts(&mut parts)?;
             p.write_bytes(&mut writer)
-                .expect("Writing to a `Vec` never fails.");
+                .expect("Writing to an `EcoVec` never fails.");
         }
 
-        Ok(Multiaddr {
-            bytes: Arc::new(writer),
-        })
+        Ok(Multiaddr { bytes: writer })
     }
 }
 
@@ -314,10 +339,10 @@ impl<'a> Iterator for ProtoStackIter<'a> {
 
 impl<'a> From<Protocol<'a>> for Multiaddr {
     fn from(p: Protocol<'a>) -> Multiaddr {
-        let mut w = Vec::new();
+        let mut w = EcoWriter(EcoVec::new());
         p.write_bytes(&mut w)
-            .expect("Writing to a `Vec` never fails.");
-        Multiaddr { bytes: Arc::new(w) }
+            .expect("Writing to an `EcoVec` never fails.");
+        Multiaddr { bytes: w }
     }
 }
 
@@ -352,7 +377,9 @@ impl TryFrom<Vec<u8>> for Multiaddr {
             let (_, s) = Protocol::from_bytes(slice)?;
             slice = s
         }
-        Ok(Multiaddr { bytes: Arc::new(v) })
+        Ok(Multiaddr {
+            bytes: EcoWriter(v.into()),
+        })
     }
 }
 
