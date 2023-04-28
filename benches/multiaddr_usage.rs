@@ -36,7 +36,6 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| make_ipv4_tcp_multiaddrs(black_box(&random_ipv4)))
     });
 
-
     let random_ipv6: Vec<Ipv6Addr> = rand::thread_rng()
         .sample_iter(Standard)
         .take(4096)
