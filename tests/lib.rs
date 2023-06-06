@@ -1,7 +1,7 @@
 use data_encoding::HEXUPPER;
 use libp2p_identity::PeerId;
 use multiaddr::*;
-use multihash::MultihashGeneric;
+use multihash::Multihash;
 use quickcheck::{Arbitrary, Gen, QuickCheck};
 use std::{
     borrow::Cow,
@@ -144,13 +144,13 @@ impl Arbitrary for Proto {
 }
 
 #[derive(Clone, Debug)]
-struct Mh(MultihashGeneric<64>);
+struct Mh(Multihash<64>);
 
 impl Arbitrary for Mh {
     fn arbitrary(g: &mut Gen) -> Self {
         let mut hash: [u8; 32] = [0; 32];
         hash.fill_with(|| u8::arbitrary(g));
-        Mh(MultihashGeneric::wrap(0x0, &hash).expect("The digest size is never too large"))
+        Mh(Multihash::wrap(0x0, &hash).expect("The digest size is never too large"))
     }
 }
 
@@ -383,7 +383,7 @@ fn construct_success() {
             Ip4(local),
             Udp(1234),
             WebRTCDirect,
-            Certhash(MultihashGeneric::from_bytes(&decoded).unwrap()),
+            Certhash(Multihash::from_bytes(&decoded).unwrap()),
         ],
     );
 
@@ -402,7 +402,7 @@ fn construct_success() {
             Ip4(local),
             Udp(1234),
             WebTransport,
-            Certhash(MultihashGeneric::from_bytes(&decoded).unwrap()),
+            Certhash(Multihash::from_bytes(&decoded).unwrap()),
         ],
     );
 }
