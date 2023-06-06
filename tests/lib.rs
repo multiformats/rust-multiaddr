@@ -103,7 +103,7 @@ impl Arbitrary for Proto {
             8 => Proto(Ip6(Ipv6Addr::arbitrary(g))),
             9 => Proto(P2pWebRtcDirect),
             10 => Proto(P2pWebRtcStar),
-            11 => Proto(WebRTC),
+            11 => Proto(WebRTCDirect),
             12 => Proto(Certhash(Mh::arbitrary(g).0)),
             13 => Proto(P2pWebSocketStar),
             14 => Proto(Memory(Arbitrary::arbitrary(g))),
@@ -369,20 +369,20 @@ fn construct_success() {
     );
 
     ma_valid(
-        "/ip4/127.0.0.1/udp/1234/webrtc",
+        "/ip4/127.0.0.1/udp/1234/webrtc-direct",
         "047F000001910204D29802",
-        vec![Ip4(local), Udp(1234), WebRTC],
+        vec![Ip4(local), Udp(1234), WebRTCDirect],
     );
 
     let (_base, decoded) =
         multibase::decode("uEiDDq4_xNyDorZBH3TlGazyJdOWSwvo4PUo5YHFMrvDE8g").unwrap();
     ma_valid(
-        "/ip4/127.0.0.1/udp/1234/webrtc/certhash/uEiDDq4_xNyDorZBH3TlGazyJdOWSwvo4PUo5YHFMrvDE8g",
+        "/ip4/127.0.0.1/udp/1234/webrtc-direct/certhash/uEiDDq4_xNyDorZBH3TlGazyJdOWSwvo4PUo5YHFMrvDE8g",
         "047F000001910204D29802D203221220C3AB8FF13720E8AD9047DD39466B3C8974E592C2FA383D4A3960714CAEF0C4F2",
         vec![
             Ip4(local),
             Udp(1234),
-            WebRTC,
+            WebRTCDirect,
             Certhash(MultihashGeneric::from_bytes(&decoded).unwrap()),
         ],
     );
@@ -441,8 +441,8 @@ fn construct_fail() {
         "/ip4/127.0.0.1/p2p",
         "/ip4/127.0.0.1/p2p/tcp",
         "/p2p-circuit/50",
-        "/ip4/127.0.0.1/udp/1234/webrtc/certhash",
-        "/ip4/127.0.0.1/udp/1234/webrtc/certhash/b2uaraocy6yrdblb4sfptaddgimjmmp", // 1 character missing from certhash
+        "/ip4/127.0.0.1/udp/1234/webrtc-direct/certhash",
+        "/ip4/127.0.0.1/udp/1234/webrtc-direct/certhash/b2uaraocy6yrdblb4sfptaddgimjmmp", // 1 character missing from certhash
     ];
 
     for address in &addresses {
@@ -614,7 +614,7 @@ fn protocol_stack() {
         "/ip4/127.0.0.1/tcp/127/tls",
         "/ip4/127.0.0.1/tcp/127/tls/ws",
         "/ip4/127.0.0.1/tcp/127/noise",
-        "/ip4/127.0.0.1/udp/1234/webrtc",
+        "/ip4/127.0.0.1/udp/1234/webrtc-direct",
     ];
     let argless = std::collections::HashSet::from([
         "http",
@@ -629,7 +629,7 @@ fn protocol_stack() {
         "tls",
         "udt",
         "utp",
-        "webrtc",
+        "webrtc-direct",
         "ws",
         "wss",
     ]);
