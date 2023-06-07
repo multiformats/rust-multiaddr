@@ -1,4 +1,4 @@
-# 0.18.0 - unreleased
+# 0.18.0
 
 - Add `WebTransport` instance for `Multiaddr`. See [PR 70].
 
