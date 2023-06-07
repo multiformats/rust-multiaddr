@@ -3,7 +3,7 @@ use crate::{Error, Result};
 use arrayref::array_ref;
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use data_encoding::BASE32;
-use multihash::MultihashGeneric;
+use libp2p_identity::PeerId;
 use std::{
     borrow::Cow,
     convert::From,
@@ -57,7 +57,7 @@ const WSS_WITH_PATH: u32 = 4780; // Note: not standard
 /// The `64` defines the allocation size for the digest within the `Multihash`.
 /// This allows us to use hashes such as SHA512.
 /// In case protocols like `/certhash` ever support hashes larger than that, we will need to update this size here (which will be a breaking change!).
-type Multihash = MultihashGeneric<64>;
+type Multihash = multihash::Multihash<64>;
 
 const PATH_SEGMENT_ENCODE_SET: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
     .add(b'%')
@@ -99,7 +99,7 @@ pub enum Protocol<'a> {
     Memory(u64),
     Onion(Cow<'a, [u8; 10]>, u16),
     Onion3(Onion3Addr<'a>),
-    P2p(Multihash),
+    P2p(PeerId),
     P2pCircuit,
     Quic,
     QuicV1,
@@ -179,7 +179,9 @@ impl<'a> Protocol<'a> {
             "p2p" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 let decoded = multibase::Base::Base58Btc.decode(s)?;
-                Ok(Protocol::P2p(Multihash::from_bytes(&decoded)?))
+                let peer_id =
+                    PeerId::from_bytes(&decoded).map_err(|e| Error::ParsingError(Box::new(e)))?;
+                Ok(Protocol::P2p(peer_id))
             }
             "http" => Ok(Protocol::Http),
             "https" => Ok(Protocol::Https),
@@ -324,7 +326,12 @@ impl<'a> Protocol<'a> {
             P2P => {
                 let (n, input) = decode::usize(input)?;
                 let (data, rest) = split_at(n, input)?;
-                Ok((Protocol::P2p(Multihash::from_bytes(data)?), rest))
+                Ok((
+                    Protocol::P2p(
+                        PeerId::from_bytes(data).map_err(|e| Error::ParsingError(Box::new(e)))?,
+                    ),
+                    rest,
+                ))
             }
             P2P_CIRCUIT => Ok((Protocol::P2pCircuit, input)),
             QUIC => Ok((Protocol::Quic, input)),
@@ -436,9 +443,9 @@ impl<'a> Protocol<'a> {
                 w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
                 w.write_all(bytes)?
             }
-            Protocol::P2p(multihash) => {
+            Protocol::P2p(peer_id) => {
                 w.write_all(encode::u32(P2P, &mut buf))?;
-                let bytes = multihash.to_bytes();
+                let bytes = peer_id.to_bytes();
                 w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
                 w.write_all(&bytes)?
             }

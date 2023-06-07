@@ -1,6 +1,7 @@
 use data_encoding::HEXUPPER;
+use libp2p_identity::PeerId;
 use multiaddr::*;
-use multihash::MultihashGeneric;
+use multihash::Multihash;
 use quickcheck::{Arbitrary, Gen, QuickCheck};
 use std::{
     borrow::Cow,
@@ -122,7 +123,7 @@ impl Arbitrary for Proto {
                     .unwrap();
                 Proto(Onion3((a, std::cmp::max(1, u16::arbitrary(g))).into()))
             }
-            17 => Proto(P2p(Mh::arbitrary(g).0)),
+            17 => Proto(P2p(PId::arbitrary(g).0)),
             18 => Proto(P2pCircuit),
             19 => Proto(Quic),
             20 => Proto(QuicV1),
@@ -143,13 +144,24 @@ impl Arbitrary for Proto {
 }
 
 #[derive(Clone, Debug)]
-struct Mh(MultihashGeneric<64>);
+struct Mh(Multihash<64>);
 
 impl Arbitrary for Mh {
     fn arbitrary(g: &mut Gen) -> Self {
         let mut hash: [u8; 32] = [0; 32];
         hash.fill_with(|| u8::arbitrary(g));
-        Mh(MultihashGeneric::wrap(0x0, &hash).expect("The digest size is never too large"))
+        Mh(Multihash::wrap(0x0, &hash).expect("The digest size is never too large"))
+    }
+}
+
+#[derive(Clone, Debug)]
+struct PId(PeerId);
+
+impl Arbitrary for PId {
+    fn arbitrary(g: &mut Gen) -> Self {
+        let mh = Mh::arbitrary(g);
+
+        PId(PeerId::from_multihash(mh.0).expect("identity multihash works if digest size < 64"))
     }
 }
 
@@ -177,8 +189,8 @@ fn ma_valid(source: &str, target: &str, protocols: Vec<Protocol<'_>>) {
     );
 }
 
-fn multihash(s: &str) -> MultihashGeneric<64> {
-    MultihashGeneric::from_bytes(&multibase::Base::Base58Btc.decode(s).unwrap()).unwrap()
+fn peer_id(s: &str) -> PeerId {
+    s.parse().unwrap()
 }
 
 #[test]
@@ -231,7 +243,7 @@ fn construct_success() {
     ma_valid(
         "/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
         "A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-        vec![P2p(multihash(
+        vec![P2p(peer_id(
             "QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
         ))],
     );
@@ -253,7 +265,7 @@ fn construct_success() {
         "/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
         "A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B0604D2",
         vec![
-            P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
+            P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
             Tcp(1234),
         ],
     );
@@ -277,30 +289,30 @@ fn construct_success() {
         "047F000001A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
         vec![
             Ip4(local),
-            P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
+            P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
         ],
     );
     ma_valid("/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
              "047F000001A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B0604D2",
-             vec![Ip4(local), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")), Tcp(1234)]);
+             vec![Ip4(local), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")), Tcp(1234)]);
     // /unix/a/b/c/d/e,
     // /unix/stdio,
     // /ip4/1.2.3.4/tcp/80/unix/a/b/c/d/e/f,
     // /ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234/unix/stdio
     ma_valid("/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "29200108A07AC542013AC986FFFE317095061F40DD03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip6(addr6), Tcp(8000), Ws("/".into()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
+             vec![Ip6(addr6), Tcp(8000), Ws("/".into()), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
              ]);
     ma_valid("/p2p-webrtc-star/ip4/127.0.0.1/tcp/9090/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "9302047F000001062382DD03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![P2pWebRtcStar, Ip4(local), Tcp(9090), Ws("/".into()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
+             vec![P2pWebRtcStar, Ip4(local), Tcp(9090), Ws("/".into()), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
              ]);
     ma_valid("/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/wss/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "29200108A07AC542013AC986FFFE317095061F40DE03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip6(addr6), Tcp(8000), Wss("/".into()), P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
+             vec![Ip6(addr6), Tcp(8000), Wss("/".into()), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
     ma_valid("/ip4/127.0.0.1/tcp/9090/p2p-circuit/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "047F000001062382A202A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip4(local), Tcp(9090), P2pCircuit, P2p(multihash("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
+             vec![Ip4(local), Tcp(9090), P2pCircuit, P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
 
     ma_valid(
         "/onion/aaimaq4ygg2iegci:80",
@@ -332,7 +344,7 @@ fn construct_success() {
     ma_valid(
         "/dnsaddr/sjc-1.bootstrap.libp2p.io/tcp/1234/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
         "3819736A632D312E626F6F7473747261702E6C69627032702E696F0604D2A50322122006B3608AA000274049EB28AD8E793A26FF6FAB281A7D3BD77CD18EB745DFAABB",
-        vec![Dnsaddr(Cow::Borrowed("sjc-1.bootstrap.libp2p.io")), Tcp(1234), P2p(multihash("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"))]
+        vec![Dnsaddr(Cow::Borrowed("sjc-1.bootstrap.libp2p.io")), Tcp(1234), P2p(peer_id("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"))]
     );
     ma_valid(
         "/ip4/127.0.0.1/tcp/127/ws",
@@ -371,7 +383,7 @@ fn construct_success() {
             Ip4(local),
             Udp(1234),
             WebRTCDirect,
-            Certhash(MultihashGeneric::from_bytes(&decoded).unwrap()),
+            Certhash(Multihash::from_bytes(&decoded).unwrap()),
         ],
     );
 
@@ -390,7 +402,7 @@ fn construct_success() {
             Ip4(local),
             Udp(1234),
             WebTransport,
-            Certhash(MultihashGeneric::from_bytes(&decoded).unwrap()),
+            Certhash(Multihash::from_bytes(&decoded).unwrap()),
         ],
     );
 }

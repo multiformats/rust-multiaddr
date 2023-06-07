@@ -1,4 +1,5 @@
-///! Implementation of [multiaddr](https://github.com/multiformats/multiaddr) in Rust.
+//! Implementation of [multiaddr](https://github.com/multiformats/multiaddr) in Rust.
+
 pub use multihash;
 
 mod errors;
