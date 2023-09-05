@@ -691,3 +691,35 @@ fn from_ipv6_socket() {
 
     assert_eq!(actual_multiaddr, expected_multiaddr);
 }
+
+#[test]
+fn into_ipv4_socket() {
+    let multiaddr: Multiaddr = Multiaddr::empty()
+        .with(Protocol::Ip4(Ipv4Addr::new(127, 0, 0, 1)))
+        .with(Protocol::Tcp(80));
+    let expected_socket_addr: SocketAddr =
+        SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 80));
+
+    let actual_socket_addr: Result<SocketAddr> = multiaddr.try_into();
+
+    assert!(actual_socket_addr.is_ok());
+    assert_eq!(actual_socket_addr.unwrap(), expected_socket_addr);
+}
+
+#[test]
+fn into_ipv6_socket() {
+    let multiaddr: Multiaddr = Multiaddr::empty()
+        .with(Protocol::Ip6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)))
+        .with(Protocol::Tcp(80));
+    let expected_socket_addr: SocketAddr = SocketAddr::V6(SocketAddrV6::new(
+        Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1),
+        80,
+        0,
+        0,
+    ));
+
+    let actual_socket_addr: Result<SocketAddr> = multiaddr.try_into();
+
+    assert!(actual_socket_addr.is_ok());
+    assert_eq!(actual_socket_addr.unwrap(), expected_socket_addr);
+}

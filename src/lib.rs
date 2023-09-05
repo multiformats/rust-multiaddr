@@ -20,7 +20,7 @@ use std::{
     convert::TryFrom,
     fmt, io,
     iter::FromIterator,
-    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
+    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6},
     result::Result as StdResult,
     str::FromStr,
     sync::Arc,
@@ -488,6 +488,22 @@ impl From<SocketAddr> for Multiaddr {
             SocketAddr::V6(sock) => Self::empty()
                 .with(Protocol::Ip6(*sock.ip()))
                 .with(Protocol::Tcp(sock.port())),
+        }
+    }
+}
+
+impl TryInto<SocketAddr> for Multiaddr {
+    type Error = Error;
+
+    fn try_into(self) -> Result<SocketAddr> {
+        match (self.iter().next(), self.iter().nth(1)) {
+            (Some(Protocol::Ip4(ip4)), Some(Protocol::Tcp(port))) => {
+                Ok(SocketAddr::V4(SocketAddrV4::new(ip4, port)))
+            }
+            (Some(Protocol::Ip6(ip6)), Some(Protocol::Tcp(port))) => {
+                Ok(SocketAddr::V6(SocketAddrV6::new(ip6, port, 0, 0)))
+            }
+            _ => Err(Error::InvalidMultiaddr),
         }
     }
 }
