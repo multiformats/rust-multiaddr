@@ -20,7 +20,7 @@ use std::{
     convert::TryFrom,
     fmt, io,
     iter::FromIterator,
-    net::{IpAddr, Ipv4Addr, Ipv6Addr},
+    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
     result::Result as StdResult,
     str::FromStr,
     sync::Arc,
@@ -475,6 +475,19 @@ macro_rules! multiaddr {
                 };
             )+
             elem.collect::<$crate::Multiaddr>()
+        }
+    }
+}
+
+impl From<SocketAddr> for Multiaddr {
+    fn from(socket: SocketAddr) -> Self {
+        match socket {
+            SocketAddr::V4(sock) => Self::empty()
+                .with(Protocol::Ip4(*sock.ip()))
+                .with(Protocol::Tcp(sock.port())),
+            SocketAddr::V6(sock) => Self::empty()
+                .with(Protocol::Ip6(*sock.ip()))
+                .with(Protocol::Tcp(sock.port())),
         }
     }
 }

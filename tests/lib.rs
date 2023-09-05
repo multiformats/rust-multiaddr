@@ -7,7 +7,7 @@ use std::{
     borrow::Cow,
     convert::{TryFrom, TryInto},
     iter::{self, FromIterator},
-    net::{Ipv4Addr, Ipv6Addr},
+    net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6},
     str::FromStr,
 };
 
@@ -660,4 +660,34 @@ fn protocol_stack() {
 fn arbitrary_impl_for_all_proto_variants() {
     let variants = core::mem::variant_count::<Protocol>() as u8;
     assert_eq!(variants, Proto::IMPL_VARIANT_COUNT);
+}
+
+#[test]
+fn from_ipv4_socket() {
+    let socket_addr: SocketAddr =
+        SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 80));
+    let expected_multiaddr: Multiaddr = Multiaddr::empty()
+        .with(Protocol::Ip4(Ipv4Addr::new(127, 0, 0, 1)))
+        .with(Protocol::Tcp(80));
+
+    let actual_multiaddr: Multiaddr = socket_addr.into();
+
+    assert_eq!(actual_multiaddr, expected_multiaddr);
+}
+
+#[test]
+fn from_ipv6_socket() {
+    let socket_addr: SocketAddr = SocketAddr::V6(SocketAddrV6::new(
+        Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1),
+        80,
+        0,
+        0,
+    ));
+    let expected_multiaddr: Multiaddr = Multiaddr::empty()
+        .with(Protocol::Ip6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)))
+        .with(Protocol::Tcp(80));
+
+    let actual_multiaddr: Multiaddr = socket_addr.into();
+
+    assert_eq!(actual_multiaddr, expected_multiaddr);
 }
