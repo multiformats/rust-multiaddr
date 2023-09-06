@@ -20,7 +20,7 @@ use std::{
     convert::TryFrom,
     fmt, io,
     iter::FromIterator,
-    net::{IpAddr, Ipv4Addr, Ipv6Addr},
+    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6},
     result::Result as StdResult,
     str::FromStr,
     sync::Arc,
@@ -198,6 +198,30 @@ impl Multiaddr {
     /// Example: `"/ip4/127.0.0.1/tcp/5001"` would return `["ip4", "tcp"]`  
     pub fn protocol_stack(&self) -> ProtoStackIter {
         ProtoStackIter { parts: self.iter() }
+    }
+
+    pub fn into_tcp_socket(&self) -> Result<SocketAddr> {
+        match (self.iter().next(), self.iter().nth(1)) {
+            (Some(Protocol::Ip4(ip4)), Some(Protocol::Tcp(port))) => {
+                Ok(SocketAddr::V4(SocketAddrV4::new(ip4, port)))
+            }
+            (Some(Protocol::Ip6(ip6)), Some(Protocol::Tcp(port))) => {
+                Ok(SocketAddr::V6(SocketAddrV6::new(ip6, port, 0, 0)))
+            }
+            _ => Err(Error::InvalidMultiaddr),
+        }
+    }
+
+    pub fn into_udp_socket(&self) -> Result<SocketAddr> {
+        match (self.iter().next(), self.iter().nth(1)) {
+            (Some(Protocol::Ip4(ip4)), Some(Protocol::Udp(port))) => {
+                Ok(SocketAddr::V4(SocketAddrV4::new(ip4, port)))
+            }
+            (Some(Protocol::Ip6(ip6)), Some(Protocol::Udp(port))) => {
+                Ok(SocketAddr::V6(SocketAddrV6::new(ip6, port, 0, 0)))
+            }
+            _ => Err(Error::InvalidMultiaddr),
+        }
     }
 }
 
@@ -475,6 +499,19 @@ macro_rules! multiaddr {
                 };
             )+
             elem.collect::<$crate::Multiaddr>()
+        }
+    }
+}
+
+impl From<SocketAddr> for Multiaddr {
+    fn from(socket: SocketAddr) -> Self {
+        match socket {
+            SocketAddr::V4(sock) => Self::empty()
+                .with(Protocol::Ip4(*sock.ip()))
+                .with(Protocol::Tcp(sock.port())),
+            SocketAddr::V6(sock) => Self::empty()
+                .with(Protocol::Ip6(*sock.ip()))
+                .with(Protocol::Tcp(sock.port())),
         }
     }
 }
