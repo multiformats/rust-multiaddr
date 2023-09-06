@@ -199,6 +199,30 @@ impl Multiaddr {
     pub fn protocol_stack(&self) -> ProtoStackIter {
         ProtoStackIter { parts: self.iter() }
     }
+
+    pub fn into_tcp_socket(&self) -> Result<SocketAddr> {
+        match (self.iter().next(), self.iter().nth(1)) {
+            (Some(Protocol::Ip4(ip4)), Some(Protocol::Tcp(port))) => {
+                Ok(SocketAddr::V4(SocketAddrV4::new(ip4, port)))
+            }
+            (Some(Protocol::Ip6(ip6)), Some(Protocol::Tcp(port))) => {
+                Ok(SocketAddr::V6(SocketAddrV6::new(ip6, port, 0, 0)))
+            }
+            _ => Err(Error::InvalidMultiaddr),
+        }
+    }
+
+    pub fn into_udp_socket(&self) -> Result<SocketAddr> {
+        match (self.iter().next(), self.iter().nth(1)) {
+            (Some(Protocol::Ip4(ip4)), Some(Protocol::Udp(port))) => {
+                Ok(SocketAddr::V4(SocketAddrV4::new(ip4, port)))
+            }
+            (Some(Protocol::Ip6(ip6)), Some(Protocol::Udp(port))) => {
+                Ok(SocketAddr::V6(SocketAddrV6::new(ip6, port, 0, 0)))
+            }
+            _ => Err(Error::InvalidMultiaddr),
+        }
+    }
 }
 
 impl fmt::Debug for Multiaddr {
