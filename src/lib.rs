@@ -26,6 +26,8 @@ use std::{
     sync::Arc,
 };
 
+use libp2p_identity::PeerId;
+
 #[cfg(feature = "url")]
 pub use self::from_url::{from_url, from_url_lossy, FromUrlErr};
 
@@ -125,6 +127,42 @@ impl Multiaddr {
         p.write_bytes(&mut w)
             .expect("Writing to a `io::Cursor<&mut Vec<u8>>` never fails.");
         self
+    }
+
+    /// Ensures the `Multiaddr` is a `/p2p/...` address for the given peer.
+    ///
+    /// If the given address is already a `p2p` address for the given peer,
+    /// i.e. the last encapsulated protocol is `/p2p/<peer-id>`, this is a no-op.
+    ///
+    /// If the given address is already a `p2p` address for a different peer
+    /// than the one given, the peer-id is replaced with the one given.
+    ///
+    /// If the given address is not yet a `p2p` address,the `/p2p/<peer-id>`
+    /// protocol is appended to the returned address.
+    pub fn to_p2p_terminated(mut self, peer_id: PeerId) -> Self {
+        let mut last = None;
+        let mut index = 0;
+        loop {
+            let data = &self.bytes.as_ref()[index..];
+            if data.is_empty() {
+                break;
+            }
+
+            let (p, next_data) =
+                Protocol::from_bytes(data).expect("`Multiaddr` is known to be valid.");
+
+            last = Some((p, index));
+            index += data.len() - next_data.len();
+        }
+
+        match last {
+            Some((Protocol::P2p(p), _)) if p == peer_id => self,
+            Some((Protocol::P2p(_), index)) => {
+                Arc::make_mut(&mut self.bytes).truncate(index);
+                self.with(Protocol::P2p(peer_id))
+            }
+            _ => self.with(Protocol::P2p(peer_id)),
+        }
     }
 
     /// Returns the components of this multiaddress.

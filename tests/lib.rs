@@ -661,3 +661,36 @@ fn arbitrary_impl_for_all_proto_variants() {
     let variants = core::mem::variant_count::<Protocol>() as u8;
     assert_eq!(variants, Proto::IMPL_VARIANT_COUNT);
 }
+
+#[test]
+fn to_p2p_terminated() {
+    let peer_id = "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"
+        .parse::<PeerId>()
+        .unwrap();
+
+    const TEST_DATA: &[(&str, &str)] = &[
+        (
+            "/ip4/127.0.0.1",
+            "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+        ),
+        (
+            "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+        ),
+        (
+            "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+            "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+        ),
+        (
+            "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+            "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+        ),
+    ];
+
+    for (input, expected) in TEST_DATA {
+        let input = input.parse::<Multiaddr>().unwrap();
+        let expected = expected.parse::<Multiaddr>().unwrap();
+
+        assert_eq!(expected, input.to_p2p_terminated(peer_id));
+    }
+}
