@@ -1,6 +1,6 @@
 # 0.18.1 - unreleased
 
-- Add `to_p2p_terminated` on `Multiaddr`. See [PR 102].
+- Add `with_p2p` and `from_str_and_peer` on `Multiaddr`. See [PR 102].
 
 [PR 102]: https://github.com/multiformats/rust-multiaddr/pull/102
 

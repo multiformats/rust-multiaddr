@@ -663,34 +663,48 @@ fn arbitrary_impl_for_all_proto_variants() {
 }
 
 #[test]
-fn to_p2p_terminated() {
-    let peer_id = "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"
-        .parse::<PeerId>()
-        .unwrap();
-
-    const TEST_DATA: &[(&str, &str)] = &[
+fn multiaddr_with_p2p_and_from_str_and_peer() {
+    const TEST_DATA: &[(&str, &str, std::result::Result<&str, &str>)] = &[
         (
+            // Multiaddr is empty -> it should push and return Ok.
+            "",
+            "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            Ok("/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"),
+        ),
+        (
+            // Last protocol is not p2p -> it should push and return Ok.
             "/ip4/127.0.0.1",
-            "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            Ok("/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"),
         ),
         (
+            // Last protocol is p2p and the contained peer matches the provided one -> it should do nothing and return Ok.
             "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-            "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            Ok("/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"),
         ),
         (
-            "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+            // Last protocol is p2p but the contained peer does not match the provided one -> it should do nothing and return Err.
             "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-        ),
-        (
-            "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
-            "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            Ok("/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"),
         ),
     ];
 
-    for (input, expected) in TEST_DATA {
-        let input = input.parse::<Multiaddr>().unwrap();
-        let expected = expected.parse::<Multiaddr>().unwrap();
+    for (multiaddr_str, peer, expected) in TEST_DATA {
+        let peer = peer.parse::<PeerId>().unwrap();
+        let expected = expected
+            .map(|a| a.parse::<Multiaddr>().unwrap())
+            .map_err(|a| a.parse::<Multiaddr>().unwrap());
 
-        assert_eq!(expected, input.to_p2p_terminated(peer_id));
+        let mut multiaddr = multiaddr_str.parse::<Multiaddr>().unwrap();
+        for _ in 0..3 {
+            let result = multiaddr.with_p2p(peer);
+            assert_eq!(result, expected);
+            multiaddr = result.unwrap_or_else(|addr| addr);
+        }
+
+        let result = Multiaddr::from_str_and_peer(multiaddr_str, peer);
+        assert_eq!(result.ok(), expected.ok());
     }
 }
