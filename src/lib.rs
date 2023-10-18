@@ -129,15 +129,6 @@ impl Multiaddr {
         self
     }
 
-    /// Parses a [`Multiaddr`] from the given string, ensuring that it ends with [`Protocol::P2p`] of the provided peer.
-    ///
-    /// If the address does not end with `/p2p`, it is simply appended.
-    /// If the address ends with a _different_ peer ID, parsing will fail.
-    pub fn from_str_and_peer(addr: &str, peer: PeerId) -> Result<Self> {
-        let addr = addr.parse::<Self>()?;
-        addr.with_p2p(peer).map_err(|_| Error::InvalidMultiaddr)
-    }
-
     /// Appends the given [`PeerId`] if not yet present at the end of this multiaddress.
     ///
     /// Fails if this address ends in a _different_ [`PeerId`].
