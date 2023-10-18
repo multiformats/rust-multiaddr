@@ -1,3 +1,9 @@
+# 0.18.1 - unreleased
+
+- Add `with_p2p` on `Multiaddr`. See [PR 102].
+
+[PR 102]: https://github.com/multiformats/rust-multiaddr/pull/102
+
 # 0.18.0
 
 - Add `WebTransport` instance for `Multiaddr`. See [PR 70].

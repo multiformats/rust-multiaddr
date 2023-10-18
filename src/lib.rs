@@ -26,6 +26,8 @@ use std::{
     sync::Arc,
 };
 
+use libp2p_identity::PeerId;
+
 #[cfg(feature = "url")]
 pub use self::from_url::{from_url, from_url_lossy, FromUrlErr};
 
@@ -125,6 +127,18 @@ impl Multiaddr {
         p.write_bytes(&mut w)
             .expect("Writing to a `io::Cursor<&mut Vec<u8>>` never fails.");
         self
+    }
+
+    /// Appends the given [`PeerId`] if not yet present at the end of this multiaddress.
+    ///
+    /// Fails if this address ends in a _different_ [`PeerId`].
+    /// In that case, the original, unmodified address is returned.
+    pub fn with_p2p(self, peer: PeerId) -> std::result::Result<Self, Self> {
+        match self.iter().last() {
+            Some(Protocol::P2p(p)) if p == peer => Ok(self),
+            Some(Protocol::P2p(_)) => Err(self),
+            _ => Ok(self.with(Protocol::P2p(peer))),
+        }
     }
 
     /// Returns the components of this multiaddress.
