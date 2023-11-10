@@ -1,4 +1,4 @@
-# 0.18.1 - unreleased
+# 0.18.1
 
 - Add `with_p2p` on `Multiaddr`. See [PR 102].
 
