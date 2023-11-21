@@ -217,7 +217,7 @@ impl Multiaddr {
 
 impl fmt::Debug for Multiaddr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.to_string().fmt(f)
+        fmt::Display::fmt(self, f)
     }
 }
 
@@ -235,7 +235,7 @@ impl fmt::Display for Multiaddr {
     ///
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for s in self.iter() {
-            s.to_string().fmt(f)?;
+            s.fmt(f)?;
         }
         Ok(())
     }
