@@ -26,7 +26,7 @@ use std::{
     sync::Arc,
 };
 
-use libp2p_identity::PeerId;
+pub use libp2p_identity::PeerId;
 
 #[cfg(feature = "url")]
 pub use self::from_url::{from_url, from_url_lossy, FromUrlErr};
