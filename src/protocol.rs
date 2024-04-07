@@ -1,9 +1,8 @@
 use crate::onion_addr::Onion3Addr;
-use crate::{Error, Result};
+use crate::{Error, PeerId, Result};
 use arrayref::array_ref;
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use data_encoding::BASE32;
-use libp2p_identity::PeerId;
 use std::{
     borrow::Cow,
     convert::From,
