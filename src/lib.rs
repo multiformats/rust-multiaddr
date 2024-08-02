@@ -27,6 +27,8 @@ use std::{
     sync::Arc,
 };
 
+use libp2p_identity::PeerId;
+
 #[cfg(feature = "url")]
 pub use self::from_url::{from_url, from_url_lossy, FromUrlErr};
 
@@ -128,6 +130,18 @@ impl Multiaddr {
         self
     }
 
+    /// Appends the given [`PeerId`] if not yet present at the end of this multiaddress.
+    ///
+    /// Fails if this address ends in a _different_ [`PeerId`].
+    /// In that case, the original, unmodified address is returned.
+    pub fn with_p2p(self, peer: PeerId) -> std::result::Result<Self, Self> {
+        match self.iter().last() {
+            Some(Protocol::P2p(p)) if p == peer => Ok(self),
+            Some(Protocol::P2p(_)) => Err(self),
+            _ => Ok(self.with(Protocol::P2p(peer))),
+        }
+    }
+
     /// Returns the components of this multiaddress.
     ///
     /// # Example
@@ -204,7 +218,7 @@ impl Multiaddr {
 
 impl fmt::Debug for Multiaddr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.to_string().fmt(f)
+        fmt::Display::fmt(self, f)
     }
 }
 
@@ -222,7 +236,7 @@ impl fmt::Display for Multiaddr {
     ///
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for s in self.iter() {
-            s.to_string().fmt(f)?;
+            s.fmt(f)?;
         }
         Ok(())
     }

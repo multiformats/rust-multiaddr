@@ -661,3 +661,66 @@ fn arbitrary_impl_for_all_proto_variants() {
     let variants = core::mem::variant_count::<Protocol>() as u8;
     assert_eq!(variants, Proto::IMPL_VARIANT_COUNT);
 }
+
+mod multiaddr_with_p2p {
+    use libp2p_identity::PeerId;
+    use multiaddr::Multiaddr;
+
+    fn test_multiaddr_with_p2p(
+        multiaddr: &str,
+        peer: &str,
+        expected: std::result::Result<&str, &str>,
+    ) {
+        let peer = peer.parse::<PeerId>().unwrap();
+        let expected = expected
+            .map(|a| a.parse::<Multiaddr>().unwrap())
+            .map_err(|a| a.parse::<Multiaddr>().unwrap());
+
+        let mut multiaddr = multiaddr.parse::<Multiaddr>().unwrap();
+        // Testing multiple time to validate idempotence.
+        for _ in 0..3 {
+            let result = multiaddr.with_p2p(peer);
+            assert_eq!(result, expected);
+            multiaddr = result.unwrap_or_else(|addr| addr);
+        }
+    }
+
+    #[test]
+    fn empty_multiaddr() {
+        // Multiaddr is empty -> it should push and return Ok.
+        test_multiaddr_with_p2p(
+            "",
+            "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            Ok("/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"),
+        )
+    }
+    #[test]
+    fn non_p2p_terminated() {
+        // Last protocol is not p2p -> it should push and return Ok.
+        test_multiaddr_with_p2p(
+            "/ip4/127.0.0.1",
+            "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            Ok("/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"),
+        )
+    }
+
+    #[test]
+    fn p2p_terminated_same_peer() {
+        // Last protocol is p2p and the contained peer matches the provided one -> it should do nothing and return Ok.
+        test_multiaddr_with_p2p(
+            "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            "QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            Ok("/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"),
+        )
+    }
+
+    #[test]
+    fn p2p_terminated_different_peer() {
+        // Last protocol is p2p but the contained peer does not match the provided one -> it should do nothing and return Err.
+        test_multiaddr_with_p2p(
+            "/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+            "QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+            Err("/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"),
+        )
+    }
+}
