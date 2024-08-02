@@ -1,4 +1,5 @@
 //! Implementation of [multiaddr](https://github.com/multiformats/multiaddr) in Rust.
+#![cfg_attr(doc, feature(doc_auto_cfg))]
 
 pub use multihash;
 
