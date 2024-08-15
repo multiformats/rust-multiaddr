@@ -1,6 +1,5 @@
 use crate::onion_addr::Onion3Addr;
 use crate::{Error, Result};
-use arrayref::array_ref;
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use data_encoding::BASE32;
 use libp2p_identity::PeerId;
@@ -114,6 +113,11 @@ pub enum Protocol<'a> {
     WebTransport,
     Ws(Cow<'a, str>),
     Wss(Cow<'a, str>),
+}
+
+#[inline]
+fn array_ref<const N: usize, T>(s: &[T]) -> &[T; N] {
+    unsafe { &*(&s[..N] as *const [T] as *const [T; N]) }
 }
 
 impl<'a> Protocol<'a> {
@@ -311,7 +315,7 @@ impl<'a> Protocol<'a> {
                 let (data, rest) = split_at(12, input)?;
                 let port = BigEndian::read_u16(&data[10..]);
                 Ok((
-                    Protocol::Onion(Cow::Borrowed(array_ref!(data, 0, 10)), port),
+                    Protocol::Onion(Cow::Borrowed(array_ref::<10, _>(&data)), port),
                     rest,
                 ))
             }
@@ -319,7 +323,7 @@ impl<'a> Protocol<'a> {
                 let (data, rest) = split_at(37, input)?;
                 let port = BigEndian::read_u16(&data[35..]);
                 Ok((
-                    Protocol::Onion3((array_ref!(data, 0, 35), port).into()),
+                    Protocol::Onion3((array_ref::<35, _>(&data), port).into()),
                     rest,
                 ))
             }
