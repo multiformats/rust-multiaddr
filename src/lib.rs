@@ -1,4 +1,5 @@
 //! Implementation of [multiaddr](https://github.com/multiformats/multiaddr) in Rust.
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 pub use multihash;
 
@@ -217,7 +218,7 @@ impl Multiaddr {
 
 impl fmt::Debug for Multiaddr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.to_string().fmt(f)
+        fmt::Display::fmt(self, f)
     }
 }
 
@@ -235,7 +236,7 @@ impl fmt::Display for Multiaddr {
     ///
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for s in self.iter() {
-            s.to_string().fmt(f)?;
+            s.fmt(f)?;
         }
         Ok(())
     }
