@@ -3,7 +3,7 @@ authors = ["dignifiedquire <dignifiedquire@gmail.com>", "Parity Technologies <ad
 description = "Implementation of the multiaddr format"
 edition = "2021"
 rust-version = "1.59.0"
-homepage = "https://github.com/multiformats/rust-multiaddr"
+repository = "https://github.com/multiformats/rust-multiaddr"
 keywords = ["multiaddr", "ipfs"]
 license = "MIT"
 name = "multiaddr"
@@ -31,3 +31,11 @@ bincode = "1"
 quickcheck = { version = "1.0.3", default-features = false }
 rand = "0.8.4"
 serde_json = "1.0"
+
+# Passing arguments to the docsrs builder in order to properly document cfg's.
+# More information: https://docs.rs/about/builds#cross-compiling
+[package.metadata.docs.rs]
+all-features = true
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nightly)'] }
