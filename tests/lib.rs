@@ -1,5 +1,4 @@
 use data_encoding::HEXUPPER;
-use libp2p_identity::PeerId;
 use multiaddr::*;
 use multihash::Multihash;
 use quickcheck::{Arbitrary, Gen, QuickCheck};
@@ -740,8 +739,7 @@ fn arbitrary_impl_for_all_proto_variants() {
 }
 
 mod multiaddr_with_p2p {
-    use libp2p_identity::PeerId;
-    use multiaddr::Multiaddr;
+    use multiaddr::{Multiaddr, PeerId};
 
     fn test_multiaddr_with_p2p(
         multiaddr: &str,
