@@ -58,6 +58,7 @@ const GARLIC32: u32 = 447;
 const SNI: u32 = 449;
 const P2P_STARDUST: u32 = 277; // Deprecated
 const WEBRTC: u32 = 281;
+const HTTP_PATH: u32 = 481;
 
 /// Type-alias for how multi-addresses use `Multihash`.
 ///
@@ -128,6 +129,7 @@ pub enum Protocol<'a> {
     Sni(Cow<'a, str>),
     P2pStardust,
     WebRTC,
+    HttpPath(Cow<'a, str>),
 }
 
 impl<'a> Protocol<'a> {
@@ -276,6 +278,11 @@ impl<'a> Protocol<'a> {
             }
             "p2p-stardust" => Ok(Protocol::P2pStardust),
             "webrtc" => Ok(Protocol::WebRTC),
+            "http-path" => {
+                let s = iter.next().ok_or(Error::InvalidProtocolString)?;
+                let decoded = percent_encoding::percent_decode(s.as_bytes()).decode_utf8()?;
+                Ok(Protocol::HttpPath(decoded))
+            }
             unknown => Err(Error::UnknownProtocolString(unknown.to_string())),
         }
     }
@@ -457,6 +464,14 @@ impl<'a> Protocol<'a> {
             }
             P2P_STARDUST => Ok((Protocol::P2pStardust, input)),
             WEBRTC => Ok((Protocol::WebRTC, input)),
+            HTTP_PATH => {
+                let (n, input) = decode::usize(input)?;
+                let (data, rest) = split_at(n, input)?;
+                Ok((
+                    Protocol::HttpPath(Cow::Borrowed(str::from_utf8(data)?)),
+                    rest,
+                ))
+            }
             _ => Err(Error::UnknownProtocolId(id)),
         }
     }
@@ -604,6 +619,12 @@ impl<'a> Protocol<'a> {
             }
             Protocol::P2pStardust => w.write_all(encode::u32(P2P_STARDUST, &mut buf))?,
             Protocol::WebRTC => w.write_all(encode::u32(WEBRTC, &mut buf))?,
+            Protocol::HttpPath(s) => {
+                w.write_all(encode::u32(HTTP_PATH, &mut buf))?;
+                let bytes = s.as_bytes();
+                w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
+                w.write_all(bytes)?
+            }
         }
         Ok(())
     }
@@ -651,6 +672,7 @@ impl<'a> Protocol<'a> {
             Sni(cow) => Sni(Cow::Owned(cow.into_owned())),
             P2pStardust => P2pStardust,
             WebRTC => WebRTC,
+            HttpPath(cow) => HttpPath(Cow::Owned(cow.into_owned())),
         }
     }
 
@@ -698,6 +720,7 @@ impl<'a> Protocol<'a> {
             Sni(_) => "sni",
             P2pStardust => "p2p-stardust",
             WebRTC => "webrtc",
+            HttpPath(_) => "http-path",
         }
     }
 }
@@ -755,6 +778,11 @@ impl<'a> fmt::Display for Protocol<'a> {
             ),
             Garlic32(addr) => write!(f, "/{}", multibase::Base::Base32Lower.encode(addr)),
             Sni(s) => write!(f, "/{s}"),
+            HttpPath(s) => {
+                let encoded =
+                    percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
+                write!(f, "/{encoded}")
+            }
             _ => Ok(()),
         }
     }
