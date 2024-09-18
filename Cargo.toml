@@ -8,7 +8,7 @@ keywords = ["multiaddr", "ipfs"]
 license = "MIT"
 name = "multiaddr"
 readme = "README.md"
-version = "0.18.1"
+version = "0.18.2"
 
 [features]
 default = ["url"]
