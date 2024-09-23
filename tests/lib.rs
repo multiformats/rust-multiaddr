@@ -84,7 +84,7 @@ impl Arbitrary for Ma {
 struct Proto(Protocol<'static>);
 
 impl Proto {
-    const IMPL_VARIANT_COUNT: u8 = 39;
+    const IMPL_VARIANT_COUNT: u8 = 40;
 }
 
 impl Arbitrary for Proto {
@@ -160,6 +160,7 @@ impl Arbitrary for Proto {
             36 => Proto(Sni(Cow::Owned(SubString::arbitrary(g).0))),
             37 => Proto(P2pStardust),
             38 => Proto(WebRTC),
+            39 => Proto(HttpPath(Cow::Owned(SubString::arbitrary(g).0))),
             _ => panic!("outside range"),
         }
     }
@@ -289,6 +290,21 @@ fn construct_success() {
         "/tcp/1234/tls/http",
         "0604D2C003E003",
         vec![Tcp(1234), Tls, Http],
+    );
+    ma_valid(
+        "/tcp/1234/http/http-path/user",
+        "0604D2E003E1030475736572",
+        vec![Tcp(1234), Http, HttpPath(Cow::Borrowed("user"))],
+    );
+    ma_valid(
+        "/tcp/1234/http/http-path/api%2Fv0%2Flogin",
+        "0604D2E003E1030C6170692F76302F6C6F67696E",
+        vec![Tcp(1234), Http, HttpPath(Cow::Borrowed("api/v0/login"))],
+    );
+    ma_valid(
+        "/tcp/1234/http/http-path/a%2520space",
+        "0604D2E003E10309612532307370616365",
+        vec![Tcp(1234), Http, HttpPath(Cow::Borrowed("a%20space"))],
     );
     ma_valid("/tcp/1234/https", "0604D2BB03", vec![Tcp(1234), Https]);
     ma_valid(
@@ -518,6 +534,7 @@ fn construct_fail() {
         "/p2p-circuit/50",
         "/ip4/127.0.0.1/udp/1234/webrtc-direct/certhash",
         "/ip4/127.0.0.1/udp/1234/webrtc-direct/certhash/b2uaraocy6yrdblb4sfptaddgimjmmp", // 1 character missing from certhash
+        "/tcp/1234/http/http-path/a/b",
     ];
 
     for address in &addresses {
@@ -672,6 +689,9 @@ fn protocol_stack() {
         "/udp/1234/utp",
         "/tcp/1234/http",
         "/tcp/1234/tls/http",
+        "/tcp/1234/http/http-path/user",
+        "/tcp/1234/http/http-path/api%2Fv1%2Flogin",
+        "/tcp/1234/http/http-path/a%20space",
         "/tcp/1234/https",
         "/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
         "/ip4/127.0.0.1/udp/1234",
