@@ -1,8 +1,8 @@
 # 0.18.3
 
-- Add `starts_with` on `Multiaddr`. See [PR ].
+- Add `starts_with` on `Multiaddr`. See [PR 119].
 
-[PR ]:
+[PR 119]: https://github.com/multiformats/rust-multiaddr/pull/119
 
 # 0.18.2
 
