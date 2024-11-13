@@ -1,3 +1,9 @@
+# 0.18.3
+
+- Add `starts_with` on `Multiaddr`. See [PR ].
+
+[PR ]:
+
 # 0.18.2
 
 - Implement missing protocols. See [PR 110].
@@ -42,7 +48,7 @@
 - Rename string representation of `WebRTC` protocol from `/webrtc` to `/webrt-direct`.
   For backwards compatibility `/webrtc` will still be decoded to `Protocol::WebRTC`, but `Protocol::WebRTC` will from now on always be encoded as `/webrtc-direct`.
   See [multiformats/multiaddr discussion] and [PR 84] for context.
-  ``` rust
+  ```rust
   assert_eq!(
       Multiaddr::empty().with(Protocol::WebRTC),
       "/webrtc".parse().unwrap(),
@@ -114,15 +120,15 @@
 
 # 0.12.0 [2021-05-26]
 
-- Merge  [multiaddr] and [parity-multiaddr] (see [PR 40]).
+- Merge [multiaddr] and [parity-multiaddr] (see [PR 40]).
 
-    - Functionality to go from a `u64` to a `multiadddr::Protocol` and back is
-      removed. Please open an issue on [multiaddr] in case this is still needed.
+  - Functionality to go from a `u64` to a `multiadddr::Protocol` and back is
+    removed. Please open an issue on [multiaddr] in case this is still needed.
 
-    - Given that `multiaddr::Protocol` now represents both the protocol
-      identifier as well as the protocol data (e.g. protocol identifier `55`
-      (`dns6`) and protocol data `some-domain.example`) `multiaddr::Protocol` is
-      no longer `Copy`.
+  - Given that `multiaddr::Protocol` now represents both the protocol
+    identifier as well as the protocol data (e.g. protocol identifier `55`
+    (`dns6`) and protocol data `some-domain.example`) `multiaddr::Protocol` is
+    no longer `Copy`.
 
 [multiaddr]: https://github.com/multiformats/rust-multiaddr
 [parity-multiaddr]: https://github.com/libp2p/rust-libp2p/blob/master/misc/multiaddr/

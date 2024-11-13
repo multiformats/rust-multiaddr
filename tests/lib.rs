@@ -68,6 +68,18 @@ fn ends_with() {
     QuickCheck::new().quickcheck(prop as fn(_))
 }
 
+#[test]
+fn starts_with() {
+    fn prop(Ma(m): Ma) {
+        let n = m.iter().count();
+        for i in 0..n {
+            let prefix = m.iter().take(i + 1).collect::<Multiaddr>();
+            assert!(m.starts_with(&prefix));
+        }
+    }
+    QuickCheck::new().quickcheck(prop as fn(_))
+}
+
 // Arbitrary impls
 
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
