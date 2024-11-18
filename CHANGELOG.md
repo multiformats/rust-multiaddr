@@ -1,3 +1,9 @@
+# 0.18.3
+
+- Add `starts_with` on `Multiaddr`. See [PR 119].
+
+[PR 119]: https://github.com/multiformats/rust-multiaddr/pull/119
+
 # 0.18.2
 
 - Implement missing protocols. See [PR 110].

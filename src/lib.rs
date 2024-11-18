@@ -210,6 +210,16 @@ impl Multiaddr {
         self.bytes[(n - m)..] == other.bytes[..]
     }
 
+    /// Checks whether the given `Multiaddr` is a prefix of this `Multiaddr`.
+    pub fn starts_with(&self, other: &Multiaddr) -> bool {
+        let n = self.bytes.len();
+        let m = other.bytes.len();
+        if n < m {
+            return false;
+        }
+        self.bytes[..m] == other.bytes[..]
+    }
+
     /// Returns &str identifiers for the protocol names themselves.
     /// This omits specific info like addresses, ports, peer IDs, and the like.
     /// Example: `"/ip4/127.0.0.1/tcp/5001"` would return `["ip4", "tcp"]`
