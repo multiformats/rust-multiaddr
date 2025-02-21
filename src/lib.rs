@@ -328,7 +328,7 @@ impl<'a> Iterator for Iter<'a> {
     }
 }
 
-/// Iterator over the string idtenfiers of the protocols (not addrs) in a multiaddr
+/// Iterator over the string identifiers of the protocols (not addrs) in a multiaddr
 pub struct ProtoStackIter<'a> {
     parts: Iter<'a>,
 }
