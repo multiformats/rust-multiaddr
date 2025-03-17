@@ -32,7 +32,7 @@ pub fn from_url(url: &str) -> std::result::Result<Multiaddr, FromUrlErr> {
 /// Attempts to parse an URL into a multiaddress. Ignores possible loss of information.
 ///
 /// This function is similar to [`from_url`], except that we don't return an error if some
-/// information in the URL cannot be retain in the generated multiaddres.
+/// information in the URL cannot be retain in the generated multiaddress.
 ///
 /// This function is only present if the `url` feature is enabled, and it is
 /// enabled by default.

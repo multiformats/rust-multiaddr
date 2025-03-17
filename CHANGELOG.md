@@ -122,7 +122,7 @@
 
 - Merge  [multiaddr] and [parity-multiaddr] (see [PR 40]).
 
-    - Functionality to go from a `u64` to a `multiadddr::Protocol` and back is
+    - Functionality to go from a `u64` to a `multiaddr::Protocol` and back is
       removed. Please open an issue on [multiaddr] in case this is still needed.
 
     - Given that `multiaddr::Protocol` now represents both the protocol
