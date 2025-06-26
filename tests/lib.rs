@@ -148,7 +148,10 @@ impl Arbitrary for Proto {
             28 => Proto(Utp),
             29 => Proto(WebTransport),
             30 => Proto(Ws("/".into())),
-            31 => Proto(Wss("/".into())),
+            31 => Proto(
+                #[allow(deprecated)]
+                Wss("/".into()),
+            ),
             32 => Proto(Ip6zone(Cow::Owned(SubString::arbitrary(g).0))),
             33 => Proto(Ipcidr(Arbitrary::arbitrary(g))),
             34 => {
@@ -367,7 +370,7 @@ fn construct_success() {
              ]);
     ma_valid("/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/wss/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "29200108A07AC542013AC986FFFE317095061F40DE03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip6(addr6), Tcp(8000), Wss("/".into()), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
+             vec![Ip6(addr6), Tcp(8000), #[allow(deprecated)] Wss("/".into()), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
     ma_valid("/ip4/127.0.0.1/tcp/9090/p2p-circuit/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
              "047F000001062382A202A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
              vec![Ip4(local), Tcp(9090), P2pCircuit, P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);

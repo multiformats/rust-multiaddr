@@ -68,7 +68,12 @@ fn from_url_inner_http_ws(
 ) -> std::result::Result<Multiaddr, FromUrlErr> {
     let (protocol, lost_path, default_port) = match url.scheme() {
         "ws" => (Protocol::Ws(url.path().to_owned().into()), false, 80),
-        "wss" => (Protocol::Wss(url.path().to_owned().into()), false, 443),
+        "wss" => (
+            #[allow(deprecated)]
+            Protocol::Wss(url.path().to_owned().into()),
+            false,
+            443,
+        ),
         "http" => (Protocol::Http, true, 80),
         "https" => (Protocol::Https, true, 443),
         _ => unreachable!("We only call this function for one of the given schemes; qed"),

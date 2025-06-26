@@ -121,6 +121,7 @@ pub enum Protocol<'a> {
     Utp,
     WebTransport,
     Ws(Cow<'a, str>),
+    #[deprecated]
     Wss(Cow<'a, str>),
     Ip6zone(Cow<'a, str>),
     Ipcidr(u8),
@@ -215,7 +216,10 @@ impl<'a> Protocol<'a> {
             "quic-v1" => Ok(Protocol::QuicV1),
             "webtransport" => Ok(Protocol::WebTransport),
             "ws" => Ok(Protocol::Ws(Cow::Borrowed("/"))),
-            "wss" => Ok(Protocol::Wss(Cow::Borrowed("/"))),
+            "wss" => Ok(
+                #[allow(deprecated)]
+                Protocol::Wss(Cow::Borrowed("/")),
+            ),
             "x-parity-ws" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 let decoded = percent_encoding::percent_decode(s.as_bytes()).decode_utf8()?;
@@ -224,7 +228,10 @@ impl<'a> Protocol<'a> {
             "x-parity-wss" => {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 let decoded = percent_encoding::percent_decode(s.as_bytes()).decode_utf8()?;
-                Ok(Protocol::Wss(decoded))
+                Ok(
+                    #[allow(deprecated)]
+                    Protocol::Wss(decoded),
+                )
             }
             "p2p-websocket-star" => Ok(Protocol::P2pWebSocketStar),
             "p2p-webrtc-star" => Ok(Protocol::P2pWebRtcStar),
@@ -429,11 +436,19 @@ impl<'a> Protocol<'a> {
                 let (data, rest) = split_at(n, input)?;
                 Ok((Protocol::Ws(Cow::Borrowed(str::from_utf8(data)?)), rest))
             }
-            WSS => Ok((Protocol::Wss(Cow::Borrowed("/")), input)),
+            WSS => Ok((
+                #[allow(deprecated)]
+                Protocol::Wss(Cow::Borrowed("/")),
+                input,
+            )),
             WSS_WITH_PATH => {
                 let (n, input) = decode::usize(input)?;
                 let (data, rest) = split_at(n, input)?;
-                Ok((Protocol::Wss(Cow::Borrowed(str::from_utf8(data)?)), rest))
+                Ok((
+                    #[allow(deprecated)]
+                    Protocol::Wss(Cow::Borrowed(str::from_utf8(data)?)),
+                    rest,
+                ))
             }
             IP6ZONE => {
                 let (n, input) = decode::usize(input)?;
@@ -569,7 +584,9 @@ impl<'a> Protocol<'a> {
                 w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
                 w.write_all(bytes)?
             }
+            #[allow(deprecated)]
             Protocol::Wss(ref s) if s == "/" => w.write_all(encode::u32(WSS, &mut buf))?,
+            #[allow(deprecated)]
             Protocol::Wss(s) => {
                 w.write_all(encode::u32(WSS_WITH_PATH, &mut buf))?;
                 let bytes = s.as_bytes();
@@ -664,6 +681,7 @@ impl<'a> Protocol<'a> {
             Utp => Utp,
             WebTransport => WebTransport,
             Ws(cow) => Ws(Cow::Owned(cow.into_owned())),
+            #[allow(deprecated)]
             Wss(cow) => Wss(Cow::Owned(cow.into_owned())),
             Ip6zone(cow) => Ip6zone(Cow::Owned(cow.into_owned())),
             Ipcidr(mask) => Ipcidr(mask),
@@ -711,7 +729,9 @@ impl<'a> Protocol<'a> {
             WebTransport => "webtransport",
             Ws(ref s) if s == "/" => "ws",
             Ws(_) => "x-parity-ws",
+            #[allow(deprecated)]
             Wss(ref s) if s == "/" => "wss",
+            #[allow(deprecated)]
             Wss(_) => "x-parity-wss",
             Ip6zone(_) => "ip6zone",
             Ipcidr(_) => "ipcidr",
@@ -761,6 +781,7 @@ impl fmt::Display for Protocol<'_> {
                     percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
                 write!(f, "/{encoded}")
             }
+            #[allow(deprecated)]
             Wss(s) if s != "/" => {
                 let encoded =
                     percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
