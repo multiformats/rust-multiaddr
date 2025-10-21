@@ -1,3 +1,8 @@
+#[cfg(feature = "arb")]
+mod arb_impl;
+#[cfg(feature = "arb")]
+pub mod arb_util;
+
 use crate::onion_addr::Onion3Addr;
 use crate::{Error, PeerId, Result};
 use arrayref::array_ref;
@@ -84,9 +89,9 @@ const PATH_SEGMENT_ENCODE_SET: &percent_encoding::AsciiSet = &percent_encoding::
 ///
 /// For `Unix`, `Ws` and `Wss` we use `&str` instead of `Path` to allow
 /// cross-platform usage of `Protocol` since encoding `Paths` to bytes is
-/// platform-specific. This means that the actual validation of paths needs to
-/// happen separately.
+/// platform-specific. This means that the actual validation of paths needs to happen separately.
 #[derive(PartialEq, Eq, Clone, Debug)]
+#[cfg_attr(feature = "arb", derive(strum::EnumCount))]
 #[non_exhaustive]
 pub enum Protocol<'a> {
     Dccp(u16),

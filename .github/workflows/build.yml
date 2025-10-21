@@ -46,7 +46,7 @@ jobs:
         shell: bash
 
       - name: Nightly Test
-        run: cargo test
+        run: cargo test --all-features
         shell: bash
         env:
           RUSTFLAGS: '--cfg nightly -Zcrate-attr=feature(variant_count)'

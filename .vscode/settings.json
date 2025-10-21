@@ -1,0 +1,8 @@
+{
+    "rust-analyzer.check.features": [
+        "arb"
+    ],
+    "rust-analyzer.cargo.features": [
+        "arb"
+    ]
+}

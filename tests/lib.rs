@@ -1,11 +1,10 @@
 use data_encoding::HEXUPPER;
 use multiaddr::*;
 use multihash::Multihash;
-use quickcheck::{Arbitrary, Gen, QuickCheck};
+use quickcheck::QuickCheck;
 use std::{
     borrow::Cow,
-    convert::{TryFrom, TryInto},
-    iter::{self, FromIterator},
+    convert::TryFrom,
     net::{Ipv4Addr, Ipv6Addr},
     str::FromStr,
 };
@@ -14,51 +13,49 @@ use std::{
 
 #[test]
 fn to_from_bytes_identity() {
-    fn prop(a: Ma) -> bool {
-        let b = a.0.to_vec();
-        Some(a) == Multiaddr::try_from(b).ok().map(Ma)
+    fn prop(a: Multiaddr) -> bool {
+        let b = a.to_vec();
+        Some(a) == Multiaddr::try_from(b).ok()
     }
-    QuickCheck::new().quickcheck(prop as fn(Ma) -> bool)
+    QuickCheck::new().quickcheck(prop as fn(Multiaddr) -> bool)
 }
 
 #[test]
 fn to_from_str_identity() {
-    fn prop(a: Ma) -> bool {
-        let b = a.0.to_string();
-        Some(a) == Multiaddr::from_str(&b).ok().map(Ma)
+    fn prop(a: Multiaddr) -> bool {
+        let b = a.to_string();
+        Some(a) == Multiaddr::from_str(&b).ok()
     }
-    QuickCheck::new().quickcheck(prop as fn(Ma) -> bool)
+    QuickCheck::new().quickcheck(prop as fn(Multiaddr) -> bool)
 }
 
 #[test]
 fn byteswriter() {
-    fn prop(a: Ma, b: Ma) -> bool {
-        let mut x = a.0.clone();
-        for p in b.0.iter() {
+    fn prop(a: Multiaddr, b: Multiaddr) -> bool {
+        let mut x = a.clone();
+        for p in b.iter() {
             x = x.with(p)
         }
-        x.iter()
-            .zip(a.0.iter().chain(b.0.iter()))
-            .all(|(x, y)| x == y)
+        x.iter().zip(a.iter().chain(b.iter())).all(|(x, y)| x == y)
     }
-    QuickCheck::new().quickcheck(prop as fn(Ma, Ma) -> bool)
+    QuickCheck::new().quickcheck(prop as fn(Multiaddr, Multiaddr) -> bool)
 }
 
 #[test]
 fn push_pop_identity() {
-    fn prop(a: Ma, p: Proto) -> bool {
+    fn prop(a: Multiaddr, p: Protocol) -> bool {
         let mut b = a.clone();
         let q = p.clone();
-        b.0.push(q.0);
-        assert_ne!(a.0, b.0);
-        Some(p.0) == b.0.pop() && a.0 == b.0
+        b.push(q);
+        assert_ne!(a, b);
+        Some(p) == b.pop() && a == b
     }
-    QuickCheck::new().quickcheck(prop as fn(Ma, Proto) -> bool)
+    QuickCheck::new().quickcheck(prop as fn(Multiaddr, Protocol<'static>) -> bool)
 }
 
 #[test]
 fn ends_with() {
-    fn prop(Ma(m): Ma) {
+    fn prop(m: Multiaddr) {
         let n = m.iter().count();
         for i in 0..n {
             let suffix = m.iter().skip(i).collect::<Multiaddr>();
@@ -70,7 +67,7 @@ fn ends_with() {
 
 #[test]
 fn starts_with() {
-    fn prop(Ma(m): Ma) {
+    fn prop(m: Multiaddr) {
         let n = m.iter().count();
         for i in 0..n {
             let prefix = m.iter().take(i + 1).collect::<Multiaddr>();
@@ -78,137 +75,6 @@ fn starts_with() {
         }
     }
     QuickCheck::new().quickcheck(prop as fn(_))
-}
-
-// Arbitrary impls
-
-#[derive(PartialEq, Eq, Clone, Hash, Debug)]
-struct Ma(Multiaddr);
-
-impl Arbitrary for Ma {
-    fn arbitrary(g: &mut Gen) -> Self {
-        let iter = (0..u8::arbitrary(g) % 128).map(|_| Proto::arbitrary(g).0);
-        Ma(Multiaddr::from_iter(iter))
-    }
-}
-
-#[derive(PartialEq, Eq, Clone, Debug)]
-struct Proto(Protocol<'static>);
-
-impl Proto {
-    const IMPL_VARIANT_COUNT: u8 = 40;
-}
-
-impl Arbitrary for Proto {
-    fn arbitrary(g: &mut Gen) -> Self {
-        use Protocol::*;
-        match u8::arbitrary(g) % Proto::IMPL_VARIANT_COUNT {
-            0 => Proto(Dccp(Arbitrary::arbitrary(g))),
-            1 => Proto(Dns(Cow::Owned(SubString::arbitrary(g).0))),
-            2 => Proto(Dns4(Cow::Owned(SubString::arbitrary(g).0))),
-            3 => Proto(Dns6(Cow::Owned(SubString::arbitrary(g).0))),
-            4 => Proto(Dnsaddr(Cow::Owned(SubString::arbitrary(g).0))),
-            5 => Proto(Http),
-            6 => Proto(Https),
-            7 => Proto(Ip4(Ipv4Addr::arbitrary(g))),
-            8 => Proto(Ip6(Ipv6Addr::arbitrary(g))),
-            9 => Proto(P2pWebRtcDirect),
-            10 => Proto(P2pWebRtcStar),
-            11 => Proto(WebRTCDirect),
-            12 => Proto(Certhash(Mh::arbitrary(g).0)),
-            13 => Proto(P2pWebSocketStar),
-            14 => Proto(Memory(Arbitrary::arbitrary(g))),
-            15 => {
-                let a = iter::repeat_with(|| u8::arbitrary(g))
-                    .take(10)
-                    .collect::<Vec<_>>()
-                    .try_into()
-                    .unwrap();
-                Proto(Onion(Cow::Owned(a), std::cmp::max(1, u16::arbitrary(g))))
-            }
-            16 => {
-                let a: [u8; 35] = iter::repeat_with(|| u8::arbitrary(g))
-                    .take(35)
-                    .collect::<Vec<_>>()
-                    .try_into()
-                    .unwrap();
-                Proto(Onion3((a, std::cmp::max(1, u16::arbitrary(g))).into()))
-            }
-            17 => Proto(P2p(PId::arbitrary(g).0)),
-            18 => Proto(P2pCircuit),
-            19 => Proto(Quic),
-            20 => Proto(QuicV1),
-            21 => Proto(Sctp(Arbitrary::arbitrary(g))),
-            22 => Proto(Tcp(Arbitrary::arbitrary(g))),
-            23 => Proto(Tls),
-            24 => Proto(Noise),
-            25 => Proto(Udp(Arbitrary::arbitrary(g))),
-            26 => Proto(Udt),
-            27 => Proto(Unix(Cow::Owned(SubString::arbitrary(g).0))),
-            28 => Proto(Utp),
-            29 => Proto(WebTransport),
-            30 => Proto(Ws("/".into())),
-            31 => Proto(Wss("/".into())),
-            32 => Proto(Ip6zone(Cow::Owned(SubString::arbitrary(g).0))),
-            33 => Proto(Ipcidr(Arbitrary::arbitrary(g))),
-            34 => {
-                let len = usize::arbitrary(g) % (462 - 387) + 387;
-                let a = iter::repeat_with(|| u8::arbitrary(g))
-                    .take(len)
-                    .collect::<Vec<_>>();
-                Proto(Garlic64(Cow::Owned(a)))
-            }
-            35 => {
-                let len = if bool::arbitrary(g) {
-                    32
-                } else {
-                    usize::arbitrary(g) % 128 + 35
-                };
-                let a = iter::repeat_with(|| u8::arbitrary(g))
-                    .take(len)
-                    .collect::<Vec<_>>();
-                Proto(Garlic32(Cow::Owned(a)))
-            }
-            36 => Proto(Sni(Cow::Owned(SubString::arbitrary(g).0))),
-            37 => Proto(P2pStardust),
-            38 => Proto(WebRTC),
-            39 => Proto(HttpPath(Cow::Owned(SubString::arbitrary(g).0))),
-            _ => panic!("outside range"),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-struct Mh(Multihash<64>);
-
-impl Arbitrary for Mh {
-    fn arbitrary(g: &mut Gen) -> Self {
-        let mut hash: [u8; 32] = [0; 32];
-        hash.fill_with(|| u8::arbitrary(g));
-        Mh(Multihash::wrap(0x0, &hash).expect("The digest size is never too large"))
-    }
-}
-
-#[derive(Clone, Debug)]
-struct PId(PeerId);
-
-impl Arbitrary for PId {
-    fn arbitrary(g: &mut Gen) -> Self {
-        let mh = Mh::arbitrary(g);
-
-        PId(PeerId::from_multihash(mh.0).expect("identity multihash works if digest size < 64"))
-    }
-}
-
-#[derive(PartialEq, Eq, Clone, Debug)]
-struct SubString(String); // ASCII string without '/'
-
-impl Arbitrary for SubString {
-    fn arbitrary(g: &mut Gen) -> Self {
-        let mut s = String::arbitrary(g);
-        s.retain(|c| c.is_ascii() && c != '/');
-        SubString(s)
-    }
 }
 
 // other unit tests
@@ -759,15 +625,6 @@ fn protocol_stack() {
         }
         assert_eq!(ps, toks);
     }
-}
-
-// Assert all `Protocol` variants are covered
-// in its `Arbitrary` impl.
-#[cfg(nightly)]
-#[test]
-fn arbitrary_impl_for_all_proto_variants() {
-    let variants = core::mem::variant_count::<Protocol>() as u8;
-    assert_eq!(variants, Proto::IMPL_VARIANT_COUNT);
 }
 
 mod multiaddr_with_p2p {
