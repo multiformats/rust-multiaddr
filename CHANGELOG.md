@@ -1,3 +1,8 @@
+# 0.19.0
+- Update `libp2p-identity` to `v0.3.0`.
+  Update `rust-version` to `1.88.0` and edition to `2024`
+  See [PR 136](https://github.com/multiformats/rust-multiaddr/pull/136)
+
 # 0.18.3
 
 - Add `starts_with` on `Multiaddr`. See [PR 119].
