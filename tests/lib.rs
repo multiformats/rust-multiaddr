@@ -350,27 +350,60 @@ fn construct_success() {
             P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
         ],
     );
-    ma_valid("/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
-             "047F000001A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B0604D2",
-             vec![Ip4(local), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")), Tcp(1234)]);
+    ma_valid(
+        "/ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234",
+        "047F000001A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B0604D2",
+        vec![
+            Ip4(local),
+            P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
+            Tcp(1234),
+        ],
+    );
     // /unix/a/b/c/d/e,
     // /unix/stdio,
     // /ip4/1.2.3.4/tcp/80/unix/a/b/c/d/e/f,
     // /ip4/127.0.0.1/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC/tcp/1234/unix/stdio
-    ma_valid("/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
-             "29200108A07AC542013AC986FFFE317095061F40DD03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip6(addr6), Tcp(8000), Ws("/".into()), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
-             ]);
-    ma_valid("/p2p-webrtc-star/ip4/127.0.0.1/tcp/9090/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
-             "9302047F000001062382DD03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![P2pWebRtcStar, Ip4(local), Tcp(9090), Ws("/".into()), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))
-             ]);
-    ma_valid("/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/wss/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
-             "29200108A07AC542013AC986FFFE317095061F40DE03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip6(addr6), Tcp(8000), Wss("/".into()), P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
-    ma_valid("/ip4/127.0.0.1/tcp/9090/p2p-circuit/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
-             "047F000001062382A202A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
-             vec![Ip4(local), Tcp(9090), P2pCircuit, P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC"))]);
+    ma_valid(
+        "/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "29200108A07AC542013AC986FFFE317095061F40DD03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
+        vec![
+            Ip6(addr6),
+            Tcp(8000),
+            Ws("/".into()),
+            P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
+        ],
+    );
+    ma_valid(
+        "/p2p-webrtc-star/ip4/127.0.0.1/tcp/9090/ws/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "9302047F000001062382DD03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
+        vec![
+            P2pWebRtcStar,
+            Ip4(local),
+            Tcp(9090),
+            Ws("/".into()),
+            P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
+        ],
+    );
+    ma_valid(
+        "/ip6/2001:8a0:7ac5:4201:3ac9:86ff:fe31:7095/tcp/8000/wss/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "29200108A07AC542013AC986FFFE317095061F40DE03A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
+        vec![
+            Ip6(addr6),
+            Tcp(8000),
+            Wss("/".into()),
+            P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
+        ],
+    );
+    ma_valid(
+        "/ip4/127.0.0.1/tcp/9090/p2p-circuit/p2p/QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
+        "047F000001062382A202A503221220D52EBB89D85B02A284948203A62FF28389C57C9F42BEEC4EC20DB76A68911C0B",
+        vec![
+            Ip4(local),
+            Tcp(9090),
+            P2pCircuit,
+            P2p(peer_id("QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC")),
+        ],
+    );
 
     ma_valid(
         "/onion/aaimaq4ygg2iegci:80",
@@ -406,30 +439,31 @@ fn construct_success() {
         91FBA830F5D80BE5C051A77C09415E3B8FE3139400848BE5244B8AE96BB0C4A24F819CBA0488F34985EAC741D3359180BD72CAFA1559E4C19F54EA8CEDBB6A5AFDE\
         4319396EB92AAB340C60A50CC2284580CB3AD09017E8D9ABC60269B3D8D687680BD86CE834412273D4F2E3BF68DD3D6FE87E2426AC658CD5C77FD5C0AA000000",
         vec![Garlic64(
-            (
-                &[
-                    141, 63, 200, 201, 118, 168, 106, 228, 231, 139, 163, 120, 231, 94, 196, 27, 201, 171, 21, 66,
-                    169, 203, 66, 37, 129, 152, 126, 17, 143, 92, 176, 192, 36, 243, 99, 157, 106, 217, 179, 175,
-                    246, 19, 103, 47, 7, 191, 187, 191, 194, 249, 32, 239, 145, 5, 52, 236, 170, 111, 249, 192,
-                    62, 15, 164, 135, 42, 118, 77, 47, 206, 109, 76, 252, 90, 90, 152, 0, 205, 149, 148, 76,
-                    201, 239, 2, 65, 247, 83, 254, 113, 73, 74, 23, 95, 51, 75, 53, 104, 36, 89, 172, 173,
-                    196, 7, 100, 40, 171, 73, 181, 168, 58, 73, 210, 234, 35, 102, 176, 100, 97, 228, 165, 89,
-                    176, 17, 31, 167, 80, 224, 222, 12, 19, 138, 148, 209, 35, 30, 213, 151, 149, 114, 255, 83,
-                    146, 41, 5, 99, 98, 33, 153, 75, 218, 188, 68, 189, 12, 23, 254, 241, 22, 34, 177, 100,
-                    50, 219, 63, 25, 52, 0, 175, 83, 204, 97, 170, 155, 252, 12, 76, 141, 135, 75, 65, 166,
-                    225, 135, 50, 240, 182, 15, 86, 98, 239, 26, 137, 200, 5, 137, 221, 131, 102, 201, 11, 181,
-                    139, 184, 94, 173, 86, 53, 106, 186, 42, 36, 73, 80, 202, 23, 10, 187, 208, 16, 148, 83,
-                    144, 20, 248, 75, 221, 56, 62, 74, 16, 224, 12, 238, 99, 223, 195, 232, 9, 80, 110, 45,
-                    155, 84, 237, 189, 202, 27, 172, 230, 234, 161, 25, 230, 133, 115, 211, 5, 51, 121, 31, 186,
-                    131, 15, 93, 128, 190, 92, 5, 26, 119, 192, 148, 21, 227, 184, 254, 49, 57, 64, 8, 72,
-                    190, 82, 68, 184, 174, 150, 187, 12, 74, 36, 248, 25, 203, 160, 72, 143, 52, 152, 94, 172,
-                    116, 29, 51, 89, 24, 11, 215, 44, 175, 161, 85, 158, 76, 25, 245, 78, 168, 206, 219, 182,
-                    165, 175, 222, 67, 25, 57, 110, 185, 42, 171, 52, 12, 96, 165, 12, 194, 40, 69, 128, 203,
-                    58, 208, 144, 23, 232, 217, 171, 198, 2, 105, 179, 216, 214, 135, 104, 11, 216, 108, 232, 52,
-                    65, 34, 115, 212, 242, 227, 191, 104, 221, 61, 111, 232, 126, 36, 38, 172, 101, 140, 213, 199,
-                    127, 213, 192, 170, 0, 0, 0,
-                ]
-            ).into()
+            (&[
+                141, 63, 200, 201, 118, 168, 106, 228, 231, 139, 163, 120, 231, 94, 196, 27, 201,
+                171, 21, 66, 169, 203, 66, 37, 129, 152, 126, 17, 143, 92, 176, 192, 36, 243, 99,
+                157, 106, 217, 179, 175, 246, 19, 103, 47, 7, 191, 187, 191, 194, 249, 32, 239,
+                145, 5, 52, 236, 170, 111, 249, 192, 62, 15, 164, 135, 42, 118, 77, 47, 206, 109,
+                76, 252, 90, 90, 152, 0, 205, 149, 148, 76, 201, 239, 2, 65, 247, 83, 254, 113, 73,
+                74, 23, 95, 51, 75, 53, 104, 36, 89, 172, 173, 196, 7, 100, 40, 171, 73, 181, 168,
+                58, 73, 210, 234, 35, 102, 176, 100, 97, 228, 165, 89, 176, 17, 31, 167, 80, 224,
+                222, 12, 19, 138, 148, 209, 35, 30, 213, 151, 149, 114, 255, 83, 146, 41, 5, 99,
+                98, 33, 153, 75, 218, 188, 68, 189, 12, 23, 254, 241, 22, 34, 177, 100, 50, 219,
+                63, 25, 52, 0, 175, 83, 204, 97, 170, 155, 252, 12, 76, 141, 135, 75, 65, 166, 225,
+                135, 50, 240, 182, 15, 86, 98, 239, 26, 137, 200, 5, 137, 221, 131, 102, 201, 11,
+                181, 139, 184, 94, 173, 86, 53, 106, 186, 42, 36, 73, 80, 202, 23, 10, 187, 208,
+                16, 148, 83, 144, 20, 248, 75, 221, 56, 62, 74, 16, 224, 12, 238, 99, 223, 195,
+                232, 9, 80, 110, 45, 155, 84, 237, 189, 202, 27, 172, 230, 234, 161, 25, 230, 133,
+                115, 211, 5, 51, 121, 31, 186, 131, 15, 93, 128, 190, 92, 5, 26, 119, 192, 148, 21,
+                227, 184, 254, 49, 57, 64, 8, 72, 190, 82, 68, 184, 174, 150, 187, 12, 74, 36, 248,
+                25, 203, 160, 72, 143, 52, 152, 94, 172, 116, 29, 51, 89, 24, 11, 215, 44, 175,
+                161, 85, 158, 76, 25, 245, 78, 168, 206, 219, 182, 165, 175, 222, 67, 25, 57, 110,
+                185, 42, 171, 52, 12, 96, 165, 12, 194, 40, 69, 128, 203, 58, 208, 144, 23, 232,
+                217, 171, 198, 2, 105, 179, 216, 214, 135, 104, 11, 216, 108, 232, 52, 65, 34, 115,
+                212, 242, 227, 191, 104, 221, 61, 111, 232, 126, 36, 38, 172, 101, 140, 213, 199,
+                127, 213, 192, 170, 0, 0, 0,
+            ])
+                .into(),
         )],
     );
     ma_valid(
@@ -440,7 +474,11 @@ fn construct_success() {
     ma_valid(
         "/dnsaddr/sjc-1.bootstrap.libp2p.io/tcp/1234/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
         "3819736A632D312E626F6F7473747261702E6C69627032702E696F0604D2A50322122006B3608AA000274049EB28AD8E793A26FF6FAB281A7D3BD77CD18EB745DFAABB",
-        vec![Dnsaddr(Cow::Borrowed("sjc-1.bootstrap.libp2p.io")), Tcp(1234), P2p(peer_id("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"))]
+        vec![
+            Dnsaddr(Cow::Borrowed("sjc-1.bootstrap.libp2p.io")),
+            Tcp(1234),
+            P2p(peer_id("QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN")),
+        ],
     );
     ma_valid(
         "/ip4/127.0.0.1/tcp/127/ws",

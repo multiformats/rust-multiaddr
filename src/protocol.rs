@@ -562,14 +562,14 @@ impl<'a> Protocol<'a> {
             Protocol::Http => w.write_all(encode::u32(HTTP, &mut buf))?,
             Protocol::Https => w.write_all(encode::u32(HTTPS, &mut buf))?,
             Protocol::WebTransport => w.write_all(encode::u32(WEBTRANSPORT, &mut buf))?,
-            Protocol::Ws(ref s) if s == "/" => w.write_all(encode::u32(WS, &mut buf))?,
+            Protocol::Ws(s) if s == "/" => w.write_all(encode::u32(WS, &mut buf))?,
             Protocol::Ws(s) => {
                 w.write_all(encode::u32(WS_WITH_PATH, &mut buf))?;
                 let bytes = s.as_bytes();
                 w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
                 w.write_all(bytes)?
             }
-            Protocol::Wss(ref s) if s == "/" => w.write_all(encode::u32(WSS, &mut buf))?,
+            Protocol::Wss(s) if s == "/" => w.write_all(encode::u32(WSS, &mut buf))?,
             Protocol::Wss(s) => {
                 w.write_all(encode::u32(WSS_WITH_PATH, &mut buf))?;
                 let bytes = s.as_bytes();
@@ -709,9 +709,9 @@ impl<'a> Protocol<'a> {
             Unix(_) => "unix",
             Utp => "utp",
             WebTransport => "webtransport",
-            Ws(ref s) if s == "/" => "ws",
+            Ws(s) if s == "/" => "ws",
             Ws(_) => "x-parity-ws",
-            Wss(ref s) if s == "/" => "wss",
+            Wss(s) if s == "/" => "wss",
             Wss(_) => "x-parity-wss",
             Ip6zone(_) => "ip6zone",
             Ipcidr(_) => "ipcidr",

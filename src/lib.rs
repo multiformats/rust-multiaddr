@@ -15,8 +15,8 @@ pub use self::onion_addr::Onion3Addr;
 pub use self::protocol::Protocol;
 use bytes::{BufMut, Bytes, BytesMut};
 use serde::{
-    de::{self, Error as DeserializerError},
     Deserialize, Deserializer, Serialize, Serializer,
+    de::{self, Error as DeserializerError},
 };
 use std::{
     convert::TryFrom,
@@ -30,7 +30,7 @@ use std::{
 pub use libp2p_identity::PeerId;
 
 #[cfg(feature = "url")]
-pub use self::from_url::{from_url, from_url_lossy, FromUrlErr};
+pub use self::from_url::{FromUrlErr, from_url, from_url_lossy};
 
 static_assertions::const_assert! {
     // This check is most certainly overkill right now, but done here
@@ -193,11 +193,7 @@ impl Multiaddr {
             address = address.with(p)
         }
 
-        if replaced {
-            Some(address)
-        } else {
-            None
-        }
+        if replaced { Some(address) } else { None }
     }
 
     /// Checks whether the given `Multiaddr` is a suffix of this `Multiaddr`.
@@ -223,7 +219,7 @@ impl Multiaddr {
     /// Returns &str identifiers for the protocol names themselves.
     /// This omits specific info like addresses, ports, peer IDs, and the like.
     /// Example: `"/ip4/127.0.0.1/tcp/5001"` would return `["ip4", "tcp"]`
-    pub fn protocol_stack(&self) -> ProtoStackIter {
+    pub fn protocol_stack(&self) -> ProtoStackIter<'_> {
         ProtoStackIter { parts: self.iter() }
     }
 }
