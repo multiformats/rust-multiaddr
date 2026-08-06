@@ -125,10 +125,7 @@ impl Multiaddr {
 
     /// Like [`Multiaddr::push`] but consumes `self`.
     pub fn with(mut self, p: Protocol<'_>) -> Self {
-        let mut bytes = BytesMut::from(std::mem::take(&mut self.bytes));
-        p.write_bytes(&mut (&mut bytes).writer())
-            .expect("Writing to a `BytesMut` never fails.");
-        self.bytes = bytes.freeze();
+        self.push(p);
         self
     }
 
