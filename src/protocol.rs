@@ -60,6 +60,49 @@ const P2P_STARDUST: u32 = 277; // Deprecated
 const WEBRTC: u32 = 281;
 const HTTP_PATH: u32 = 481;
 
+#[cfg(feature = "custom")]
+pub(crate) const BUILT_IN_PROTOCOLS: &[(&str, u32, i32, bool)] = &[
+    ("ip4", IP4, 4, false),
+    ("tcp", TCP, 2, false),
+    ("udp", UDP, 2, false),
+    ("dccp", DCCP, 2, false),
+    ("ip6", IP6, 16, false),
+    ("p2p", P2P, -1, false),
+    ("ipfs", P2P, -1, false),
+    ("http", HTTP, 0, false),
+    ("https", HTTPS, 0, false),
+    ("onion", ONION, 12, false),
+    ("onion3", ONION3, 37, false),
+    ("quic", QUIC, 0, false),
+    ("quic-v1", QUIC_V1, 0, false),
+    ("ws", WS, 0, false),
+    ("wss", WSS, 0, false),
+    ("p2p-websocket-star", P2P_WEBSOCKET_STAR, 0, false),
+    ("webrtc-direct", WEBRTC_DIRECT, 0, false),
+    ("p2p-webrtc-direct", P2P_WEBRTC_DIRECT, 0, false),
+    ("certhash", CERTHASH, -1, false),
+    ("p2p-circuit", P2P_CIRCUIT, 0, false),
+    ("sctp", SCTP, 2, false),
+    ("udt", UDT, 0, false),
+    ("utp", UTP, 0, false),
+    ("unix", UNIX, -1, true),
+    ("dns", DNS, -1, false),
+    ("dns4", DNS4, -1, false),
+    ("dns6", DNS6, -1, false),
+    ("dnsaddr", DNSADDR, -1, false),
+    ("tls", TLS, 0, false),
+    ("noise", NOISE, 0, false),
+    ("webtransport", WEBTRANSPORT, 0, false),
+    ("ip6zone", IP6ZONE, -1, true),
+    ("ipcidr", IPCIDR, 1, false),
+    ("garlic64", GARLIC64, -1, false),
+    ("garlic32", GARLIC32, -1, false),
+    ("sni", SNI, -1, false),
+    ("webrtc", WEBRTC, 0, false),
+    ("http-path", HTTP_PATH, -1, true),
+    ("memory", MEMORY, 8, false),
+];
+
 /// Type-alias for how multi-addresses use `Multihash`.
 ///
 /// The `64` defines the allocation size for the digest within the `Multihash`.
@@ -130,6 +173,13 @@ pub enum Protocol<'a> {
     P2pStardust,
     WebRTC,
     HttpPath(Cow<'a, str>),
+    #[cfg(feature = "custom")]
+    Custom {
+        def: std::sync::Arc<crate::custom::CustomProtocolDef>,
+        data: Cow<'a, [u8]>,
+    },
+    #[cfg(feature = "custom")]
+    Unknown(u32, Cow<'a, [u8]>),
 }
 
 impl<'a> Protocol<'a> {
@@ -282,6 +332,22 @@ impl<'a> Protocol<'a> {
                 let s = iter.next().ok_or(Error::InvalidProtocolString)?;
                 let decoded = percent_encoding::percent_decode(s.as_bytes()).decode_utf8()?;
                 Ok(Protocol::HttpPath(decoded))
+            }
+            #[cfg(feature = "custom")]
+            unknown if unknown.starts_with("unknown-") => {
+                let id_str = &unknown["unknown-".len()..];
+                let id: u32 = id_str
+                    .parse()
+                    .map_err(|_| Error::UnknownProtocolString(unknown.to_string()))?;
+                let data = match iter.next() {
+                    Some("") => vec![],
+                    Some(s) => match multibase::Base::Base64Url.decode(s) {
+                        Ok(d) => d,
+                        Err(_) => return Err(Error::InvalidProtocolString),
+                    },
+                    None => vec![],
+                };
+                Ok(Protocol::Unknown(id, std::borrow::Cow::Owned(data)))
             }
             unknown => Err(Error::UnknownProtocolString(unknown.to_string())),
         }
@@ -472,6 +538,12 @@ impl<'a> Protocol<'a> {
                     rest,
                 ))
             }
+            #[cfg(feature = "custom")]
+            _ => Ok((
+                Protocol::Unknown(id, std::borrow::Cow::Borrowed(input)),
+                [].as_ref(),
+            )),
+            #[cfg(not(feature = "custom"))]
             _ => Err(Error::UnknownProtocolId(id)),
         }
     }
@@ -625,6 +697,19 @@ impl<'a> Protocol<'a> {
                 w.write_all(encode::usize(bytes.len(), &mut encode::usize_buffer()))?;
                 w.write_all(bytes)?
             }
+            #[cfg(feature = "custom")]
+            Protocol::Custom { def, data } => {
+                w.write_all(encode::u32(def.code, &mut buf))?;
+                if def.size == -1 {
+                    w.write_all(encode::usize(data.len(), &mut encode::usize_buffer()))?;
+                }
+                w.write_all(data.as_ref())?
+            }
+            #[cfg(feature = "custom")]
+            Protocol::Unknown(code, data) => {
+                w.write_all(encode::u32(*code, &mut buf))?;
+                w.write_all(data.as_ref())?
+            }
         }
         Ok(())
     }
@@ -673,6 +758,13 @@ impl<'a> Protocol<'a> {
             P2pStardust => P2pStardust,
             WebRTC => WebRTC,
             HttpPath(cow) => HttpPath(Cow::Owned(cow.into_owned())),
+            #[cfg(feature = "custom")]
+            Custom { def, data } => Custom {
+                def: def.clone(),
+                data: Cow::Owned(data.into_owned()),
+            },
+            #[cfg(feature = "custom")]
+            Unknown(code, data) => Unknown(code, Cow::Owned(data.into_owned())),
         }
     }
 
@@ -721,6 +813,10 @@ impl<'a> Protocol<'a> {
             P2pStardust => "p2p-stardust",
             WebRTC => "webrtc",
             HttpPath(_) => "http-path",
+            #[cfg(feature = "custom")]
+            Custom { def, .. } => def.name,
+            #[cfg(feature = "custom")]
+            Unknown(_, _) => "unknown",
         }
     }
 }
@@ -728,7 +824,11 @@ impl<'a> Protocol<'a> {
 impl fmt::Display for Protocol<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use self::Protocol::*;
-        write!(f, "/{}", self.tag())?;
+        match self {
+            #[cfg(feature = "custom")]
+            Unknown(code, _) => write!(f, "/unknown-{code}"),
+            _ => write!(f, "/{}", self.tag()),
+        }?;
         match self {
             Dccp(port) => write!(f, "/{port}"),
             Dns(s) => write!(f, "/{s}"),
@@ -782,6 +882,32 @@ impl fmt::Display for Protocol<'_> {
                 let encoded =
                     percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
                 write!(f, "/{encoded}")
+            }
+            #[cfg(feature = "custom")]
+            Custom { def, data } => {
+                if let Some(t) = &def.transcoder {
+                    let s = t.bytes_to_string(data.as_ref()).map_err(|_| fmt::Error)?;
+                    if !s.is_empty() {
+                        write!(f, "/{s}")?;
+                    }
+                    Ok(())
+                } else if data.is_empty() {
+                    Ok(())
+                } else if def.path {
+                    let s = std::str::from_utf8(data.as_ref()).map_err(|_| fmt::Error)?;
+                    let encoded =
+                        percent_encoding::percent_encode(s.as_bytes(), PATH_SEGMENT_ENCODE_SET);
+                    write!(f, "/{encoded}")
+                } else {
+                    write!(f, "/{}", multibase::Base::Base64Url.encode(data.as_ref()))
+                }
+            }
+            #[cfg(feature = "custom")]
+            Unknown(_, data) => {
+                if !data.is_empty() {
+                    write!(f, "/{}", multibase::Base::Base64Url.encode(data.as_ref()))?;
+                }
+                Ok(())
             }
             _ => Ok(()),
         }

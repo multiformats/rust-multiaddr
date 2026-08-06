@@ -7,9 +7,14 @@ mod errors;
 mod onion_addr;
 mod protocol;
 
+#[cfg(feature = "custom")]
+mod custom;
+
 #[cfg(feature = "url")]
 mod from_url;
 
+#[cfg(feature = "custom")]
+pub use self::custom::{CustomProtocolDef, Registry, Transcoder};
 pub use self::errors::{Error, Result};
 pub use self::onion_addr::Onion3Addr;
 pub use self::protocol::Protocol;

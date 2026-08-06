@@ -636,7 +636,15 @@ fn to_multiaddr() {
 #[test]
 fn from_bytes_fail() {
     let bytes = vec![1, 2, 3, 4];
+    #[cfg(not(feature = "custom"))]
     assert!(Multiaddr::try_from(bytes).is_err());
+    #[cfg(feature = "custom")]
+    {
+        let multiaddr = Multiaddr::try_from(bytes)
+            .expect("Should parse as Unknown protocol when custom feature is on");
+        let mut iter = multiaddr.iter();
+        assert_eq!("unknown", iter.next().unwrap().tag());
+    }
 }
 
 #[test]
