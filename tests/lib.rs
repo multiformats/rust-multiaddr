@@ -809,6 +809,8 @@ fn arbitrary_impl_for_all_proto_variants() {
 }
 
 mod multiaddr_with_p2p {
+    use std::net::{IpAddr, Ipv4Addr};
+
     use multiaddr::{Multiaddr, PeerId};
 
     fn test_multiaddr_with_p2p(
@@ -867,5 +869,40 @@ mod multiaddr_with_p2p {
             "QmcgpsyWgH8Y8ajJz1Cu72KnS5uo2Aa2LpzU7kinSupNKC",
             Err("/ip4/127.0.0.1/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN"),
         )
+    }
+    #[test]
+    fn ip_addr_of_ip_addresses() {
+        let v4: Multiaddr = "/ip4/127.0.0.1/udp/4001/quic-v1".parse().unwrap();
+        assert_eq!(v4.ip_addr(), Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        let v6: Multiaddr = "/ip6/2001:db8::1/tcp/443".parse().unwrap();
+        assert_eq!(
+            v6.ip_addr(),
+            Some(IpAddr::V6("2001:db8::1".parse().unwrap()))
+        );
+    }
+
+    #[test]
+    fn ip_addr_absent_without_ip_component() {
+        // Hostname-based addresses are not resolved.
+        let hostname: Multiaddr = "/dns4/example.com/tcp/443".parse().unwrap();
+        assert_eq!(hostname.ip_addr(), None);
+
+        let memory: Multiaddr = "/memory/1234".parse().unwrap();
+        assert_eq!(memory.ip_addr(), None);
+
+        assert_eq!(Multiaddr::empty().ip_addr(), None);
+    }
+
+    #[test]
+    fn ip_addr_tracks_components() {
+        let mut address: Multiaddr = "/ip4/127.0.0.1/tcp/80".parse().unwrap();
+        assert_eq!(address.ip_addr(), Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        address.pop(); // `tcp`
+        assert_eq!(address.ip_addr(), Some(IpAddr::V4(Ipv4Addr::LOCALHOST)));
+
+        address.pop(); // `ip4` — nothing left
+        assert_eq!(address.ip_addr(), None);
     }
 }
