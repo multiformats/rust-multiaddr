@@ -1,3 +1,10 @@
+# 0.19.1
+- Add `Multiaddr::ip_addr` method.
+  See [PR 139](https://github.com/multiformats/rust-multiaddr/pull/139)
+
+- Remove `arrayref` dependency.
+  See [PR 138](https://github.com/multiformats/rust-multiaddr/pull/138)
+
 # 0.19.0
 - Update `libp2p-identity` to `v0.3.0`.
   Update `rust-version` to `1.88.0` and edition to `2024`
