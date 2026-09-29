@@ -1,6 +1,5 @@
 use crate::onion_addr::Onion3Addr;
 use crate::{Error, PeerId, Result};
-use arrayref::array_ref;
 use byteorder::{BigEndian, ByteOrder, ReadBytesExt, WriteBytesExt};
 use data_encoding::BASE32;
 use std::{
@@ -369,18 +368,14 @@ impl<'a> Protocol<'a> {
             ONION => {
                 let (data, rest) = split_at(12, input)?;
                 let port = BigEndian::read_u16(&data[10..]);
-                Ok((
-                    Protocol::Onion(Cow::Borrowed(array_ref!(data, 0, 10)), port),
-                    rest,
-                ))
+                let data = data.first_chunk::<10>().ok_or(Error::DataLessThanLen)?;
+                Ok((Protocol::Onion(Cow::Borrowed(data), port), rest))
             }
             ONION3 => {
                 let (data, rest) = split_at(37, input)?;
                 let port = BigEndian::read_u16(&data[35..]);
-                Ok((
-                    Protocol::Onion3((array_ref!(data, 0, 35), port).into()),
-                    rest,
-                ))
+                let data = data.first_chunk::<35>().ok_or(Error::DataLessThanLen)?;
+                Ok((Protocol::Onion3((data, port).into()), rest))
             }
             P2P => {
                 let (n, input) = decode::usize(input)?;
