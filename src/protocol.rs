@@ -368,18 +368,14 @@ impl<'a> Protocol<'a> {
             ONION => {
                 let (data, rest) = split_at(12, input)?;
                 let port = BigEndian::read_u16(&data[10..]);
-                Ok((
-                    Protocol::Onion(Cow::Borrowed(data.first_chunk::<10>().unwrap()), port),
-                    rest,
-                ))
+                let data = data.first_chunk::<10>().ok_or(Error::DataLessThanLen)?;
+                Ok((Protocol::Onion(Cow::Borrowed(data), port), rest))
             }
             ONION3 => {
                 let (data, rest) = split_at(37, input)?;
                 let port = BigEndian::read_u16(&data[35..]);
-                Ok((
-                    Protocol::Onion3((data.first_chunk::<35>().unwrap(), port).into()),
-                    rest,
-                ))
+                let data = data.first_chunk::<35>().ok_or(Error::DataLessThanLen)?;
+                Ok((Protocol::Onion3((data, port).into()), rest))
             }
             P2P => {
                 let (n, input) = decode::usize(input)?;
