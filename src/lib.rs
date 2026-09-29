@@ -222,6 +222,20 @@ impl Multiaddr {
     pub fn protocol_stack(&self) -> ProtoStackIter<'_> {
         ProtoStackIter { parts: self.iter() }
     }
+
+    // Returns the IP address of this multiaddress, if it has one.
+    ///
+    /// Iterates the components of this multiaddress and returns the first
+    /// [`Protocol::Ip4`] or [`Protocol::Ip6`] found. Multiaddresses without an
+    /// IP component, hostname-based (`/dns4/...`) or non-IP transport
+    /// addresses (`/memory/`), return `None`. Hostnames are not resolved.
+    pub fn ip_addr(&self) -> Option<IpAddr> {
+        self.iter().find_map(|p| match p {
+            Protocol::Ip4(addr) => Some(IpAddr::V4(addr)),
+            Protocol::Ip6(addr) => Some(IpAddr::V6(addr)),
+            _ => None,
+        })
+    }
 }
 
 impl fmt::Debug for Multiaddr {
